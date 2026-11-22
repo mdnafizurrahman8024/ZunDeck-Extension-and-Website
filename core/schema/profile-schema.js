@@ -162,16 +162,26 @@ export function createDefaultProfile() {
     cvProfiles: [
       {
         id: 'cv-academic',
-        name: 'Academic & Research Focus (ATS)',
-        targetRole: 'Graduate Research Assistant / PhD Scholar',
-        includedSections: ['education', 'research', 'publications', 'skills', 'certifications', 'references'],
+        name: 'Flagship Academic & Research CV (ATS)',
+        targetRole: 'Academic Scholar & DVM Researcher',
+        templateId: 'cv-acad-flagship',
+        includedSections: ['education', 'research', 'publications', 'projects', 'certifications', 'leadership', 'references'],
+        itemOverrides: {}
+      },
+      {
+        id: 'cv-europass',
+        name: 'Erasmus Mundus / Europass Academic CV',
+        targetRole: 'Graduate Research Candidate',
+        templateId: 'cv-acad-europass',
+        includedSections: ['education', 'research', 'publications', 'skills', 'certifications', 'languages', 'references'],
         itemOverrides: {}
       },
       {
         id: 'cv-healthtech',
-        name: 'HealthTech & Software Focus',
+        name: '1-Page ATS Software & HealthTech Resume',
         targetRole: 'Computational Biologist / Full-Stack Engineer',
-        includedSections: ['projects', 'skills', 'research', 'education', 'certifications'],
+        templateId: 'cv-corp-ats-gold',
+        includedSections: ['skills', 'projects', 'research', 'education'],
         itemOverrides: {}
       }
     ]

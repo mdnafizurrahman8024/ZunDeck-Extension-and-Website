@@ -25,7 +25,8 @@ test('dev-server starts and serves workbench with HTTP 200', async () => {
 
     const resApp = await fetchUrl(`http://localhost:${port}/apps/web/index.html`);
     assert.equal(resApp.status, 200);
-    assert.ok(resApp.body.includes('Live Preview Workbench'));
+    assert.ok(resApp.body.includes('ZunDeck'));
+    assert.ok(resApp.body.includes('Studio'));
 
     const res404 = await fetchUrl(`http://localhost:${port}/non-existent-file.xyz`);
     assert.equal(res404.status, 404);

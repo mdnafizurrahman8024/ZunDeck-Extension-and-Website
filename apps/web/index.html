@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZunDeck — Live Preview Workbench &amp; 30 Template Studio</title>
-  <meta name="description" content="ZunDeck Live Preview Workbench: test 30 role-based portfolios and Custom Canvas across Laptop, Phone Desktop, and Mobile viewports.">
+  <title>ZunDeck — Unified Portfolio &amp; CV Studio</title>
+  <meta name="description" content="ZunDeck Studio: 30 Role-Based Portfolios, 30 CV &amp; Resume Templates, Europass, Multi-CV Profiles, Vector PDF, Word DOCX &amp; ATS Robot X-Ray.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <link rel="stylesheet" href="css/app.css">
@@ -24,9 +24,22 @@
         <span class="brand-glyph">Z</span>
         <div class="brand-text">
           <span class="brand-title">ZunDeck</span>
-          <span class="brand-sub">Workbench &bull; 30 Templates</span>
+          <span class="brand-sub">Workbench &bull; Studio</span>
         </div>
       </div>
+
+      <!-- Studio Mode Switcher (Portfolio vs CV & Resume) -->
+      <div class="studio-mode-switcher" role="tablist">
+        <button type="button" class="mode-tab active" data-mode="portfolio" id="tab-mode-portfolio">
+          <i class="fa-solid fa-layer-group"></i>
+          <span>Portfolio Studio</span>
+        </button>
+        <button type="button" class="mode-tab" data-mode="cv" id="tab-mode-cv">
+          <i class="fa-solid fa-file-invoice"></i>
+          <span>CV &amp; Resume Studio</span>
+        </button>
+      </div>
+
       <div class="sync-pill" id="sync-status-indicator" title="Connected to Mother Showcase">
         <span class="sync-dot"></span>
         <span id="sync-status-label">Mother Showcase Synced</span>
@@ -51,15 +64,37 @@
 
     <!-- Actions & Tools -->
     <div class="header-actions">
+      <!-- CV specific tools (shown in CV mode) -->
+      <div class="cv-header-tools" id="cv-header-tools" style="display: none;">
+        <select id="select-cv-profile" class="cv-profile-select" aria-label="Targeted CV Profile Selector" title="Switch Multi-CV Profile">
+          <!-- Populated by JS -->
+        </select>
+        <button type="button" class="btn-tool active" id="btn-toggle-qr" title="Toggle Smart QR Code">
+          <i class="fa-solid fa-qrcode"></i>
+        </button>
+        <button type="button" class="btn-tool" id="btn-toggle-xray" title="ATS Robot X-Ray Preview">
+          <i class="fa-solid fa-robot"></i>
+        </button>
+        <button type="button" class="btn-tool" id="btn-print-pdf" title="Vector PDF Print / Save">
+          <i class="fa-solid fa-print"></i>
+        </button>
+        <button type="button" class="btn-primary" id="btn-export-docx" title="Export Editable Word (.docx)">
+          <i class="fa-solid fa-file-word"></i>
+          <span>Word (.docx)</span>
+        </button>
+      </div>
+
+      <!-- Portfolio specific export (shown in portfolio mode) -->
+      <button type="button" class="btn-primary" id="btn-export-html">
+        <i class="fa-solid fa-download"></i>
+        <span>Export HTML</span>
+      </button>
+
       <button type="button" class="btn-tool" id="btn-theme-toggle" title="Toggle Dark/Light Mode">
         <i class="fa-solid fa-circle-half-stroke"></i>
       </button>
       <button type="button" class="btn-tool" id="btn-popout" title="Open Preview in New Tab">
         <i class="fa-solid fa-arrow-up-right-from-square"></i>
-      </button>
-      <button type="button" class="btn-primary" id="btn-export-html">
-        <i class="fa-solid fa-download"></i>
-        <span>Export HTML</span>
       </button>
     </div>
   </header>
@@ -71,16 +106,12 @@
     <aside class="catalog-sidebar">
       <div class="sidebar-search-box">
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
-        <input type="text" id="catalog-search" placeholder="Search 30 templates..." aria-label="Search portfolio templates">
+        <input type="text" id="catalog-search" placeholder="Search templates..." aria-label="Search templates">
       </div>
 
       <!-- Category Filter Tabs -->
-      <div class="category-tabs" role="tablist">
-        <button type="button" class="cat-tab active" data-category="all">All (31)</button>
-        <button type="button" class="cat-tab" data-category="academic">Academic (10)</button>
-        <button type="button" class="cat-tab" data-category="tech">Tech &amp; AI (10)</button>
-        <button type="button" class="cat-tab" data-category="corporate">Corporate (10)</button>
-        <button type="button" class="cat-tab" data-category="custom">Custom (1)</button>
+      <div class="category-tabs" id="category-tabs" role="tablist">
+        <!-- Dynamically rendered based on active mode -->
       </div>
 
       <!-- Template Items List -->
@@ -97,6 +128,12 @@
           <span class="active-viewport-size" id="label-active-size">1440 &times; auto</span>
         </div>
         <div class="canvas-actions">
+          <button type="button" class="btn-canvas-action" id="btn-sync-to-master" title="Sync CV Edits Back to Master Portfolio" style="display: none;">
+            <i class="fa-solid fa-arrow-up-right-dots"></i> Sync to Portfolio
+          </button>
+          <button type="button" class="btn-canvas-action" id="btn-pull-from-master" title="Pull Latest from Master Portfolio" style="display: none;">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Pull Latest
+          </button>
           <button type="button" class="btn-canvas-action" id="btn-refresh-preview" title="Reload Preview">
             <i class="fa-solid fa-rotate-right"></i> Refresh
           </button>
@@ -106,11 +143,49 @@
       <!-- Responsive Preview Frame Container -->
       <div class="frame-viewport-stage" id="frame-stage">
         <div class="preview-device-wrapper viewport-laptop" id="device-wrapper">
-          <iframe id="preview-iframe" title="ZunDeck Live Template Preview" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+          <iframe id="preview-iframe" title="ZunDeck Live Preview" sandbox="allow-scripts allow-same-origin allow-popups allow-modals"></iframe>
         </div>
       </div>
     </main>
 
+  </div>
+
+  <!-- ATS Robot X-Ray Modal Drawer -->
+  <div class="xray-modal-overlay" id="xray-modal" aria-hidden="true" style="display: none;">
+    <div class="xray-modal-window">
+      <div class="xray-header">
+        <div class="xray-title-group">
+          <i class="fa-solid fa-robot xray-icon"></i>
+          <div>
+            <h3 class="xray-title">ATS Robot X-Ray &amp; Compliance Inspector</h3>
+            <p class="xray-subtitle">Simulates automated resume parser extraction order and identifies structural parsing risks</p>
+          </div>
+        </div>
+        <div class="xray-score-badge" id="xray-score-badge">95/100 ATS Score</div>
+        <button type="button" class="btn-close-modal" id="btn-close-xray">&times;</button>
+      </div>
+
+      <div class="xray-body-grid">
+        <!-- Checks & Diagnostics Column -->
+        <div class="xray-diagnostics-col">
+          <h4 class="xray-col-heading">Structural Diagnostics</h4>
+          <div class="xray-checks-list" id="xray-checks-list">
+            <!-- Rendered by JS -->
+          </div>
+
+          <h4 class="xray-col-heading" style="margin-top: 14px;">Warnings &amp; Advice</h4>
+          <div class="xray-warnings-list" id="xray-warnings-list">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Raw Linear Text Stream Column -->
+        <div class="xray-text-col">
+          <h4 class="xray-col-heading">Extracted Plain-Text Order (Linear Robot Stream)</h4>
+          <pre class="xray-raw-text" id="xray-raw-text"></pre>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="js/main.js"></script>
