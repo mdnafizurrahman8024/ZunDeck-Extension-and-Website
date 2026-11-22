@@ -55,16 +55,32 @@ graph TD
 - **`pdf-print-exporter.js`**: Vector A4 print styling and iframe print trigger.
 - **`docx-exporter.js` & `letter-exporter.js`**: Zero-dependency OpenXML Word (`.docx`) file generator producing valid zip archives for CVs and Letters.
 - **`letter-editor.js`**: Real-time word/character statistics, target limit progress, private local drafts storage, and AI refinement hooks.
+- **`notes-scratchpad.js`**: Private Idea Scratchpad with tags (`Research`, `Project`, `CV Idea`, `Design`, `SOP`), pinning, search, and 1-click dispatch to SOP and Profile editors.
 - **`qr-generator.js`**: Pure vector SVG QR code generator with zero dependencies.
 
-### 4. `apps/web/`
+### 5. `core/security/` & `core/storage/`
+- **`secret-scanner.js`**: Pre-push and pre-export firewall detecting Google/Gemini keys, OpenAI/Anthropic keys, GitHub PATs, AWS keys, and private key blocks with automatic masking.
+- **`sanitizer.js`**: XSS and input sanitizer blocking `javascript:`, unsafe `data:` URLs, inline event handlers, and malicious tags.
+- **`vault-storage.js`**: Unified storage adapter for `chrome.storage.local` and `localStorage`, enforcing strict private (`zundeck_private`) vs workspace (`zundeck_workspace`) data partitioning and portable `.zundeck.json` backup export/import.
+- **`auto-save-engine.js`**: 2-second debounced local auto-save engine reporting live status transitions (`saved`, `saving`, `dirty`, `offline`).
+- **`indexeddb-store.js`**: Lightweight IndexedDB wrapper for large blobs and media without clogging key-value stores.
+
+### 6. `apps/extension/` (Manifest V3 Side Panel Extension)
+- Store-compliant Chrome/Edge Manifest V3 extension operating in the browser side panel:
+  - Least-privilege permissions: `sidePanel`, `storage`, `unlimitedStorage`, `activeTab`, `scripting`.
+  - Strict Content Security Policy (`script-src 'self'; object-src 'self'`).
+  - 8-Tab navigation: Showcase & Templates, Editor, Media, Capture, SOP, Vibe AI, Notes, Settings & BYOK Vault.
+  - Crisp geometric deck emblem SVG & PNG icons (`16, 32, 48, 128px`).
+
+### 7. `apps/web/`
 - Interactive Live Preview Workbench. Offers instant viewport toggling:
   - **Laptop** (`1440px`)
   - **Phone Desktop Mode / Tablet** (`980px`)
   - **Mobile** (`390px`)
 - Allows real-time template switching across all 30 templates with theme toggle and live data binding.
 
-### 5. `scripts/dev-server.mjs`
-- Zero-dependency Node.js HTTP server.
-- Supports ES modules, correct MIME types, and CORS.
-- **Free-Port Fallback**: Probes port `4173`; if occupied by other local development tools, auto-increments until a free port is found (up to `4250`).
+### 8. `scripts/`
+- **`dev-server.mjs`**: Zero-dependency Node.js HTTP server with auto-port fallback (`4173` -> `4250`).
+- **`sync-extension-core.mjs`**: Synchronizes shared `core/` modules to `apps/extension/core/` for unpack loading in Chrome/Edge.
+- **`generate-icons.mjs`**: Generates vector SVG and valid PNG chunk icons.
+- **`verify.mjs`**: Master pre-flight verification script.

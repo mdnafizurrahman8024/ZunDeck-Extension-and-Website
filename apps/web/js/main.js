@@ -22,14 +22,28 @@ import {
   deleteDraft,
   createNewDraft
 } from '../../core/ui/letter-editor.js';
+import {
+  createNote,
+  updateNote,
+  deleteNote,
+  togglePinNote,
+  filterAndSortNotes,
+  sendNoteToTarget,
+  formatNoteDate
+} from '../../core/ui/notes-scratchpad.js';
+import { loadPrivateVault, savePrivateVault } from '../../core/storage/vault-storage.js';
 
 let activeProfile = getMotherShowcaseFallback();
-let studioMode = 'portfolio'; // 'portfolio' | 'cv' | 'letters'
+let studioMode = 'portfolio'; // 'portfolio' | 'cv' | 'letters' | 'notes'
 let activePortfolioTemplateId = 'acad-flagship';
 let activeCvTemplateId = 'cv-acad-flagship';
 let activeCvProfileId = 'cv-acad-flagship-profile';
 let activeLetterModeId = 'sop';
 let activeLetterDraftId = null;
+let webNotes = [];
+let activeWebNoteId = null;
+let activeWebNoteTag = 'all';
+let webNotesSearch = '';
 let showQr = true;
 let includeLetterhead = true;
 let activeViewport = 'laptop';
@@ -54,6 +68,7 @@ const dom = {
   tabModePortfolio: document.getElementById('tab-mode-portfolio'),
   tabModeCv: document.getElementById('tab-mode-cv'),
   tabModeLetters: document.getElementById('tab-mode-letters'),
+  tabModeNotes: document.getElementById('tab-mode-notes'),
   cvHeaderTools: document.getElementById('cv-header-tools'),
   selectCvProfile: document.getElementById('select-cv-profile'),
   btnToggleQr: document.getElementById('btn-toggle-qr'),
@@ -73,6 +88,20 @@ const dom = {
   catalogSidebar: document.getElementById('catalog-sidebar'),
   workbenchCanvas: document.getElementById('workbench-canvas'),
   lettersWorkspace: document.getElementById('letters-workspace'),
+  notesWorkspace: document.getElementById('notes-workspace'),
+
+  // Notes Scratchpad Elements
+  btnWebNewNote: document.getElementById('btn-web-new-note'),
+  webSearchNotes: document.getElementById('web-search-notes'),
+  notesTagChips: document.querySelectorAll('#notes-tag-chips .tag-chip'),
+  webNotesList: document.getElementById('web-notes-list'),
+  webNoteTitle: document.getElementById('web-note-title'),
+  webNoteTag: document.getElementById('web-note-tag'),
+  webNoteContent: document.getElementById('web-note-content'),
+  btnWebNotePin: document.getElementById('btn-web-note-pin'),
+  btnWebNoteSendSop: document.getElementById('btn-web-note-send-sop'),
+  btnWebNoteDelete: document.getElementById('btn-web-note-delete'),
+  webNoteTimestamp: document.getElementById('web-note-timestamp'),
 
   // Letters Studio Header Tools
   letterHeaderTools: document.getElementById('letter-header-tools'),
@@ -260,11 +289,13 @@ function switchStudioMode(mode) {
   dom.tabModePortfolio.classList.toggle('active', mode === 'portfolio');
   dom.tabModeCv.classList.toggle('active', mode === 'cv');
   dom.tabModeLetters.classList.toggle('active', mode === 'letters');
+  dom.tabModeNotes.classList.toggle('active', mode === 'notes');
 
   if (mode === 'portfolio') {
     dom.catalogSidebar.style.display = 'flex';
     dom.workbenchCanvas.style.display = 'flex';
     dom.lettersWorkspace.style.display = 'none';
+    dom.notesWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -281,6 +312,7 @@ function switchStudioMode(mode) {
     dom.catalogSidebar.style.display = 'flex';
     dom.workbenchCanvas.style.display = 'flex';
     dom.lettersWorkspace.style.display = 'none';
+    dom.notesWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'flex';
     dom.letterHeaderTools.style.display = 'none';
@@ -298,6 +330,7 @@ function switchStudioMode(mode) {
     dom.catalogSidebar.style.display = 'none';
     dom.workbenchCanvas.style.display = 'none';
     dom.lettersWorkspace.style.display = 'flex';
+    dom.notesWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'flex';
@@ -311,7 +344,103 @@ function switchStudioMode(mode) {
     }
     updateLetterStats();
     renderDraftsList();
+  } else if (mode === 'notes') {
+    dom.catalogSidebar.style.display = 'none';
+    dom.workbenchCanvas.style.display = 'none';
+    dom.lettersWorkspace.style.display = 'none';
+    dom.notesWorkspace.style.display = 'flex';
+
+    dom.cvHeaderTools.style.display = 'none';
+    dom.letterHeaderTools.style.display = 'none';
+    dom.btnExportHtml.style.display = 'none';
+    dom.btnSyncToMaster.style.display = 'none';
+    dom.btnPullFromMaster.style.display = 'none';
+
+    dom.labelActiveTemplate.textContent = 'Idea Scratchpad (Private Vault)';
+    loadWebNotesFromVault();
   }
+}
+
+async function loadWebNotesFromVault() {
+  const vault = await loadPrivateVault();
+  webNotes = Array.isArray(vault.ideaNotes) ? vault.ideaNotes : [];
+  if (!webNotes.length) {
+    const defaultNote = createNote({
+      title: 'Nanoparticle Rabies Vaccine Meta-Analysis',
+      tag: 'Research',
+      pinned: true,
+      content: 'OSF Registry DOI: 10.17605/OSF.IO/9AQS3. Focus on comparative immunological titers across chitosan vs liposomal carriers.'
+    });
+    webNotes.push(defaultNote);
+    vault.ideaNotes = webNotes;
+    await savePrivateVault(vault);
+  }
+  if (!activeWebNoteId && webNotes.length) {
+    activeWebNoteId = webNotes[0].id;
+  }
+  renderWebNotesList();
+  if (activeWebNoteId) openWebNote(activeWebNoteId);
+}
+
+function renderWebNotesList() {
+  const filtered = filterAndSortNotes(webNotes, {
+    query: webNotesSearch,
+    tag: activeWebNoteTag
+  });
+
+  if (!filtered.length) {
+    dom.webNotesList.innerHTML = `<div style="font-size:0.75rem; color:var(--text-dim); text-align:center; padding:16px 0;">No matching notes found. Click "+ New Note" to start writing.</div>`;
+    return;
+  }
+
+  dom.webNotesList.innerHTML = filtered.map((n) => `
+    <div class="web-note-item ${n.pinned ? 'pinned' : ''} ${n.id === activeWebNoteId ? 'active' : ''}" data-id="${n.id}">
+      <div class="web-note-meta">
+        <span class="web-note-tag-badge">${n.tag}</span>
+        <span>${n.pinned ? '★ Pinned' : formatNoteDate(n.updatedAt)}</span>
+      </div>
+      <div class="web-note-title-text">${n.title || 'Untitled Note'}</div>
+      <div class="web-note-snippet">${n.content ? n.content.replace(/\n/g, ' ') : 'Empty note content...'}</div>
+    </div>
+  `).join('');
+
+  dom.webNotesList.querySelectorAll('.web-note-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      const id = item.getAttribute('data-id');
+      openWebNote(id);
+    });
+  });
+}
+
+function openWebNote(noteId) {
+  activeWebNoteId = noteId;
+  const note = webNotes.find((n) => n.id === noteId);
+  if (!note) return;
+
+  dom.webNoteTitle.value = note.title;
+  dom.webNoteTag.value = note.tag;
+  dom.webNoteContent.value = note.content;
+  dom.btnWebNotePin.innerHTML = `<i class="fa-solid fa-thumbtack" style="color:${note.pinned ? '#f59e0b' : 'inherit'};"></i> ${note.pinned ? 'Pinned' : 'Pin'}`;
+  dom.webNoteTimestamp.textContent = `Last updated: ${formatNoteDate(note.updatedAt)}`;
+
+  dom.webNotesList.querySelectorAll('.web-note-item').forEach((item) => {
+    item.classList.toggle('active', item.getAttribute('data-id') === noteId);
+  });
+}
+
+async function saveActiveWebNote() {
+  if (!activeWebNoteId) return;
+  const updates = {
+    title: dom.webNoteTitle.value.trim() || 'Untitled Note',
+    tag: dom.webNoteTag.value,
+    content: dom.webNoteContent.value
+  };
+
+  webNotes = updateNote(webNotes, activeWebNoteId, updates);
+  const vault = await loadPrivateVault();
+  vault.ideaNotes = webNotes;
+  await savePrivateVault(vault);
+  renderWebNotesList();
 }
 
 function syncSenderDetailsFromProfile() {
@@ -683,6 +812,7 @@ function initEventListeners() {
   dom.tabModePortfolio.addEventListener('click', () => switchStudioMode('portfolio'));
   dom.tabModeCv.addEventListener('click', () => switchStudioMode('cv'));
   dom.tabModeLetters.addEventListener('click', () => switchStudioMode('letters'));
+  dom.tabModeNotes.addEventListener('click', () => switchStudioMode('notes'));
 
   dom.searchInput.addEventListener('input', (e) => {
     searchQuery = e.target.value.trim().toLowerCase();
@@ -807,6 +937,72 @@ function initEventListeners() {
         dom.letterSaveIndicator.innerHTML = '<i class="fa-solid fa-check"></i> Draft Ready';
       }, 3000);
     });
+  });
+
+  // Notes Scratchpad listeners
+  dom.btnWebNewNote.addEventListener('click', async () => {
+    const newNote = createNote({ title: 'New Idea Note', tag: 'Research' });
+    webNotes.unshift(newNote);
+    const vault = await loadPrivateVault();
+    vault.ideaNotes = webNotes;
+    await savePrivateVault(vault);
+    activeWebNoteId = newNote.id;
+    renderWebNotesList();
+    openWebNote(newNote.id);
+  });
+
+  dom.webSearchNotes.addEventListener('input', (e) => {
+    webNotesSearch = e.target.value.trim().toLowerCase();
+    renderWebNotesList();
+  });
+
+  dom.notesTagChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      dom.notesTagChips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeWebNoteTag = chip.getAttribute('data-tag');
+      renderWebNotesList();
+    });
+  });
+
+  dom.webNoteTitle.addEventListener('input', saveActiveWebNote);
+  dom.webNoteTag.addEventListener('change', saveActiveWebNote);
+  dom.webNoteContent.addEventListener('input', saveActiveWebNote);
+
+  dom.btnWebNotePin.addEventListener('click', async () => {
+    if (!activeWebNoteId) return;
+    webNotes = togglePinNote(webNotes, activeWebNoteId);
+    const vault = await loadPrivateVault();
+    vault.ideaNotes = webNotes;
+    await savePrivateVault(vault);
+    renderWebNotesList();
+    openWebNote(activeWebNoteId);
+  });
+
+  dom.btnWebNoteDelete.addEventListener('click', async () => {
+    if (!activeWebNoteId) return;
+    webNotes = deleteNote(webNotes, activeWebNoteId);
+    const vault = await loadPrivateVault();
+    vault.ideaNotes = webNotes;
+    await savePrivateVault(vault);
+    activeWebNoteId = webNotes.length ? webNotes[0].id : null;
+    renderWebNotesList();
+    if (activeWebNoteId) {
+      openWebNote(activeWebNoteId);
+    } else {
+      dom.webNoteTitle.value = '';
+      dom.webNoteContent.value = '';
+      dom.webNoteTimestamp.textContent = '';
+    }
+  });
+
+  dom.btnWebNoteSendSop.addEventListener('click', () => {
+    const note = webNotes.find((n) => n.id === activeWebNoteId);
+    if (!note) return;
+    const payload = sendNoteToTarget(note, 'sop');
+    dom.targetNotes.value = `${dom.targetNotes.value}\n\n${payload.text}`.trim();
+    switchStudioMode('letters');
+    alert(`Note idea "${note.title}" sent to SOP & Letters target story/notes!`);
   });
 
   // Mobile sub-navigation toggle

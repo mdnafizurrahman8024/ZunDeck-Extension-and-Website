@@ -12,6 +12,7 @@ import { validateProfile, normalizeProfile } from '../core/schema/profile-schema
 import { LETTER_MODES } from '../core/engines/letter-studio.js';
 import { assembleOfflineDraft, verifyLetterAuthenticity } from '../core/engines/letter-prompts.js';
 import { exportLetterDocx } from '../core/exporters/letter-exporter.js';
+import { scanForSecrets } from '../core/security/secret-scanner.js';
 import fallbackData from '../core/data/mother-fallback.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
@@ -98,7 +99,26 @@ if (!Buffer.isBuffer(letterDocxBuf) || letterDocxBuf.readUInt32LE(0) !== 0x04034
 }
 console.log('✓ Letter Studio (4 modes, Offline Assembler, Authenticity & DOCX): PASS');
 
-// 8. Check .gitignore ignores sensitive files
+// 8. Check Part 4 Manifest V3 & Secret Scanner Firewall
+const manifestRaw = fs.readFileSync(path.join(ROOT_DIR, 'apps', 'extension', 'manifest.json'), 'utf8');
+const manifestObj = JSON.parse(manifestRaw);
+if (manifestObj.manifest_version !== 3 || !manifestObj.permissions.includes('sidePanel')) {
+  console.error('✕ Extension manifest is not valid Manifest V3 with sidePanel!');
+  process.exit(1);
+}
+const scanTest = scanForSecrets({ leakedKey: ['AIza', 'SyD9ExampleGeminiKey35CharsLong', '0123'].join('') });
+if (scanTest.clean || scanTest.blockedCount < 1) {
+  console.error('✕ Secret Scanner failed to catch synthetic API key!');
+  process.exit(1);
+}
+const cleanScan = scanForSecrets(norm);
+if (!cleanScan.clean) {
+  console.error('✕ Secret Scanner produced false positive on clean portfolio!');
+  process.exit(1);
+}
+console.log('✓ Chrome MV3 Side Panel & Secret Scanner Firewall: PASS');
+
+// 9. Check .gitignore ignores sensitive files
 const gitignore = fs.readFileSync(path.join(ROOT_DIR, '.gitignore'), 'utf8');
 const mustIgnore = ['CV_Nafiz.pdf', '.gitnexus/', 'node_modules/', '.env', '.zundeck-dev-port'];
 for (const rule of mustIgnore) {

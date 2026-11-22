@@ -42,6 +42,10 @@
           <i class="fa-solid fa-pen-nib"></i>
           <span>SOP &amp; Letters</span>
         </button>
+        <button type="button" class="mode-tab" data-mode="notes" id="tab-mode-notes">
+          <i class="fa-solid fa-lightbulb"></i>
+          <span>Idea Scratchpad</span>
+        </button>
       </div>
 
       <div class="sync-pill" id="sync-status-indicator" title="Connected to Mother Showcase">
@@ -334,6 +338,64 @@
             <div class="sheet-signoff-section">
               <textarea id="letter-input-signoff" class="sheet-signoff-textarea" rows="3" placeholder="Sign-off (e.g. Sincerely, / Respectfully submitted,)"></textarea>
             </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Dedicated Notes Scratchpad Workspace (Shown in notes mode) -->
+    <div class="notes-workspace" id="notes-workspace" style="display: none;">
+      <!-- Left Notes Sidebar -->
+      <aside class="notes-sidebar">
+        <div class="notes-header-row">
+          <span class="notes-panel-title">Idea Scratchpad</span>
+          <button type="button" class="btn-sm-action" id="btn-web-new-note">+ New Note</button>
+        </div>
+        <div class="sidebar-search-box">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="web-search-notes" placeholder="Search notes..." aria-label="Search notes">
+        </div>
+        <!-- Tag Filter Chips -->
+        <div class="notes-tag-chips" id="notes-tag-chips">
+          <button type="button" class="tag-chip active" data-tag="all">All</button>
+          <button type="button" class="tag-chip" data-tag="Research">Research</button>
+          <button type="button" class="tag-chip" data-tag="Project">Project</button>
+          <button type="button" class="tag-chip" data-tag="CV Idea">CV Idea</button>
+          <button type="button" class="tag-chip" data-tag="Design">Design</button>
+          <button type="button" class="tag-chip" data-tag="SOP">SOP</button>
+        </div>
+        <!-- Notes Cards List -->
+        <div class="web-notes-list" id="web-notes-list">
+          <!-- Rendered by JS -->
+        </div>
+      </aside>
+
+      <!-- Right Active Note Editor Stage -->
+      <main class="notes-editor-stage">
+        <div class="notes-editor-paper" id="web-note-editor-card">
+          <div class="notes-editor-toolbar">
+            <div class="notes-toolbar-left">
+              <input type="text" id="web-note-title" class="notes-title-input" placeholder="Note Title...">
+              <select id="web-note-tag" class="notes-tag-select">
+                <option value="Research">Research</option>
+                <option value="Project">Project</option>
+                <option value="CV Idea">CV Idea</option>
+                <option value="Design">Design</option>
+                <option value="SOP">SOP</option>
+              </select>
+            </div>
+            <div class="notes-toolbar-right">
+              <button type="button" class="btn-tool" id="btn-web-note-pin" title="Pin / Unpin Note"><i class="fa-solid fa-thumbtack"></i></button>
+              <button type="button" class="btn-tool" id="btn-web-note-send-sop" title="Send to SOP Notes"><i class="fa-solid fa-paper-plane"></i> Send to SOP</button>
+              <button type="button" class="btn-tool" id="btn-web-note-delete" title="Delete Note" style="color: #ef4444;"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+          <div class="notes-body-wrapper">
+            <textarea id="web-note-content" class="notes-textarea" placeholder="Jot down rough research ideas, upcoming manuscripts, software architectures, or SOP stories..."></textarea>
+          </div>
+          <div class="notes-footer-row">
+            <span class="notes-timestamp-label" id="web-note-timestamp">Created recently</span>
+            <span class="notes-privacy-tag"><i class="fa-solid fa-shield-halved"></i> Strictly Private Local Vault</span>
           </div>
         </div>
       </main>
