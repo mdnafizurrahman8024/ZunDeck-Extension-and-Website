@@ -18,6 +18,7 @@ build/
 
 # Code indexing & internal metadata
 .gitnexus/
+.claude/
 
 # Local reference files & user private vault backups
 # (Prevents raw reference PDFs, local backups, and user vaults from committing)
