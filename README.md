@@ -1,6 +1,8 @@
-# ZunDeck
-
-> **AI Portfolio • ATS CV & Resume • SOP Studio • Scroll Capture • Vibe Coding • 1-Click Free Deploy**
+<div align="center">
+  <img src="apps/web/assets/zundeck-logo.png" alt="ZunDeck Logo" width="130" style="border-radius: 50%;" />
+  <h1>ZunDeck</h1>
+  <p><strong>AI Portfolio • ATS CV &amp; Resume • SOP Studio • Scroll Capture • Vibe Coding • 1-Click Free Deploy</strong></p>
+</div>
 
 ZunDeck is a lightweight, zero-dependency, local-first portfolio workstation and multi-document studio. It empowers researchers, software engineers, clinicians, students, and executives to curate a single source of professional truth (`ZunProfileV1`) and compile it bidirectionally into high-impact academic portfolios, ATS-optimized CVs, and targeted Statements of Purpose (SOP).
 
@@ -21,8 +23,8 @@ ZunDeck is a lightweight, zero-dependency, local-first portfolio workstation and
 
 ```bash
 # Clone the repository
-git clone https://github.com/mdnafizurrahman8024/ZunDeck.git
-cd ZunDeck
+git clone https://github.com/mdnafizurrahman8024/ZunDeck-Extension-and-Website.git
+cd ZunDeck-Extension-and-Website
 
 # Launch the live preview server (starts at 4173 or auto-increments if busy)
 npm run dev

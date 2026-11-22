@@ -87,6 +87,15 @@ button, input, select {
   font-size: 1rem;
 }
 
+.brand-logo-img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+  display: block;
+}
+
 .brand-title {
   font-family: var(--font-heading);
   font-weight: 700;

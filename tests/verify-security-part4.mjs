@@ -70,13 +70,21 @@ test('Manifest V3 conforms strictly to store guidelines with least-privilege per
   assert.ok(!manifest.content_security_policy.extension_pages.includes("'unsafe-eval'"));
   assert.ok(!manifest.content_security_policy.extension_pages.includes("'unsafe-inline'"));
 
-  // Check icon files exist and have valid PNG signatures
+  // Check brand icon files exist and have valid PNG signatures
   for (const size of [16, 32, 48, 128]) {
-    const iconFile = path.join(ROOT_DIR, 'apps', 'extension', 'icons', `icon-${size}.png`);
-    assert.ok(fs.existsSync(iconFile), `Missing icon: icon-${size}.png`);
+    const iconFile = path.join(ROOT_DIR, 'apps', 'extension', 'assets', 'icons', `icon${size}.png`);
+    assert.ok(fs.existsSync(iconFile), `Missing icon: icon${size}.png`);
     const iconBuf = fs.readFileSync(iconFile);
-    assert.equal(iconBuf.readUInt32BE(0), 0x89504E47, `Invalid PNG signature for icon-${size}.png`);
+    assert.equal(iconBuf.readUInt32BE(0), 0x89504E47, `Invalid PNG signature for icon${size}.png`);
   }
+
+  // Check web brand assets
+  const webLogo = path.join(ROOT_DIR, 'apps', 'web', 'assets', 'zundeck-logo.png');
+  const webFavicon = path.join(ROOT_DIR, 'apps', 'web', 'favicon.png');
+  assert.ok(fs.existsSync(webLogo), 'Missing apps/web/assets/zundeck-logo.png');
+  assert.ok(fs.existsSync(webFavicon), 'Missing apps/web/favicon.png');
+  assert.equal(fs.readFileSync(webLogo).readUInt32BE(0), 0x89504E47);
+  assert.equal(fs.readFileSync(webFavicon).readUInt32BE(0), 0x89504E47);
 });
 
 test('Secret Scanner blocks synthetic API keys, PATs, private keys, and vault leaks', () => {
