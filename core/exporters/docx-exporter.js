@@ -22,7 +22,7 @@ function calculateCrc32(buf) {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-function buildZip(files) {
+export function buildZip(files) {
   const localHeaders = [];
   const centralHeaders = [];
   let offset = 0;
@@ -102,7 +102,7 @@ function buildZip(files) {
   return Buffer.concat([...localHeaders, ...centralHeaders, eocd]);
 }
 
-function xmlEscape(str) {
+export function xmlEscape(str) {
   if (!str) return '';
   return String(str)
     .replace(/&/g, '&amp;')

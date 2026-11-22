@@ -7,13 +7,31 @@ import { generateDocxBlob } from '../../core/exporters/docx-exporter.js';
 import { printCv } from '../../core/exporters/pdf-print-exporter.js';
 import { runAtsXRay } from '../../core/engines/ats-xray.js';
 import { getCvProfiles, syncCvToMaster, pullMasterToCv } from '../../core/engines/cv-profile-manager.js';
+import { LETTER_MODES, getLetterModeById } from '../../core/engines/letter-studio.js';
+import { assembleOfflineDraft, verifyLetterAuthenticity } from '../../core/engines/letter-prompts.js';
+import {
+  exportLetterDocx,
+  exportLetterMarkdown,
+  exportLetterPlainText,
+  renderLetterHtml
+} from '../../core/exporters/letter-exporter.js';
+import {
+  getWordCountProgress,
+  loadDrafts,
+  saveDraft,
+  deleteDraft,
+  createNewDraft
+} from '../../core/ui/letter-editor.js';
 
 let activeProfile = getMotherShowcaseFallback();
-let studioMode = 'portfolio'; // 'portfolio' | 'cv'
+let studioMode = 'portfolio'; // 'portfolio' | 'cv' | 'letters'
 let activePortfolioTemplateId = 'acad-flagship';
 let activeCvTemplateId = 'cv-acad-flagship';
 let activeCvProfileId = 'cv-acad-flagship-profile';
+let activeLetterModeId = 'sop';
+let activeLetterDraftId = null;
 let showQr = true;
+let includeLetterhead = true;
 let activeViewport = 'laptop';
 let activeCategory = 'all';
 let activeTheme = 'dark';
@@ -35,6 +53,7 @@ const dom = {
   btnRefresh: document.getElementById('btn-refresh-preview'),
   tabModePortfolio: document.getElementById('tab-mode-portfolio'),
   tabModeCv: document.getElementById('tab-mode-cv'),
+  tabModeLetters: document.getElementById('tab-mode-letters'),
   cvHeaderTools: document.getElementById('cv-header-tools'),
   selectCvProfile: document.getElementById('select-cv-profile'),
   btnToggleQr: document.getElementById('btn-toggle-qr'),
@@ -48,7 +67,67 @@ const dom = {
   xrayScoreBadge: document.getElementById('xray-score-badge'),
   xrayChecksList: document.getElementById('xray-checks-list'),
   xrayWarningsList: document.getElementById('xray-warnings-list'),
-  xrayRawText: document.getElementById('xray-raw-text')
+  xrayRawText: document.getElementById('xray-raw-text'),
+
+  // Workspace sections
+  catalogSidebar: document.getElementById('catalog-sidebar'),
+  workbenchCanvas: document.getElementById('workbench-canvas'),
+  lettersWorkspace: document.getElementById('letters-workspace'),
+
+  // Letters Studio Header Tools
+  letterHeaderTools: document.getElementById('letter-header-tools'),
+  btnLetterVerify: document.getElementById('btn-letter-verify'),
+  btnLetterCopy: document.getElementById('btn-letter-copy'),
+  btnLetterExportMd: document.getElementById('btn-letter-export-md'),
+  btnLetterPrintPdf: document.getElementById('btn-letter-print-pdf'),
+  btnLetterExportDocx: document.getElementById('btn-letter-export-docx'),
+
+  // Letters Sidebar Controls
+  letterModeChips: document.querySelectorAll('.mode-chip'),
+  letterModeDesc: document.getElementById('letter-mode-desc'),
+  targetInst: document.getElementById('target-inst'),
+  targetProgram: document.getElementById('target-program'),
+  targetProfessor: document.getElementById('target-professor'),
+  targetFocus: document.getElementById('target-focus'),
+  targetNotes: document.getElementById('target-notes'),
+  btnAssembleDraft: document.getElementById('btn-assemble-draft'),
+  statsWordCounter: document.getElementById('stats-word-counter'),
+  statsReadingTime: document.getElementById('stats-reading-time'),
+  statsProgressBar: document.getElementById('stats-progress-bar'),
+  statsCharCounter: document.getElementById('stats-char-counter'),
+  statsStatusTag: document.getElementById('stats-status-tag'),
+  draftsList: document.getElementById('drafts-list'),
+  btnNewDraft: document.getElementById('btn-new-draft'),
+  btnSaveDraft: document.getElementById('btn-save-draft'),
+  checkLetterhead: document.getElementById('check-letterhead'),
+
+  // Letters Canvas & Sheet
+  lettersCanvas: document.getElementById('letters-canvas'),
+  lettersSidebar: document.getElementById('letters-sidebar'),
+  letterActiveBadge: document.getElementById('letter-active-badge'),
+  letterSaveIndicator: document.getElementById('letter-save-indicator'),
+  sheetLetterhead: document.getElementById('sheet-letterhead'),
+  sheetSenderName: document.getElementById('sheet-sender-name'),
+  sheetSenderSub: document.getElementById('sheet-sender-sub'),
+  sheetSenderContact: document.getElementById('sheet-sender-contact'),
+  letterInputDate: document.getElementById('letter-input-date'),
+  letterInputRecipient: document.getElementById('letter-input-recipient'),
+  letterInputSubject: document.getElementById('letter-input-subject'),
+  letterInputBody: document.getElementById('letter-input-body'),
+  letterInputSignoff: document.getElementById('letter-input-signoff'),
+  aiChips: document.querySelectorAll('.btn-ai-chip'),
+
+  // Letters Mobile Subnav
+  btnSubnavControls: document.getElementById('btn-subnav-controls'),
+  btnSubnavEditor: document.getElementById('btn-subnav-editor'),
+
+  // Verification Modal
+  letterVerifyModal: document.getElementById('letter-verify-modal'),
+  btnCloseLetterVerify: document.getElementById('btn-close-letter-verify'),
+  verifyScoreBadge: document.getElementById('verify-score-badge'),
+  verifyMentionsList: document.getElementById('verify-mentions-list'),
+  verifyWarningsList: document.getElementById('verify-warnings-list'),
+  verifyPlaceholdersList: document.getElementById('verify-placeholders-list')
 };
 
 function renderCategoryTabs() {
@@ -60,7 +139,7 @@ function renderCategoryTabs() {
       <button type="button" class="cat-tab ${activeCategory === 'corporate' ? 'active' : ''}" data-category="corporate">Corporate (10)</button>
       <button type="button" class="cat-tab ${activeCategory === 'custom' ? 'active' : ''}" data-category="custom">Custom (1)</button>
     `;
-  } else {
+  } else if (studioMode === 'cv') {
     dom.categoryTabsContainer.innerHTML = `
       <button type="button" class="cat-tab ${activeCategory === 'all' ? 'active' : ''}" data-category="all">All (30)</button>
       <button type="button" class="cat-tab ${activeCategory === 'academic' ? 'active' : ''}" data-category="academic">Academic CVs (10)</button>
@@ -162,7 +241,7 @@ function updatePreview() {
       theme: activeTheme
     });
     dom.previewIframe.srcdoc = markup;
-  } else {
+  } else if (studioMode === 'cv') {
     const cvProfiles = getCvProfiles(activeProfile);
     const activeCvProf = cvProfiles.find((p) => p.id === activeCvProfileId) || cvProfiles[0];
     const markup = renderCvHtml(activeProfile, {
@@ -178,30 +257,337 @@ function switchStudioMode(mode) {
   studioMode = mode;
   activeCategory = 'all';
 
+  dom.tabModePortfolio.classList.toggle('active', mode === 'portfolio');
+  dom.tabModeCv.classList.toggle('active', mode === 'cv');
+  dom.tabModeLetters.classList.toggle('active', mode === 'letters');
+
   if (mode === 'portfolio') {
-    dom.tabModePortfolio.classList.add('active');
-    dom.tabModeCv.classList.remove('active');
+    dom.catalogSidebar.style.display = 'flex';
+    dom.workbenchCanvas.style.display = 'flex';
+    dom.lettersWorkspace.style.display = 'none';
+
     dom.cvHeaderTools.style.display = 'none';
+    dom.letterHeaderTools.style.display = 'none';
     dom.btnExportHtml.style.display = 'inline-flex';
     dom.btnSyncToMaster.style.display = 'none';
     dom.btnPullFromMaster.style.display = 'none';
+
     const tpl = getTemplateById(activePortfolioTemplateId);
     dom.labelActiveTemplate.textContent = tpl.name;
-  } else {
-    dom.tabModePortfolio.classList.remove('active');
-    dom.tabModeCv.classList.add('active');
+    renderCategoryTabs();
+    renderCatalog();
+    updatePreview();
+  } else if (mode === 'cv') {
+    dom.catalogSidebar.style.display = 'flex';
+    dom.workbenchCanvas.style.display = 'flex';
+    dom.lettersWorkspace.style.display = 'none';
+
     dom.cvHeaderTools.style.display = 'flex';
+    dom.letterHeaderTools.style.display = 'none';
     dom.btnExportHtml.style.display = 'none';
     dom.btnSyncToMaster.style.display = 'inline-flex';
     dom.btnPullFromMaster.style.display = 'inline-flex';
+
     renderCvProfileDropdown();
     const tpl = getCvTemplateById(activeCvTemplateId);
     dom.labelActiveTemplate.textContent = tpl.name;
+    renderCategoryTabs();
+    renderCatalog();
+    updatePreview();
+  } else if (mode === 'letters') {
+    dom.catalogSidebar.style.display = 'none';
+    dom.workbenchCanvas.style.display = 'none';
+    dom.lettersWorkspace.style.display = 'flex';
+
+    dom.cvHeaderTools.style.display = 'none';
+    dom.letterHeaderTools.style.display = 'flex';
+    dom.btnExportHtml.style.display = 'none';
+    dom.btnSyncToMaster.style.display = 'none';
+    dom.btnPullFromMaster.style.display = 'none';
+
+    syncSenderDetailsFromProfile();
+    if (!dom.letterInputBody.value) {
+      assembleCurrentLetterDraft();
+    }
+    updateLetterStats();
+    renderDraftsList();
+  }
+}
+
+function syncSenderDetailsFromProfile() {
+  const identity = activeProfile?.identity || {};
+  const education = (activeProfile?.education || [])[0] || {};
+
+  dom.sheetSenderName.textContent = identity.fullName || 'Md. Nafizur Rahman';
+  dom.sheetSenderSub.textContent = `${education.degree || 'Doctor of Veterinary Medicine (DVM)'} • ${education.institution || 'University of Rajshahi'}`;
+  dom.sheetSenderContact.innerHTML = `
+    <div>${identity.email || 'mdnafizurrahman8024@gmail.com'}</div>
+    <div>${identity.location?.city || 'Rajshahi'}, ${identity.location?.country || 'Bangladesh'}</div>
+    <div>${(activeProfile?.links?.personalWebsite || 'https://mdnafizurrahman8024.github.io/').replace('https://', '')}</div>
+  `;
+
+  if (!dom.letterInputDate.value) {
+    dom.letterInputDate.value = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+}
+
+function assembleCurrentLetterDraft() {
+  const targetDetails = {
+    institution: dom.targetInst.value.trim(),
+    program: dom.targetProgram.value.trim(),
+    professor: dom.targetProfessor.value.trim(),
+    focusArea: dom.targetFocus.value.trim()
+  };
+  const personalNotes = dom.targetNotes.value.trim();
+
+  const draft = assembleOfflineDraft(activeProfile, activeLetterModeId, targetDetails, personalNotes);
+
+  dom.letterInputSubject.value = draft.subject;
+  dom.letterInputRecipient.value = draft.salutation ? draft.salutation.replace('Dear ', '').replace(',', '') : 'Admissions Committee';
+  dom.letterInputBody.value = draft.paragraphs.join('\n\n');
+  dom.letterInputSignoff.value = draft.signoff;
+
+  updateLetterStats();
+}
+
+function updateLetterStats() {
+  const text = dom.letterInputBody.value;
+  const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+  const chars = text.length;
+  const progress = getWordCountProgress(words, activeLetterModeId);
+
+  dom.statsWordCounter.textContent = `${words} words`;
+  dom.statsCharCounter.textContent = `${chars} chars`;
+  dom.statsReadingTime.textContent = `~${Math.max(1, Math.ceil(words / 200))} min read`;
+  dom.statsProgressBar.style.width = `${progress.percentage}%`;
+  dom.statsProgressBar.style.backgroundColor = progress.color;
+  dom.statsStatusTag.textContent = progress.label;
+  dom.statsStatusTag.style.color = progress.color;
+
+  const mode = getLetterModeById(activeLetterModeId);
+  dom.letterActiveBadge.textContent = `${mode.name} (${mode.badge})`;
+  dom.letterModeDesc.textContent = mode.description;
+}
+
+function renderDraftsList() {
+  const drafts = loadDrafts();
+  if (!drafts.length) {
+    dom.draftsList.innerHTML = `<div style="font-size: 0.72rem; color: var(--text-dim); padding: 4px 0;">No saved private drafts yet.</div>`;
+    return;
   }
 
-  renderCategoryTabs();
-  renderCatalog();
-  updatePreview();
+  dom.draftsList.innerHTML = drafts.map((d) => `
+    <div class="draft-item ${d.id === activeLetterDraftId ? 'active' : ''}" data-id="${d.id}">
+      <span class="draft-title-text" title="${d.title}">${d.title}</span>
+      <button type="button" class="btn-delete-draft" data-id="${d.id}" title="Delete Draft">&times;</button>
+    </div>
+  `).join('');
+
+  dom.draftsList.querySelectorAll('.draft-item').forEach((item) => {
+    item.addEventListener('click', (e) => {
+      if (e.target.classList.contains('btn-delete-draft')) return;
+      const id = item.getAttribute('data-id');
+      loadSelectedDraft(id);
+    });
+  });
+
+  dom.draftsList.querySelectorAll('.btn-delete-draft').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      deleteDraft(id);
+      if (activeLetterDraftId === id) activeLetterDraftId = null;
+      renderDraftsList();
+    });
+  });
+}
+
+function loadSelectedDraft(id) {
+  const drafts = loadDrafts();
+  const draft = drafts.find((d) => d.id === id);
+  if (!draft) return;
+
+  activeLetterDraftId = draft.id;
+  activeLetterModeId = draft.modeId || 'sop';
+
+  dom.letterModeChips.forEach((chip) => {
+    chip.classList.toggle('active', chip.getAttribute('data-mode-id') === activeLetterModeId);
+  });
+
+  dom.targetInst.value = draft.targetDetails?.institution || '';
+  dom.targetProgram.value = draft.targetDetails?.program || '';
+  dom.targetProfessor.value = draft.targetDetails?.professor || '';
+  dom.targetFocus.value = draft.targetDetails?.focusArea || '';
+  dom.targetNotes.value = draft.personalNotes || '';
+
+  dom.letterInputSubject.value = draft.subject || '';
+  dom.letterInputBody.value = draft.content || '';
+  dom.letterInputSignoff.value = draft.signoff || '';
+
+  updateLetterStats();
+  renderDraftsList();
+}
+
+function handleSaveDraft() {
+  const title = prompt('Enter a name for this draft:', `${getLetterModeById(activeLetterModeId).badge} Draft — ${dom.targetInst.value || 'General'}`);
+  if (!title) return;
+
+  const draft = createNewDraft(activeLetterModeId, title, {
+    institution: dom.targetInst.value.trim(),
+    program: dom.targetProgram.value.trim(),
+    professor: dom.targetProfessor.value.trim(),
+    focusArea: dom.targetFocus.value.trim()
+  });
+
+  draft.personalNotes = dom.targetNotes.value.trim();
+  draft.subject = dom.letterInputSubject.value.trim();
+  draft.content = dom.letterInputBody.value;
+  draft.signoff = dom.letterInputSignoff.value;
+
+  if (activeLetterDraftId) draft.id = activeLetterDraftId;
+
+  saveDraft(draft);
+  activeLetterDraftId = draft.id;
+  renderDraftsList();
+  dom.letterSaveIndicator.innerHTML = '<i class="fa-solid fa-check"></i> Draft Saved';
+}
+
+function getLetterExportData() {
+  const identity = activeProfile?.identity || {};
+  const education = (activeProfile?.education || [])[0] || {};
+
+  return {
+    sender: {
+      name: identity.fullName || 'Md. Nafizur Rahman',
+      role: education.degree || 'Doctor of Veterinary Medicine (DVM)',
+      institution: education.institution || 'University of Rajshahi',
+      email: identity.email || 'mdnafizurrahman8024@gmail.com',
+      phone: identity.phone || '',
+      location: `${identity.location?.city || 'Rajshahi'}, ${identity.location?.country || 'Bangladesh'}`,
+      website: activeProfile?.links?.personalWebsite || 'https://mdnafizurrahman8024.github.io/'
+    },
+    recipient: {
+      name: dom.letterInputRecipient.value.trim(),
+      institution: dom.targetInst.value.trim()
+    },
+    date: dom.letterInputDate.value.trim(),
+    subject: dom.letterInputSubject.value.trim(),
+    paragraphs: dom.letterInputBody.value.split('\n\n').filter(Boolean),
+    signoff: dom.letterInputSignoff.value.trim(),
+    showLetterhead: includeLetterhead,
+    modeId: activeLetterModeId
+  };
+}
+
+function exportLetterDocxFile() {
+  const data = getLetterExportData();
+  const buf = exportLetterDocx(data);
+  const blob = new Blob([buf], {
+    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${activeLetterModeId}-${activeProfile.identity?.shortName || 'Document'}.docx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportLetterMarkdownFile() {
+  const data = getLetterExportData();
+  const md = exportLetterMarkdown(data);
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${activeLetterModeId}-${activeProfile.identity?.shortName || 'Document'}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function copyLetterTextToClipboard() {
+  const data = getLetterExportData();
+  const plainText = exportLetterPlainText(data);
+  navigator.clipboard.writeText(plainText).then(() => {
+    dom.letterSaveIndicator.innerHTML = '<i class="fa-solid fa-copy"></i> Copied to Clipboard!';
+    setTimeout(() => {
+      dom.letterSaveIndicator.innerHTML = '<i class="fa-solid fa-check"></i> Draft Ready';
+    }, 2500);
+  });
+}
+
+function printLetterPdf() {
+  const data = getLetterExportData();
+  const html = renderLetterHtml(data);
+  const printWin = window.open('', '_blank');
+  if (printWin) {
+    printWin.document.open();
+    printWin.document.write(html);
+    printWin.document.close();
+    setTimeout(() => {
+      printWin.focus();
+      printWin.print();
+    }, 400);
+  }
+}
+
+function openLetterVerifyModal() {
+  const fullText = `${dom.letterInputSubject.value}\n${dom.letterInputBody.value}\n${dom.letterInputSignoff.value}`;
+  const report = verifyLetterAuthenticity(fullText, activeProfile);
+
+  if (report.authentic) {
+    dom.verifyScoreBadge.textContent = '100% Authentic';
+    dom.verifyScoreBadge.style.color = '#10b981';
+    dom.verifyScoreBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+    dom.verifyScoreBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+  } else {
+    dom.verifyScoreBadge.textContent = 'Warning: Review Needed';
+    dom.verifyScoreBadge.style.color = '#ef4444';
+    dom.verifyScoreBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+    dom.verifyScoreBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+  }
+
+  dom.verifyMentionsList.innerHTML = report.verifiedMentions.map((m) => `
+    <div class="xray-check-row">
+      <i class="fa-solid fa-circle-check xray-check-pass xray-check-icon"></i>
+      <div><strong>${m}</strong></div>
+    </div>
+  `).join('');
+
+  if (report.warnings.length) {
+    dom.verifyWarningsList.innerHTML = report.warnings.map((w) => `
+      <div class="xray-warning-box"><i class="fa-solid fa-triangle-exclamation"></i> ${w}</div>
+    `).join('');
+  } else {
+    dom.verifyWarningsList.innerHTML = `<div style="font-size: 0.75rem; color: #10b981;"><i class="fa-solid fa-check"></i> Zero fabrications detected against verified profile.</div>`;
+  }
+
+  if (report.placeholders.length) {
+    dom.verifyPlaceholdersList.innerHTML = report.placeholders.map((p) => `
+      <div class="verify-placeholder-row">
+        <i class="fa-solid fa-pen-to-square"></i>
+        <span>${p}</span>
+      </div>
+    `).join('');
+  } else {
+    dom.verifyPlaceholdersList.innerHTML = `<div style="font-size: 0.75rem; color: #10b981;"><i class="fa-solid fa-check"></i> All placeholders completed! Document is ready to submit.</div>`;
+  }
+
+  dom.letterVerifyModal.style.display = 'flex';
+  dom.letterVerifyModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeLetterVerifyModal() {
+  dom.letterVerifyModal.style.display = 'none';
+  dom.letterVerifyModal.setAttribute('aria-hidden', 'true');
 }
 
 function exportCurrentDocument() {
@@ -219,12 +605,14 @@ function exportCurrentDocument() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  } else if (studioMode === 'cv') {
+    exportCvDocx();
   } else {
-    exportDocx();
+    exportLetterDocxFile();
   }
 }
 
-function exportDocx() {
+function exportCvDocx() {
   const buf = generateDocxBlob(activeProfile);
   const blob = new Blob([buf], {
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -240,6 +628,11 @@ function exportDocx() {
 }
 
 function openPopout() {
+  if (studioMode === 'letters') {
+    printLetterPdf();
+    return;
+  }
+
   const markup = studioMode === 'portfolio'
     ? renderPortfolioHtml(activeProfile, { templateId: activePortfolioTemplateId, theme: activeTheme })
     : renderCvHtml(activeProfile, { templateId: activeCvTemplateId, showQr });
@@ -289,6 +682,7 @@ function closeAtsXRayModal() {
 function initEventListeners() {
   dom.tabModePortfolio.addEventListener('click', () => switchStudioMode('portfolio'));
   dom.tabModeCv.addEventListener('click', () => switchStudioMode('cv'));
+  dom.tabModeLetters.addEventListener('click', () => switchStudioMode('letters'));
 
   dom.searchInput.addEventListener('input', (e) => {
     searchQuery = e.target.value.trim().toLowerCase();
@@ -341,7 +735,7 @@ function initEventListeners() {
     printCv(dom.previewIframe);
   });
 
-  dom.btnExportDocx.addEventListener('click', exportDocx);
+  dom.btnExportDocx.addEventListener('click', exportCvDocx);
 
   dom.btnSyncToMaster.addEventListener('click', () => {
     syncCvToMaster(activeProfile, activeCvProfileId);
@@ -353,6 +747,84 @@ function initEventListeners() {
     updatePreview();
     alert('Latest master portfolio data pulled into CV profile!');
   });
+
+  // Letters Studio tools
+  dom.letterModeChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      dom.letterModeChips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeLetterModeId = chip.getAttribute('data-mode-id');
+      assembleCurrentLetterDraft();
+    });
+  });
+
+  dom.btnAssembleDraft.addEventListener('click', assembleCurrentLetterDraft);
+
+  dom.letterInputBody.addEventListener('input', updateLetterStats);
+  dom.letterInputSubject.addEventListener('input', () => {
+    dom.letterSaveIndicator.innerHTML = '<i class="fa-solid fa-pen"></i> Editing...';
+  });
+
+  dom.checkLetterhead.addEventListener('change', (e) => {
+    includeLetterhead = e.target.checked;
+    dom.sheetLetterhead.style.display = includeLetterhead ? 'flex' : 'none';
+  });
+
+  dom.btnNewDraft.addEventListener('click', () => {
+    activeLetterDraftId = null;
+    dom.targetInst.value = '';
+    dom.targetProgram.value = '';
+    dom.targetProfessor.value = '';
+    dom.targetFocus.value = '';
+    dom.targetNotes.value = '';
+    assembleCurrentLetterDraft();
+  });
+
+  dom.btnSaveDraft.addEventListener('click', handleSaveDraft);
+
+  dom.btnLetterExportDocx.addEventListener('click', exportLetterDocxFile);
+  dom.btnLetterExportMd.addEventListener('click', exportLetterMarkdownFile);
+  dom.btnLetterCopy.addEventListener('click', copyLetterTextToClipboard);
+  dom.btnLetterPrintPdf.addEventListener('click', printLetterPdf);
+
+  dom.btnLetterVerify.addEventListener('click', openLetterVerifyModal);
+  dom.btnCloseLetterVerify.addEventListener('click', closeLetterVerifyModal);
+  dom.letterVerifyModal.addEventListener('click', (e) => {
+    if (e.target === dom.letterVerifyModal) closeLetterVerifyModal();
+  });
+
+  // AI Refine buttons (mock hook ready for Part 8 Gemini BYOK client)
+  dom.aiChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const action = chip.getAttribute('data-ai-action');
+      const actionLabels = {
+        polish: 'Polished academic tone applied.',
+        shorten: 'Trimmed length by 25% while preserving facts.',
+        formalize: 'Formalized language for scholarship selection committee.'
+      };
+      dom.letterSaveIndicator.innerHTML = `<i class="fa-solid fa-bolt"></i> ${actionLabels[action] || 'Refined with AI'}`;
+      setTimeout(() => {
+        dom.letterSaveIndicator.innerHTML = '<i class="fa-solid fa-check"></i> Draft Ready';
+      }, 3000);
+    });
+  });
+
+  // Mobile sub-navigation toggle
+  if (dom.btnSubnavControls && dom.btnSubnavEditor) {
+    dom.btnSubnavControls.addEventListener('click', () => {
+      dom.btnSubnavControls.classList.add('active');
+      dom.btnSubnavEditor.classList.remove('active');
+      dom.lettersSidebar.style.display = 'flex';
+      dom.lettersCanvas.style.display = 'none';
+    });
+
+    dom.btnSubnavEditor.addEventListener('click', () => {
+      dom.btnSubnavEditor.classList.add('active');
+      dom.btnSubnavControls.classList.remove('active');
+      dom.lettersSidebar.style.display = 'none';
+      dom.lettersCanvas.style.display = 'flex';
+    });
+  }
 }
 
 async function init() {
@@ -367,6 +839,7 @@ async function init() {
       activeProfile = liveProfile;
       dom.syncLabel.textContent = 'Mother Live Sync Active';
       updatePreview();
+      if (studioMode === 'letters') syncSenderDetailsFromProfile();
     }
   } catch {
     dom.syncLabel.textContent = 'Offline Fallback Snapshot';

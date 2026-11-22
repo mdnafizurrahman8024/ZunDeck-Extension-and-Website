@@ -44,9 +44,18 @@ graph TD
 - **`mother-fallback.json`**: An offline snapshot (~35 KB text-only) ensuring zero-dependency local operation when disconnected.
 
 ### 3. `core/templates/` & `core/engines/`
-- **`portfolio-catalog.js`**: Holds metadata, badge presets, color themes, and layout definitions for 30 role-based templates across Academic, Tech, and Corporate sectors + Custom Canvas.
-- **`portfolio-engine.js`**: Pure functional rendering engine that compiles `ZunProfileV1` data and a selected template into standalone, accessible, responsive HTML and CSS with XSS escaping.
+- **`portfolio-catalog.js` & `portfolio-engine.js`**: 30 role-based templates across Academic, Tech, and Corporate sectors + Custom Canvas. Compiles `ZunProfileV1` into standalone responsive HTML/CSS.
+- **`cv-catalog.js` & `cv-engine.js`**: 30 CV & Resume templates featuring Flagship Academic CV, Europass CEFR layout, and corporate standards with vector print CSS.
+- **`cv-profile-manager.js`**: Multi-CV targeted profile manager with bidirectional sync between master portfolio and role-specific CV profiles.
+- **`ats-xray.js`**: ATS compliance inspector analyzing linear plain-text stream, candidate metrics, and parsing diagnostics.
+- **`letter-studio.js` & `letter-prompts.js`**: 4 writing modes (SOP, Motivation Letter, Cover Letter, Cold Email), deterministic Offline Smart Template Assembler, and Zero-Fabrication Authenticity Guardrail.
 - **`seo-generator.js`**: Produces OpenGraph, Twitter Card, and JSON-LD Person structured data.
+
+### 4. `core/exporters/` & `core/ui/`
+- **`pdf-print-exporter.js`**: Vector A4 print styling and iframe print trigger.
+- **`docx-exporter.js` & `letter-exporter.js`**: Zero-dependency OpenXML Word (`.docx`) file generator producing valid zip archives for CVs and Letters.
+- **`letter-editor.js`**: Real-time word/character statistics, target limit progress, private local drafts storage, and AI refinement hooks.
+- **`qr-generator.js`**: Pure vector SVG QR code generator with zero dependencies.
 
 ### 4. `apps/web/`
 - Interactive Live Preview Workbench. Offers instant viewport toggling:

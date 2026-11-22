@@ -28,7 +28,7 @@
         </div>
       </div>
 
-      <!-- Studio Mode Switcher (Portfolio vs CV & Resume) -->
+      <!-- Studio Mode Switcher (Portfolio vs CV & Resume vs SOP & Letters) -->
       <div class="studio-mode-switcher" role="tablist">
         <button type="button" class="mode-tab active" data-mode="portfolio" id="tab-mode-portfolio">
           <i class="fa-solid fa-layer-group"></i>
@@ -37,6 +37,10 @@
         <button type="button" class="mode-tab" data-mode="cv" id="tab-mode-cv">
           <i class="fa-solid fa-file-invoice"></i>
           <span>CV &amp; Resume Studio</span>
+        </button>
+        <button type="button" class="mode-tab" data-mode="letters" id="tab-mode-letters">
+          <i class="fa-solid fa-pen-nib"></i>
+          <span>SOP &amp; Letters</span>
         </button>
       </div>
 
@@ -84,6 +88,27 @@
         </button>
       </div>
 
+      <!-- SOP & Letters specific tools (shown in letters mode) -->
+      <div class="letter-header-tools" id="letter-header-tools" style="display: none;">
+        <button type="button" class="btn-tool" id="btn-letter-verify" title="Verify Authenticity (Zero-Fabrication)">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Verify</span>
+        </button>
+        <button type="button" class="btn-tool" id="btn-letter-copy" title="Copy Plain Text to Clipboard">
+          <i class="fa-solid fa-copy"></i>
+        </button>
+        <button type="button" class="btn-tool" id="btn-letter-export-md" title="Download Markdown (.md)">
+          <i class="fa-solid fa-file-code"></i>
+        </button>
+        <button type="button" class="btn-tool" id="btn-letter-print-pdf" title="Vector PDF Print / Save">
+          <i class="fa-solid fa-print"></i>
+        </button>
+        <button type="button" class="btn-primary" id="btn-letter-export-docx" title="Export Editable Word (.docx)">
+          <i class="fa-solid fa-file-word"></i>
+          <span>Word (.docx)</span>
+        </button>
+      </div>
+
       <!-- Portfolio specific export (shown in portfolio mode) -->
       <button type="button" class="btn-primary" id="btn-export-html">
         <i class="fa-solid fa-download"></i>
@@ -103,7 +128,7 @@
   <div class="app-workspace">
 
     <!-- Left Templates Catalog Sidebar -->
-    <aside class="catalog-sidebar">
+    <aside class="catalog-sidebar" id="catalog-sidebar">
       <div class="sidebar-search-box">
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
         <input type="text" id="catalog-search" placeholder="Search templates..." aria-label="Search templates">
@@ -121,7 +146,7 @@
     </aside>
 
     <!-- Center Preview Workbench Canvas -->
-    <main class="workbench-canvas">
+    <main class="workbench-canvas" id="workbench-canvas">
       <div class="canvas-toolbar">
         <div class="canvas-meta">
           <span class="active-template-name" id="label-active-template">Flagship Academic &amp; Research Scholar</span>
@@ -147,6 +172,172 @@
         </div>
       </div>
     </main>
+
+    <!-- Dedicated SOP & Letters Studio Workspace (Shown in letters mode) -->
+    <div class="letters-workspace" id="letters-workspace" style="display: none;">
+      <!-- Mobile Sub-Navigation -->
+      <div class="letters-mobile-nav" id="letters-mobile-nav">
+        <button type="button" class="btn-subnav active" data-subpane="controls" id="btn-subnav-controls">
+          <i class="fa-solid fa-sliders"></i> Target &amp; Notes
+        </button>
+        <button type="button" class="btn-subnav" data-subpane="editor" id="btn-subnav-editor">
+          <i class="fa-solid fa-file-lines"></i> Letter Sheet
+        </button>
+      </div>
+
+      <!-- Left Controls & Configuration Panel -->
+      <aside class="letters-sidebar" id="letters-sidebar">
+        <!-- Document Mode Selector -->
+        <div class="letters-mode-group">
+          <label class="letters-group-title">Document Mode</label>
+          <div class="letter-mode-chips" id="letter-mode-chips">
+            <button type="button" class="mode-chip active" data-mode-id="sop">
+              <span class="chip-label">Statement of Purpose</span>
+              <span class="chip-badge">PhD / MS</span>
+            </button>
+            <button type="button" class="mode-chip" data-mode-id="motivation">
+              <span class="chip-label">Motivation Letter</span>
+              <span class="chip-badge">Erasmus</span>
+            </button>
+            <button type="button" class="mode-chip" data-mode-id="cover-letter">
+              <span class="chip-label">Cover Letter</span>
+              <span class="chip-badge">Corporate</span>
+            </button>
+            <button type="button" class="mode-chip" data-mode-id="cold-email">
+              <span class="chip-label">Cold Email to PI</span>
+              <span class="chip-badge">Outreach</span>
+            </button>
+          </div>
+          <p class="letters-mode-desc" id="letter-mode-desc">Comprehensive academic trajectory, research competence, laboratory fit, methodology mastery, and long-term scientific vision.</p>
+        </div>
+
+        <!-- Target Opportunity Fields -->
+        <div class="letters-form-section">
+          <label class="letters-group-title">Target Opportunity</label>
+          <div class="form-row">
+            <label for="target-inst" class="field-label">Target University / Organization</label>
+            <input type="text" id="target-inst" class="form-input" placeholder="e.g. University of Copenhagen / Karolinska">
+          </div>
+          <div class="form-row">
+            <label for="target-program" class="field-label">Degree Program / Position Title</label>
+            <input type="text" id="target-program" class="form-input" placeholder="e.g. MSc in One Health / Graduate Fellow">
+          </div>
+          <div class="form-row">
+            <label for="target-professor" class="field-label">Target Professor / Hiring Team</label>
+            <input type="text" id="target-professor" class="form-input" placeholder="e.g. Prof. Dr. Henrik Nielsen / PI">
+          </div>
+          <div class="form-row">
+            <label for="target-focus" class="field-label">Research Focus / Lab Domain</label>
+            <input type="text" id="target-focus" class="form-input" placeholder="e.g. AMR Genomic Surveillance &amp; Vaccine Informatics">
+          </div>
+        </div>
+
+        <!-- Personal Story & Specific Notes -->
+        <div class="letters-form-section">
+          <label for="target-notes" class="letters-group-title">Personal Story &amp; Specific Lab Connections</label>
+          <textarea id="target-notes" class="form-textarea" rows="3" placeholder="Paste specific paper citations, personal resilience stories, or why this professor's lab inspires you..."></textarea>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="letters-action-group">
+          <button type="button" class="btn-assemble-draft" id="btn-assemble-draft">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Smart Assemble Draft (Zero-Fabrication)</span>
+          </button>
+        </div>
+
+        <!-- Word Count & Target Limit Bar -->
+        <div class="letters-stats-card">
+          <div class="stats-header">
+            <span class="stats-label" id="stats-word-counter">0 words</span>
+            <span class="stats-reading-time" id="stats-reading-time">~1 min read</span>
+          </div>
+          <div class="stats-progress-track">
+            <div class="stats-progress-bar" id="stats-progress-bar" style="width: 0%;"></div>
+          </div>
+          <div class="stats-footer">
+            <span class="stats-detail" id="stats-char-counter">0 chars</span>
+            <span class="stats-status-tag" id="stats-status-tag">Target: 850</span>
+          </div>
+        </div>
+
+        <!-- Draft Management & Options -->
+        <div class="letters-drafts-section">
+          <div class="drafts-header">
+            <span class="letters-group-title">Saved Private Drafts</span>
+            <button type="button" class="btn-sm-action" id="btn-new-draft" title="Create New Draft">+ New</button>
+          </div>
+          <div class="drafts-list" id="drafts-list">
+            <!-- Rendered by JS -->
+          </div>
+          <div class="draft-options-row">
+            <label class="toggle-control">
+              <input type="checkbox" id="check-letterhead" checked>
+              <span>Include Letterhead</span>
+            </label>
+            <button type="button" class="btn-save-draft" id="btn-save-draft">
+              <i class="fa-solid fa-floppy-disk"></i> Save Draft
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Letter Sheet & Editor Canvas -->
+      <main class="letters-canvas" id="letters-canvas">
+        <div class="letters-canvas-toolbar">
+          <div class="letter-toolbar-left">
+            <span class="letter-mode-badge" id="letter-active-badge">SOP (PhD / MS)</span>
+            <span class="letter-auto-saved-tag" id="letter-save-indicator"><i class="fa-solid fa-check"></i> Draft Ready</span>
+          </div>
+          <div class="letter-ai-helpers">
+            <span class="ai-helper-label"><i class="fa-solid fa-bolt"></i> Quick Refine:</span>
+            <button type="button" class="btn-ai-chip" data-ai-action="polish" title="Polish academic tone and clarity">Polish Tone</button>
+            <button type="button" class="btn-ai-chip" data-ai-action="shorten" title="Trim wordiness by 25%">Shorten 25%</button>
+            <button type="button" class="btn-ai-chip" data-ai-action="formalize" title="Formalize for scholarship committee">Formalize</button>
+          </div>
+        </div>
+
+        <!-- Live A4 Letter Sheet -->
+        <div class="letter-sheet-container">
+          <div class="letter-sheet-paper" id="letter-sheet-paper">
+            <!-- Dynamic Letterhead Block -->
+            <div class="sheet-letterhead" id="sheet-letterhead">
+              <div class="sheet-letterhead-left">
+                <div class="sheet-sender-name" id="sheet-sender-name">Md. Nafizur Rahman</div>
+                <div class="sheet-sender-sub" id="sheet-sender-sub">Doctor of Veterinary Medicine (DVM) &bull; University of Rajshahi</div>
+              </div>
+              <div class="sheet-letterhead-right" id="sheet-sender-contact">
+                <div>mdnafizurrahman8024@gmail.com</div>
+                <div>Rajshahi-6205, Bangladesh</div>
+                <div>mdnafizurrahman8024.github.io</div>
+              </div>
+            </div>
+
+            <!-- Date & Recipient Details -->
+            <div class="sheet-meta-section">
+              <input type="text" class="sheet-date-input" id="letter-input-date" placeholder="Date">
+              <input type="text" class="sheet-recipient-input" id="letter-input-recipient" placeholder="Recipient / Committee Details (e.g., Admissions Committee, Faculty of Science)">
+            </div>
+
+            <!-- Subject Line -->
+            <div class="sheet-subject-row">
+              <span class="subject-prefix">Subject:</span>
+              <input type="text" class="sheet-subject-input" id="letter-input-subject" placeholder="Subject line for document or email...">
+            </div>
+
+            <!-- Main Body Content Textarea -->
+            <div class="sheet-body-container">
+              <textarea id="letter-input-body" class="sheet-body-textarea" placeholder="Your document content appears here. You can edit directly or use Smart Assemble Draft..."></textarea>
+            </div>
+
+            <!-- Sign-off Block -->
+            <div class="sheet-signoff-section">
+              <textarea id="letter-input-signoff" class="sheet-signoff-textarea" rows="3" placeholder="Sign-off (e.g. Sincerely, / Respectfully submitted,)"></textarea>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
 
   </div>
 
@@ -183,6 +374,40 @@
         <div class="xray-text-col">
           <h4 class="xray-col-heading">Extracted Plain-Text Order (Linear Robot Stream)</h4>
           <pre class="xray-raw-text" id="xray-raw-text"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Letter Authenticity & Zero-Fabrication Verification Modal -->
+  <div class="xray-modal-overlay" id="letter-verify-modal" aria-hidden="true" style="display: none;">
+    <div class="xray-modal-window">
+      <div class="xray-header">
+        <div class="xray-title-group">
+          <i class="fa-solid fa-shield-halved xray-icon" style="color: #0d9488;"></i>
+          <div>
+            <h3 class="xray-title">Authenticity &amp; Zero-Fabrication Verification</h3>
+            <p class="xray-subtitle">Cross-verifies claims against your verified ZunProfileV1 record and flags ungrounded assertions</p>
+          </div>
+        </div>
+        <div class="xray-score-badge" id="verify-score-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">
+          100% Authentic
+        </div>
+        <button type="button" class="btn-close-modal" id="btn-close-letter-verify">&times;</button>
+      </div>
+
+      <div class="xray-body-grid">
+        <div class="xray-diagnostics-col">
+          <h4 class="xray-col-heading">Verified Profile Mentions</h4>
+          <div class="xray-checks-list" id="verify-mentions-list"></div>
+
+          <h4 class="xray-col-heading" style="margin-top: 14px;">Fabrication Warnings</h4>
+          <div class="xray-warnings-list" id="verify-warnings-list"></div>
+        </div>
+
+        <div class="xray-text-col">
+          <h4 class="xray-col-heading">Pending User Inputs &amp; Context Gaps</h4>
+          <div id="verify-placeholders-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
       </div>
     </div>

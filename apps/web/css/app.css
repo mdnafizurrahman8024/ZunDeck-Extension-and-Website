@@ -713,3 +713,661 @@ button, input, select {
     height: 100% !important;
   }
 }
+
+/* ==========================================================================
+   SOP & Letters Studio Layout & Styles (Part 3)
+   ========================================================================== */
+
+.letter-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.letters-workspace {
+  flex: 1;
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+
+.letters-mobile-nav {
+  display: none;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 4px 8px;
+  gap: 8px;
+}
+
+.btn-subnav {
+  flex: 1;
+  padding: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-subnav.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: rgba(13, 148, 136, 0.4);
+}
+
+/* Letters Sidebar */
+.letters-sidebar {
+  width: 380px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.letters-group-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Mode selector chips */
+.letter-mode-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.mode-chip {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all 0.15s ease;
+}
+
+.mode-chip:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--text-main);
+}
+
+.mode-chip.active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--text-main);
+}
+
+.chip-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.chip-badge {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.letters-mode-desc {
+  font-size: 0.73rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+/* Form section & inputs */
+.letters-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.form-input, .form-textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+  color: var(--text-main);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  transition: border-color 0.15s ease;
+}
+
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+/* Assemble Button */
+.btn-assemble-draft {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: none;
+  background: linear-gradient(135deg, #0d9488, #0f766e);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+  transition: all 0.15s ease;
+}
+
+.btn-assemble-draft:hover {
+  filter: brightness(1.08);
+}
+
+/* Stats Card */
+.letters-stats-card {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stats-header, .stats-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.stats-label {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.stats-reading-time {
+  color: var(--text-dim);
+}
+
+.stats-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.stats-progress-bar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 9999px;
+  transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+.stats-detail {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.stats-status-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Saved Drafts */
+.letters-drafts-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drafts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-sm-action {
+  padding: 3px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.btn-sm-action:hover {
+  color: var(--text-main);
+  border-color: var(--primary);
+}
+
+.drafts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+.draft-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.draft-item:hover {
+  border-color: var(--primary);
+}
+
+.draft-item.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.draft-title-text {
+  font-weight: 500;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.btn-delete-draft {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.btn-delete-draft:hover {
+  color: #ef4444;
+}
+
+.draft-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.toggle-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.btn-save-draft {
+  padding: 5px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 5px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+  color: var(--text-main);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-save-draft:hover {
+  border-color: var(--primary);
+}
+
+/* Letters Canvas & Paper */
+.letters-canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 24px 20px;
+  align-items: center;
+}
+
+.letters-canvas-toolbar {
+  width: 100%;
+  max-width: 820px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.letter-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.letter-mode-badge {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: var(--primary-light);
+  border: 1px solid rgba(13, 148, 136, 0.3);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.letter-auto-saved-tag {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.letter-ai-helpers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-helper-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-ai-chip {
+  padding: 4px 9px;
+  font-size: 0.72rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-ai-chip:hover {
+  border-color: var(--primary);
+  color: var(--text-main);
+}
+
+/* Live A4 Sheet Paper */
+.letter-sheet-container {
+  width: 100%;
+  max-width: 820px;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.letter-sheet-paper {
+  width: 100%;
+  min-height: 1050px;
+  background: #ffffff;
+  color: #1e293b;
+  border-radius: 6px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.25);
+  padding: 56px 64px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sheet Letterhead */
+.sheet-letterhead {
+  border-bottom: 2px solid #0d9488;
+  padding-bottom: 18px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.sheet-sender-name {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.sheet-sender-sub {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+.sheet-sender-contact {
+  text-align: right;
+  font-size: 0.76rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Sheet Meta Section */
+.sheet-meta-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.sheet-date-input {
+  border: none;
+  border-bottom: 1px solid transparent;
+  font-size: 0.85rem;
+  color: #475569;
+  font-weight: 500;
+  width: 220px;
+  background: transparent;
+  padding: 2px 0;
+}
+
+.sheet-recipient-input {
+  border: none;
+  border-bottom: 1px solid transparent;
+  font-size: 0.88rem;
+  color: #0f172a;
+  font-weight: 600;
+  width: 100%;
+  background: transparent;
+  padding: 3px 0;
+}
+
+.sheet-date-input:focus, .sheet-recipient-input:focus {
+  outline: none;
+  border-bottom-color: #0d9488;
+}
+
+/* Sheet Subject Row */
+.sheet-subject-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #cbd5e1;
+}
+
+.subject-prefix {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.sheet-subject-input {
+  flex: 1;
+  border: none;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+  background: transparent;
+  padding: 2px 0;
+}
+
+.sheet-subject-input:focus {
+  outline: none;
+}
+
+/* Sheet Body Container & Textarea */
+.sheet-body-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-body-textarea {
+  width: 100%;
+  min-height: 520px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #1e293b;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  padding: 6px 0;
+  resize: vertical;
+}
+
+.sheet-body-textarea:focus {
+  outline: none;
+  background: rgba(13, 148, 136, 0.02);
+  border-color: rgba(13, 148, 136, 0.2);
+  padding: 6px 8px;
+}
+
+/* Sign-off Section */
+.sheet-signoff-section {
+  margin-top: 28px;
+}
+
+.sheet-signoff-textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #0f172a;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  resize: none;
+}
+
+.sheet-signoff-textarea:focus {
+  outline: none;
+}
+
+/* Placeholder Pill in Verification Modal */
+.verify-placeholder-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 3px solid #f59e0b;
+  font-size: 0.76rem;
+  color: #f59e0b;
+  line-height: 1.4;
+}
+
+/* Responsive Rules for Letters Studio */
+@media (max-width: 980px) {
+  .letters-sidebar {
+    width: 320px;
+    padding: 14px;
+  }
+  .letter-sheet-paper {
+    padding: 36px 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .letters-mobile-nav {
+    display: flex;
+  }
+  .letters-workspace {
+    flex-direction: column;
+  }
+  .letters-sidebar {
+    width: 100%;
+    height: 100%;
+    border-right: none;
+    padding: 14px;
+  }
+  .letters-canvas {
+    width: 100%;
+    padding: 12px 8px;
+  }
+  .letter-sheet-paper {
+    padding: 24px 18px;
+    min-height: auto;
+  }
+  .sheet-letterhead {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .sheet-sender-contact {
+    text-align: left;
+  }
+  .letter-header-tools span {
+    display: none;
+  }
+}
