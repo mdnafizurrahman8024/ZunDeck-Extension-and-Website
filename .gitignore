@@ -1,0 +1,44 @@
+# ZunDeck .gitignore
+# Strict security, privacy, and clean repository hygiene
+
+# Environment, secrets, and private keys
+.env
+.env.*
+*.key
+*.pem
+secrets.*
+config.local.*
+
+# Dependencies and caches
+node_modules/
+.cache/
+dist/
+build/
+.zundeck-dev-port
+
+# Code indexing & internal metadata
+.gitnexus/
+
+# Local reference files & user private vault backups
+# (Prevents raw reference PDFs, local backups, and user vaults from committing)
+CV_Nafiz.pdf
+*.zundeck.json
+user-vault/
+local-backups/
+*.sqlite
+*.db
+
+# Operating System & Editor artifacts
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+tmp/
+*.tmp
+.idea/
+*.swp
+*.swo
