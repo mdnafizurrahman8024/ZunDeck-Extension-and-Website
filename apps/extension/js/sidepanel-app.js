@@ -23,6 +23,8 @@ import { generateDocxBlob } from '../core/exporters/docx-exporter.js';
 import { renderPortfolioHtml } from '../core/engines/portfolio-engine.js';
 import { VisualEditorController } from '../core/ui/visual-editor.js';
 import { LivePreviewController } from '../core/ui/live-preview.js';
+import { CapturePanelController } from '../core/ui/capture-panel.js';
+import { StagingReviewController } from '../core/ui/capture-staging-review.js';
 
 let activeProfile = getMotherShowcaseFallback();
 let privateVault = null;
@@ -31,6 +33,7 @@ let activeNoteId = null;
 let autoSaveController = null;
 let spVisualEditor = null;
 let spLivePreview = null;
+let spCapturePanel = null;
 
 const dom = {
   tabBtns: document.querySelectorAll('.sp-tab-btn'),
@@ -52,9 +55,8 @@ const dom = {
   btnExportCvDocx: document.getElementById('btn-export-cv-docx'),
   btnExportPortfolioHtml: document.getElementById('btn-export-portfolio-html'),
 
-  // Capture
-  captureTabTitle: document.getElementById('capture-tab-title'),
-  btnCaptureSnippet: document.getElementById('btn-capture-snippet'),
+  // Capture (Part 7 Harvester)
+  spCapturePanelMount: document.getElementById('sp-capture-panel-mount'),
 
   // SOP
   spSopMode: document.getElementById('sp-sop-mode'),
@@ -103,6 +105,31 @@ function switchTab(tabId) {
   });
   if (tabId === 'editor') {
     initSidepanelVisualEditor();
+  } else if (tabId === 'capture') {
+    initSidepanelCapture();
+  }
+}
+
+function initSidepanelCapture() {
+  if (!spCapturePanel && dom.spCapturePanelMount) {
+    spCapturePanel = new CapturePanelController({
+      container: dom.spCapturePanelMount,
+      isExtension: true,
+      onStageBatch: (batch) => {
+        const review = new StagingReviewController({
+          activeProfile,
+          stagedBatch: batch,
+          onConfirm: (merged) => {
+            activeProfile = merged;
+            if (spVisualEditor) spVisualEditor.setProfile(activeProfile);
+            if (spLivePreview) spLivePreview.setProfile(activeProfile);
+            autoSaveController?.markDirty();
+          }
+        });
+        review.show();
+      }
+    });
+    spCapturePanel.render();
   }
 }
 
@@ -294,14 +321,18 @@ function importBackupHandler(e) {
 function detectActiveTab() {
   if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs && tabs[0]) {
-        dom.captureTabTitle.textContent = `${tabs[0].title || 'Tab'} (${tabs[0].url || ''})`;
-      } else {
-        dom.captureTabTitle.textContent = 'Active tab reference ready.';
+      if (dom.captureTabTitle) {
+        dom.captureTabTitle.textContent = tabs && tabs[0] ? `${tabs[0].title || 'Tab'} (${tabs[0].url || ''})` : 'Active tab reference ready.';
       }
     });
-  } else {
-    dom.captureTabTitle.textContent = 'Active tab reference ready.';
+  }
+
+  if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg?.action === 'HARVESTER_UPDATE' && spCapturePanel) {
+        spCapturePanel.updateLiveCounts(msg.counts);
+      }
+    });
   }
 }
 

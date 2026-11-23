@@ -161,4 +161,43 @@ if (!OPTIMIZATION_PRESETS['high-dpi'] || STORE_NAMES.ORIGINALS !== 'zundeck_medi
 }
 console.log('✓ Media & Documents Manager, Drive Embed & Consent Optimizer: PASS');
 
+// 12. Check Part 7 Smart Progressive Scroll-Capture Harvester & Noise Filter
+const { isNoiseLine, stripHtmlTags } = await import('../core/parsers/noise-filter.js');
+const { parseCvTextToProfile } = await import('../core/parsers/cv-file-parser.js');
+const { CAPTURE_BUCKETS } = await import('../core/ui/capture-panel.js');
+
+if (!isNoiseLine('Sponsored • Follow') || !isNoiseLine('People also viewed') || !isNoiseLine('Accept all cookies')) {
+  console.error('✕ Noise filter failed to identify noise patterns!');
+  process.exit(1);
+}
+if (isNoiseLine('Doctor of Veterinary Medicine (DVM)')) {
+  console.error('✕ Noise filter erroneously flagged valid credential!');
+  process.exit(1);
+}
+if (stripHtmlTags('<script>alert("xss")</script><b>Hello</b>') !== 'Hello') {
+  console.error('✕ stripHtmlTags failed sanitization check!');
+  process.exit(1);
+}
+const testParsed = parseCvTextToProfile(`
+John Doe
+johndoe@example.com
++1 555-0199
+https://linkedin.com/in/johndoe
+
+EDUCATION
+Bachelor of Science in Biology, Harvard University, 2018-2022
+
+PUBLICATIONS
+A novel approach to rabies vaccination. Journal of Virology, 2023. DOI: 10.1016/j.virology.2023.01
+`);
+if (!testParsed.identity?.fullName || !testParsed.identity?.email || !testParsed.education?.length) {
+  console.error('✕ CV text parser failed to extract structured fields!');
+  process.exit(1);
+}
+if (CAPTURE_BUCKETS.length < 8) {
+  console.error('✕ Capture buckets missing required targets!');
+  process.exit(1);
+}
+console.log('✓ Smart Harvester, Noise Filter, CV Parser & Staging Review: PASS');
+
 console.log('--- Verification Complete: ALL CHECKS PASSED ---');

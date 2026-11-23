@@ -34,11 +34,14 @@ import {
 import { loadPrivateVault, savePrivateVault } from '../../core/storage/vault-storage.js';
 import { VisualEditorController } from '../../core/ui/visual-editor.js';
 import { LivePreviewController } from '../../core/ui/live-preview.js';
+import { CapturePanelController } from '../../core/ui/capture-panel.js';
+import { StagingReviewController } from '../../core/ui/capture-staging-review.js';
 
 let activeProfile = getMotherShowcaseFallback();
-let studioMode = 'portfolio'; // 'portfolio' | 'cv' | 'letters' | 'notes' | 'editor'
+let studioMode = 'portfolio'; // 'portfolio' | 'cv' | 'letters' | 'notes' | 'editor' | 'capture'
 let visualEditor = null;
 let editorLivePreview = null;
+let webCapturePanel = null;
 let activePortfolioTemplateId = 'acad-flagship';
 let activeCvTemplateId = 'cv-acad-flagship';
 let activeCvProfileId = 'cv-acad-flagship-profile';
@@ -74,6 +77,9 @@ const dom = {
   tabModeLetters: document.getElementById('tab-mode-letters'),
   tabModeNotes: document.getElementById('tab-mode-notes'),
   tabModeEditor: document.getElementById('tab-mode-editor'),
+  tabModeCapture: document.getElementById('tab-mode-capture'),
+  captureWorkspace: document.getElementById('capture-workspace'),
+  webCapturePanelMount: document.getElementById('web-capture-panel-mount'),
   editorWorkspace: document.getElementById('editor-workspace'),
   visualEditorContainer: document.getElementById('visual-editor-container'),
   editorPreviewIframe: document.getElementById('editor-preview-iframe'),
@@ -312,6 +318,7 @@ function switchStudioMode(mode) {
   dom.tabModeLetters.classList.toggle('active', mode === 'letters');
   dom.tabModeNotes.classList.toggle('active', mode === 'notes');
   if (dom.tabModeEditor) dom.tabModeEditor.classList.toggle('active', mode === 'editor');
+  if (dom.tabModeCapture) dom.tabModeCapture.classList.toggle('active', mode === 'capture');
 
   if (mode === 'portfolio') {
     dom.catalogSidebar.style.display = 'flex';
@@ -319,6 +326,7 @@ function switchStudioMode(mode) {
     dom.lettersWorkspace.style.display = 'none';
     dom.notesWorkspace.style.display = 'none';
     if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
+    if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -337,6 +345,7 @@ function switchStudioMode(mode) {
     dom.lettersWorkspace.style.display = 'none';
     dom.notesWorkspace.style.display = 'none';
     if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
+    if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'flex';
     dom.letterHeaderTools.style.display = 'none';
@@ -356,6 +365,7 @@ function switchStudioMode(mode) {
     dom.lettersWorkspace.style.display = 'flex';
     dom.notesWorkspace.style.display = 'none';
     if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
+    if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'flex';
@@ -375,6 +385,7 @@ function switchStudioMode(mode) {
     dom.lettersWorkspace.style.display = 'none';
     dom.notesWorkspace.style.display = 'flex';
     if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
+    if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -390,6 +401,7 @@ function switchStudioMode(mode) {
     dom.lettersWorkspace.style.display = 'none';
     dom.notesWorkspace.style.display = 'none';
     if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'flex';
+    if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -399,6 +411,22 @@ function switchStudioMode(mode) {
 
     dom.labelActiveTemplate.textContent = 'No-Code Visual Editor & Real-Time Live Preview';
     initVisualEditor();
+  } else if (mode === 'capture') {
+    dom.catalogSidebar.style.display = 'none';
+    dom.workbenchCanvas.style.display = 'none';
+    dom.lettersWorkspace.style.display = 'none';
+    dom.notesWorkspace.style.display = 'none';
+    if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
+    if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'flex';
+
+    dom.cvHeaderTools.style.display = 'none';
+    dom.letterHeaderTools.style.display = 'none';
+    dom.btnExportHtml.style.display = 'none';
+    dom.btnSyncToMaster.style.display = 'none';
+    dom.btnPullFromMaster.style.display = 'none';
+
+    dom.labelActiveTemplate.textContent = 'Smart CV Importer & Web Harvester';
+    initCaptureWorkspace();
   }
 }
 
@@ -454,6 +482,30 @@ function initVisualEditor() {
 
   if (editorLivePreview) {
     editorLivePreview.updateNow();
+  }
+}
+
+function initCaptureWorkspace() {
+  if (!webCapturePanel && dom.webCapturePanelMount) {
+    webCapturePanel = new CapturePanelController({
+      container: dom.webCapturePanelMount,
+      isExtension: false,
+      onStageBatch: (batch) => {
+        const review = new StagingReviewController({
+          activeProfile,
+          stagedBatch: batch,
+          onConfirm: (merged) => {
+            activeProfile = merged;
+            if (visualEditor) visualEditor.setProfile(activeProfile);
+            if (editorLivePreview) editorLivePreview.setProfile(activeProfile);
+            updatePreview();
+            savePrivateVault({ profile: activeProfile }).catch(() => {});
+          }
+        });
+        review.show();
+      }
+    });
+    webCapturePanel.render();
   }
 }
 
@@ -915,6 +967,7 @@ function initEventListeners() {
   dom.tabModeLetters.addEventListener('click', () => switchStudioMode('letters'));
   dom.tabModeNotes.addEventListener('click', () => switchStudioMode('notes'));
   dom.tabModeEditor?.addEventListener('click', () => switchStudioMode('editor'));
+  dom.tabModeCapture?.addEventListener('click', () => switchStudioMode('capture'));
 
   dom.btnEditorPopout?.addEventListener('click', () => {
     if (editorLivePreview) editorLivePreview.openPopoutWindow();

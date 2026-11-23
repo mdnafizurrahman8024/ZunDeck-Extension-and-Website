@@ -51,6 +51,10 @@
           <i class="fa-solid fa-pen-ruler"></i>
           <span>Visual Editor</span>
         </button>
+        <button type="button" class="mode-tab" data-mode="capture" id="tab-mode-capture">
+          <i class="fa-solid fa-cloud-arrow-down"></i>
+          <span>CV Import &amp; Harvester</span>
+        </button>
       </div>
 
       <div class="sync-pill" id="sync-status-indicator" title="Connected to Mother Showcase">
@@ -444,6 +448,11 @@
           <iframe id="editor-preview-iframe" class="editor-preview-iframe" title="ZunDeck Real-Time Live Preview"></iframe>
         </div>
       </main>
+    </div>
+
+    <!-- CV Import & Harvester Workspace (Part 7) -->
+    <div class="capture-workspace" id="capture-workspace" style="display: none;">
+      <div class="capture-workspace-inner" id="web-capture-panel-mount"></div>
     </div>
 
   </div>

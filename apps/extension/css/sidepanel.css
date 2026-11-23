@@ -701,3 +701,381 @@ body {
 .sp-visual-editor-wrap .doc-type-icon-col {
   font-size: 1.1rem;
 }
+
+/* Part 7 Sidepanel Harvester & Staging Review styles */
+.capture-panel-root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.capture-mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+}
+
+.cap-tab-btn {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.cap-tab-btn.active {
+  background: var(--bg-surface);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.harvester-status-card {
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.harvester-status-card.recording {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.harvester-status-card.paused {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.status-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-indicator-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.recording .status-dot {
+  background: #10b981;
+  box-shadow: 0 0 5px #10b981;
+}
+
+.paused .status-dot {
+  background: #f59e0b;
+}
+
+.items-counter-badge {
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--border-subtle);
+  color: var(--text-main);
+}
+
+.harvester-counters-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.counter-chip {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.counter-chip strong {
+  color: var(--text-main);
+  margin-left: 2px;
+}
+
+.harvester-help-text {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 0;
+}
+
+.harvester-controls-row {
+  display: flex;
+  gap: 6px;
+}
+
+.clip-selector-card,
+.manual-import-card {
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clip-preview-box {
+  padding: 10px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  border: 1px dashed var(--border-subtle);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.cv-file-dropzone {
+  padding: 16px 10px;
+  border: 2px dashed var(--border-subtle);
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bg-surface);
+}
+
+.cv-drop-icon {
+  font-size: 1.4rem;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.cv-drop-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.cv-drop-sub {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.or-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+
+.or-divider::before,
+.or-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.or-divider span {
+  padding: 0 8px;
+}
+
+.manual-editor-box {
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+.manual-editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.manual-paste-area {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 8px;
+  font-size: 0.74rem;
+  font-family: inherit;
+  color: var(--text-main);
+  resize: vertical;
+  outline: none;
+}
+
+/* Staging Review Overlay for Extension */
+.staging-review-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.staging-review-window {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.staging-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.staging-badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(13, 148, 136, 0.12);
+  color: var(--primary);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.staging-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  margin: 2px 0 0;
+}
+
+.staging-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.staging-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.staging-strategy-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.72rem;
+}
+
+.staging-section-card {
+  padding: 10px;
+  border-radius: 6px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+.staging-sec-title {
+  font-size: 0.76rem;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.staging-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.staging-item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.staging-item-inputs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.staging-skills-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.staged-skill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.7rem;
+}
+
+.staging-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+.staging-safety-badge {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.staging-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}

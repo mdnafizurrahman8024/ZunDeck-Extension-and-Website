@@ -12,7 +12,44 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const activeTab = tabs && tabs[0] ? tabs[0] : null;
       sendResponse({ tab: activeTab });
     });
-    return true; // Keep channel open for async response
+    return true;
+  }
+
+  // Inject content script ONLY on explicit user trigger
+  if (message?.action === 'INJECT_SCROLL_HARVESTER') {
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+      const tabId = tabs && tabs[0]?.id;
+      if (!tabId) {
+        sendResponse({ success: false, error: 'No active tab found' });
+        return;
+      }
+
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId },
+          files: ['content/scroll-harvester.js']
+        });
+        sendResponse({ success: true, tabId });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    });
+    return true;
+  }
+
+  // Forward actions to active tab content script
+  if (['PAUSE_SCROLL', 'RESUME_SCROLL', 'GET_HARVESTED_DATA', 'CLIP_MOUSE_SELECTION'].includes(message?.action)) {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs && tabs[0]?.id;
+      if (!tabId) {
+        sendResponse({ success: false, error: 'No active tab' });
+        return;
+      }
+      chrome.tabs.sendMessage(tabId, message, (res) => {
+        sendResponse(res || { success: true });
+      });
+    });
+    return true;
   }
 
   if (message?.action === 'PING') {

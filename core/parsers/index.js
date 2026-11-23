@@ -25,3 +25,6 @@ export function parseBibtexToPublication(rawBibtex) {
 
 export * from './doi-orcid-fetcher.js';
 export * from './drive-embed.js';
+export * from './noise-filter.js';
+export * from './site-parsers.js';
+export * from './cv-file-parser.js';

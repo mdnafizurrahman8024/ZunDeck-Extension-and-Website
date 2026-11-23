@@ -30,3 +30,5 @@ export * from './letter-editor.js';
 export * from './notes-scratchpad.js';
 export * from './media-manager.js';
 export * from './docs-manager.js';
+export * from './capture-panel.js';
+export * from './capture-staging-review.js';
