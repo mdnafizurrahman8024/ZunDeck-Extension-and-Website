@@ -501,3 +501,164 @@ body {
   color: var(--text-muted);
   cursor: pointer;
 }
+
+/* Side Panel Visual Editor Styling (Part 5) */
+.sp-header-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-popout-preview {
+  background: rgba(13, 148, 136, 0.15);
+  border-color: rgba(13, 148, 136, 0.4);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.btn-popout-preview:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.sp-visual-editor-wrap {
+  margin-top: 4px;
+}
+
+.sp-visual-editor-wrap .visual-editor-root {
+  display: flex;
+  flex-direction: column;
+}
+
+.sp-visual-editor-wrap .ve-tabs-nav {
+  display: flex;
+  overflow-x: auto;
+  gap: 2px;
+  padding: 4px 6px 0 6px;
+  background: var(--bg-surface-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  scrollbar-width: none;
+}
+
+.sp-visual-editor-wrap .ve-tabs-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.sp-visual-editor-wrap .ve-tab-btn {
+  padding: 5px 8px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sp-visual-editor-wrap .ve-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.sp-visual-editor-wrap .ve-content-pane {
+  padding: 10px 0;
+}
+
+.sp-visual-editor-wrap .form-grid-2,
+.sp-visual-editor-wrap .form-grid-4,
+.sp-visual-editor-wrap .filler-row,
+.sp-visual-editor-wrap .loc-fields-grid,
+.sp-visual-editor-wrap .contact-modes-grid,
+.sp-visual-editor-wrap .customizer-grid,
+.sp-visual-editor-wrap .template-picks-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.sp-visual-editor-wrap .form-group {
+  margin-bottom: 8px;
+}
+
+.sp-visual-editor-wrap .form-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+  display: block;
+}
+
+.sp-visual-editor-wrap .form-input,
+.sp-visual-editor-wrap .form-textarea,
+.sp-visual-editor-wrap .form-select {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+  color: var(--text-main);
+  font-size: 0.78rem;
+  font-family: inherit;
+}
+
+.sp-visual-editor-wrap .ve-item-card {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 6px;
+}
+
+.sp-visual-editor-wrap .item-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.sp-visual-editor-wrap .item-meta {
+  font-size: 0.68rem;
+}
+
+.sp-visual-editor-wrap .btn-icon-subtle,
+.sp-visual-editor-wrap .btn-icon-danger {
+  padding: 2px 5px;
+  font-size: 0.72rem;
+}
+
+.sp-visual-editor-wrap .auto-filler-box {
+  padding: 10px;
+  border-radius: 6px;
+  background: rgba(13, 148, 136, 0.08);
+  border: 1px solid rgba(13, 148, 136, 0.25);
+  margin-bottom: 10px;
+}
+
+.sp-visual-editor-wrap .input-with-button {
+  display: flex;
+  gap: 4px;
+}
+
+.sp-visual-editor-wrap .badge-presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sp-visual-editor-wrap .badge-preset-btn {
+  padding: 2px 6px;
+  font-size: 0.68rem;
+}
+
+.sp-visual-editor-wrap .link-item-row {
+  padding: 6px 8px;
+  gap: 6px;
+}
+
+.sp-visual-editor-wrap .editor-subcard {
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}

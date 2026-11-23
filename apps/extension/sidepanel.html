@@ -61,35 +61,19 @@
       </div>
     </section>
 
-    <!-- Tab 2: Editor (No-Code Profile Editor) -->
+    <!-- Tab 2: Editor (No-Code Visual Profile Editor & Real-Time Sync) -->
     <section class="sp-panel" id="panel-editor">
       <div class="sp-section-header">
-        <span class="sp-section-title">Quick Profile Editor</span>
-        <button type="button" class="sp-btn-sm" id="btn-revert-profile">Revert</button>
+        <span class="sp-section-title"><i class="fa-solid fa-pen-ruler"></i> Visual Editor</span>
+        <div class="sp-header-btns">
+          <button type="button" class="sp-btn-sm btn-popout-preview" id="btn-sp-popout-preview" title="Pop-Out Live Preview to Full Browser Tab">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Live Pop-Out
+          </button>
+          <button type="button" class="sp-btn-sm" id="btn-revert-profile">Revert</button>
+        </div>
       </div>
-      <div class="sp-form-group">
-        <label for="edit-fullname" class="sp-label">Full Name</label>
-        <input type="text" id="edit-fullname" class="sp-input">
-      </div>
-      <div class="sp-form-group">
-        <label for="edit-rolebadge" class="sp-label">Role Badge</label>
-        <input type="text" id="edit-rolebadge" class="sp-input">
-      </div>
-      <div class="sp-form-group">
-        <label for="edit-tagline" class="sp-label">Tagline</label>
-        <textarea id="edit-tagline" class="sp-textarea" rows="2"></textarea>
-      </div>
-      <div class="sp-form-group">
-        <label for="edit-availability" class="sp-label">Availability Status</label>
-        <input type="text" id="edit-availability" class="sp-input">
-      </div>
-      <div class="sp-form-group">
-        <label for="edit-email" class="sp-label">Primary Email</label>
-        <input type="email" id="edit-email" class="sp-input">
-      </div>
-      <div class="sp-form-group">
-        <label for="edit-location" class="sp-label">Location</label>
-        <input type="text" id="edit-location" class="sp-input">
+      <div id="sp-visual-editor-container" class="sp-visual-editor-wrap">
+        <!-- Rendered by VisualEditorController -->
       </div>
     </section>
 

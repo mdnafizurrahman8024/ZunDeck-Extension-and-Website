@@ -129,4 +129,20 @@ for (const rule of mustIgnore) {
 }
 console.log('✓ Strict .gitignore rules verified: PASS');
 
+// 10. Check Part 5 No-Code Visual Editor, Live Preview & DOI/ORCID Filler
+const { isValidDoi, normalizeDoi } = await import('../core/parsers/doi-orcid-fetcher.js');
+const { BADGE_PRESETS } = await import('../core/ui/badge-picker.js');
+const { LINK_PLATFORMS } = await import('../core/ui/links-manager.js');
+const { VIEWPORT_PRESETS } = await import('../core/ui/live-preview.js');
+
+if (!isValidDoi('10.1016/j.vetmic.2023.109823') || normalizeDoi('doi:10.1016/j.vetmic.2023.109823') !== '10.1016/j.vetmic.2023.109823') {
+  console.error('✕ DOI parser failed verification!');
+  process.exit(1);
+}
+if (BADGE_PRESETS.length < 8 || LINK_PLATFORMS.length < 16 || !VIEWPORT_PRESETS.laptop) {
+  console.error('✕ Part 5 UI presets or catalogs missing definitions!');
+  process.exit(1);
+}
+console.log('✓ No-Code Visual Editor, Live Preview, Badges & DOI/ORCID Engine: PASS');
+
 console.log('--- Verification Complete: ALL CHECKS PASSED ---');

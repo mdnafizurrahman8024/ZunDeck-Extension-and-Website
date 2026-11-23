@@ -22,3 +22,5 @@ export function parseBibtexToPublication(rawBibtex) {
     status: 'published'
   };
 }
+
+export * from './doi-orcid-fetcher.js';

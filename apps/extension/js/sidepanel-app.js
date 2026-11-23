@@ -21,12 +21,16 @@ import {
 import { assembleOfflineDraft } from '../core/engines/letter-prompts.js';
 import { generateDocxBlob } from '../core/exporters/docx-exporter.js';
 import { renderPortfolioHtml } from '../core/engines/portfolio-engine.js';
+import { VisualEditorController } from '../core/ui/visual-editor.js';
+import { LivePreviewController } from '../core/ui/live-preview.js';
 
 let activeProfile = getMotherShowcaseFallback();
 let privateVault = null;
 let activeTabId = 'showcase';
 let activeNoteId = null;
 let autoSaveController = null;
+let spVisualEditor = null;
+let spLivePreview = null;
 
 const dom = {
   tabBtns: document.querySelectorAll('.sp-tab-btn'),
@@ -39,13 +43,9 @@ const dom = {
   selectTemplateType: document.getElementById('select-template-type'),
   containerTemplatesList: document.getElementById('container-templates-list'),
 
-  // Quick Editor
-  editFullname: document.getElementById('edit-fullname'),
-  editRolebadge: document.getElementById('edit-rolebadge'),
-  editTagline: document.getElementById('edit-tagline'),
-  editAvailability: document.getElementById('edit-availability'),
-  editEmail: document.getElementById('edit-email'),
-  editLocation: document.getElementById('edit-location'),
+  // Visual Editor (Part 5)
+  spVisualEditorContainer: document.getElementById('sp-visual-editor-container'),
+  btnSpPopoutPreview: document.getElementById('btn-sp-popout-preview'),
   btnRevertProfile: document.getElementById('btn-revert-profile'),
 
   // Media
@@ -101,44 +101,42 @@ function switchTab(tabId) {
   dom.panels.forEach((p) => {
     p.classList.toggle('active', p.id === `panel-${tabId}`);
   });
+  if (tabId === 'editor') {
+    initSidepanelVisualEditor();
+  }
 }
 
-function initAutoSave() {
-  autoSaveController = createAutoSaveController({
-    delay: 2000,
-    onSave: async () => {
-      await saveWorkspace({
-        activeProfile,
-        lastSaved: new Date().toISOString()
-      });
-    },
-    onStatusChange: ({ label }) => {
-      dom.autoSaveLabel.textContent = label;
-    }
-  });
-}
+function initSidepanelVisualEditor() {
+  if (!spLivePreview) {
+    spLivePreview = new LivePreviewController({
+      profile: activeProfile,
+      mode: 'portfolio',
+      templateId: activeProfile.displayConfig?.portfolioTemplateId || 'acad-flagship'
+    });
+  } else {
+    spLivePreview.setProfile(activeProfile);
+  }
 
-function populateEditorFields() {
-  const identity = activeProfile?.identity || {};
-  dom.editFullname.value = identity.fullName || '';
-  dom.editRolebadge.value = identity.roleBadge || '';
-  dom.editTagline.value = identity.tagline || '';
-  dom.editAvailability.value = identity.availabilityStatus || '';
-  dom.editEmail.value = identity.email || '';
-  dom.editLocation.value = identity.location?.city || '';
-}
-
-function syncEditorToProfile() {
-  if (!activeProfile.identity) activeProfile.identity = {};
-  activeProfile.identity.fullName = dom.editFullname.value.trim();
-  activeProfile.identity.roleBadge = dom.editRolebadge.value.trim();
-  activeProfile.identity.tagline = dom.editTagline.value.trim();
-  activeProfile.identity.availabilityStatus = dom.editAvailability.value.trim();
-  activeProfile.identity.email = dom.editEmail.value.trim();
-  if (!activeProfile.identity.location) activeProfile.identity.location = {};
-  activeProfile.identity.location.city = dom.editLocation.value.trim();
-
-  autoSaveController.markDirty();
+  if (!spVisualEditor && dom.spVisualEditorContainer) {
+    spVisualEditor = new VisualEditorController({
+      profile: activeProfile,
+      container: dom.spVisualEditorContainer,
+      onChange: (updatedProfile) => {
+        activeProfile = updatedProfile;
+        if (spLivePreview) {
+          spLivePreview.setProfile(activeProfile);
+        }
+      },
+      onStatusChange: (status) => {
+        if (dom.autoSaveLabel) {
+          dom.autoSaveLabel.textContent = status === 'saving' ? 'Saving...' : 'Saved locally';
+        }
+      }
+    });
+    spVisualEditor.render();
+  } else if (spVisualEditor) {
+    spVisualEditor.setProfile(activeProfile);
+  }
 }
 
 function renderTemplatesList() {
@@ -282,7 +280,8 @@ function importBackupHandler(e) {
       const ws = await loadWorkspace();
       if (ws.activeProfile) activeProfile = ws.activeProfile;
       privateVault = await loadPrivateVault();
-      populateEditorFields();
+      if (spVisualEditor) spVisualEditor.setProfile(activeProfile);
+      if (spLivePreview) spLivePreview.setProfile(activeProfile);
       renderNotesList();
       alert('Backup imported successfully!');
     } catch (err) {
@@ -314,13 +313,22 @@ function initEventListeners() {
   dom.inputSearchTemplates.addEventListener('input', renderTemplatesList);
   dom.selectTemplateType.addEventListener('change', renderTemplatesList);
 
-  [dom.editFullname, dom.editRolebadge, dom.editTagline, dom.editAvailability, dom.editEmail, dom.editLocation]
-    .forEach((input) => input.addEventListener('input', syncEditorToProfile));
+  dom.btnSpPopoutPreview?.addEventListener('click', () => {
+    if (!spLivePreview) {
+      spLivePreview = new LivePreviewController({
+        profile: activeProfile,
+        mode: 'portfolio',
+        templateId: activeProfile.displayConfig?.portfolioTemplateId || 'acad-flagship'
+      });
+    }
+    spLivePreview.openPopoutWindow();
+  });
 
-  dom.btnRevertProfile.addEventListener('click', () => {
+  dom.btnRevertProfile?.addEventListener('click', () => {
     activeProfile = getMotherShowcaseFallback();
-    populateEditorFields();
-    autoSaveController.markDirty();
+    if (spVisualEditor) spVisualEditor.setProfile(activeProfile);
+    if (spLivePreview) spLivePreview.setProfile(activeProfile);
+    autoSaveController?.markDirty();
   });
 
   dom.btnExportCvDocx.addEventListener('click', () => {
@@ -414,7 +422,6 @@ async function init() {
     activeProfile = ws.activeProfile;
   }
 
-  populateEditorFields();
   renderTemplatesList();
   renderNotesList();
   initEventListeners();

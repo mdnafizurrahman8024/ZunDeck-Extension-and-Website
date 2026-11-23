@@ -32,9 +32,13 @@ import {
   formatNoteDate
 } from '../../core/ui/notes-scratchpad.js';
 import { loadPrivateVault, savePrivateVault } from '../../core/storage/vault-storage.js';
+import { VisualEditorController } from '../../core/ui/visual-editor.js';
+import { LivePreviewController } from '../../core/ui/live-preview.js';
 
 let activeProfile = getMotherShowcaseFallback();
-let studioMode = 'portfolio'; // 'portfolio' | 'cv' | 'letters' | 'notes'
+let studioMode = 'portfolio'; // 'portfolio' | 'cv' | 'letters' | 'notes' | 'editor'
+let visualEditor = null;
+let editorLivePreview = null;
 let activePortfolioTemplateId = 'acad-flagship';
 let activeCvTemplateId = 'cv-acad-flagship';
 let activeCvProfileId = 'cv-acad-flagship-profile';
@@ -69,6 +73,17 @@ const dom = {
   tabModeCv: document.getElementById('tab-mode-cv'),
   tabModeLetters: document.getElementById('tab-mode-letters'),
   tabModeNotes: document.getElementById('tab-mode-notes'),
+  tabModeEditor: document.getElementById('tab-mode-editor'),
+  editorWorkspace: document.getElementById('editor-workspace'),
+  visualEditorContainer: document.getElementById('visual-editor-container'),
+  editorPreviewIframe: document.getElementById('editor-preview-iframe'),
+  editorDeviceFrame: document.getElementById('editor-device-frame'),
+  editorAutoSaveStatus: document.getElementById('editor-auto-save-status'),
+  btnEditorPopout: document.getElementById('btn-editor-popout'),
+  btnToggleEditorForm: document.getElementById('btn-toggle-editor-form'),
+  btnToggleEditorPreview: document.getElementById('btn-toggle-editor-preview'),
+  editorSidebar: document.getElementById('editor-sidebar'),
+  editorPreviewStage: document.getElementById('editor-preview-stage'),
   cvHeaderTools: document.getElementById('cv-header-tools'),
   selectCvProfile: document.getElementById('select-cv-profile'),
   btnToggleQr: document.getElementById('btn-toggle-qr'),
@@ -258,6 +273,12 @@ function setViewport(viewport) {
     dom.labelActiveSize.textContent = '980 × auto (Tablet / Phone Desktop)';
   } else if (viewport === 'mobile') {
     dom.labelActiveSize.textContent = '390 × 844 (Mobile)';
+  } else if (viewport === 'a4') {
+    dom.labelActiveSize.textContent = '794 × 1123 (CV A4)';
+  }
+
+  if (editorLivePreview) {
+    editorLivePreview.setViewport(viewport);
   }
 }
 
@@ -290,12 +311,14 @@ function switchStudioMode(mode) {
   dom.tabModeCv.classList.toggle('active', mode === 'cv');
   dom.tabModeLetters.classList.toggle('active', mode === 'letters');
   dom.tabModeNotes.classList.toggle('active', mode === 'notes');
+  if (dom.tabModeEditor) dom.tabModeEditor.classList.toggle('active', mode === 'editor');
 
   if (mode === 'portfolio') {
     dom.catalogSidebar.style.display = 'flex';
     dom.workbenchCanvas.style.display = 'flex';
     dom.lettersWorkspace.style.display = 'none';
     dom.notesWorkspace.style.display = 'none';
+    if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -313,6 +336,7 @@ function switchStudioMode(mode) {
     dom.workbenchCanvas.style.display = 'flex';
     dom.lettersWorkspace.style.display = 'none';
     dom.notesWorkspace.style.display = 'none';
+    if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'flex';
     dom.letterHeaderTools.style.display = 'none';
@@ -331,6 +355,7 @@ function switchStudioMode(mode) {
     dom.workbenchCanvas.style.display = 'none';
     dom.lettersWorkspace.style.display = 'flex';
     dom.notesWorkspace.style.display = 'none';
+    if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'flex';
@@ -349,6 +374,7 @@ function switchStudioMode(mode) {
     dom.workbenchCanvas.style.display = 'none';
     dom.lettersWorkspace.style.display = 'none';
     dom.notesWorkspace.style.display = 'flex';
+    if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -358,6 +384,76 @@ function switchStudioMode(mode) {
 
     dom.labelActiveTemplate.textContent = 'Idea Scratchpad (Private Vault)';
     loadWebNotesFromVault();
+  } else if (mode === 'editor') {
+    dom.catalogSidebar.style.display = 'none';
+    dom.workbenchCanvas.style.display = 'none';
+    dom.lettersWorkspace.style.display = 'none';
+    dom.notesWorkspace.style.display = 'none';
+    if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'flex';
+
+    dom.cvHeaderTools.style.display = 'none';
+    dom.letterHeaderTools.style.display = 'none';
+    dom.btnExportHtml.style.display = 'none';
+    dom.btnSyncToMaster.style.display = 'none';
+    dom.btnPullFromMaster.style.display = 'none';
+
+    dom.labelActiveTemplate.textContent = 'No-Code Visual Editor & Real-Time Live Preview';
+    initVisualEditor();
+  }
+}
+
+function initVisualEditor() {
+  if (!editorLivePreview) {
+    editorLivePreview = new LivePreviewController({
+      iframe: dom.editorPreviewIframe,
+      wrapper: dom.editorDeviceFrame,
+      viewport: activeViewport,
+      mode: 'portfolio',
+      templateId: activePortfolioTemplateId,
+      theme: activeTheme,
+      profile: activeProfile
+    });
+  } else {
+    editorLivePreview.setProfile(activeProfile);
+    editorLivePreview.setTemplateId(activePortfolioTemplateId);
+    editorLivePreview.setViewport(activeViewport);
+  }
+
+  if (!visualEditor) {
+    visualEditor = new VisualEditorController({
+      profile: activeProfile,
+      container: dom.visualEditorContainer,
+      onChange: (updatedProfile) => {
+        activeProfile = updatedProfile;
+        if (editorLivePreview) {
+          editorLivePreview.setProfile(activeProfile);
+        }
+        if (studioMode === 'portfolio' || studioMode === 'cv') {
+          updatePreview();
+        }
+      },
+      onStatusChange: (status) => {
+        if (dom.editorAutoSaveStatus) {
+          if (status === 'saving') {
+            dom.editorAutoSaveStatus.className = 'auto-save-status-badge saving';
+            dom.editorAutoSaveStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+          } else {
+            dom.editorAutoSaveStatus.className = 'auto-save-status-badge saved';
+            dom.editorAutoSaveStatus.innerHTML = '<i class="fa-solid fa-check"></i> Auto-Saved locally (2s)';
+          }
+        }
+        if (dom.syncLabel) {
+          dom.syncLabel.textContent = status === 'saving' ? 'Auto-Saving...' : 'Auto-Saved locally';
+        }
+      }
+    });
+    visualEditor.render();
+  } else {
+    visualEditor.setProfile(activeProfile);
+  }
+
+  if (editorLivePreview) {
+    editorLivePreview.updateNow();
   }
 }
 
@@ -757,6 +853,11 @@ function exportCvDocx() {
 }
 
 function openPopout() {
+  if (studioMode === 'editor' && editorLivePreview) {
+    editorLivePreview.openPopoutWindow();
+    return;
+  }
+
   if (studioMode === 'letters') {
     printLetterPdf();
     return;
@@ -813,6 +914,26 @@ function initEventListeners() {
   dom.tabModeCv.addEventListener('click', () => switchStudioMode('cv'));
   dom.tabModeLetters.addEventListener('click', () => switchStudioMode('letters'));
   dom.tabModeNotes.addEventListener('click', () => switchStudioMode('notes'));
+  dom.tabModeEditor?.addEventListener('click', () => switchStudioMode('editor'));
+
+  dom.btnEditorPopout?.addEventListener('click', () => {
+    if (editorLivePreview) editorLivePreview.openPopoutWindow();
+  });
+
+  dom.btnToggleEditorForm?.addEventListener('click', () => {
+    dom.btnToggleEditorForm?.classList.add('active');
+    dom.btnToggleEditorPreview?.classList.remove('active');
+    dom.editorSidebar?.classList.remove('hidden-mobile');
+    dom.editorPreviewStage?.classList.add('hidden-mobile');
+  });
+
+  dom.btnToggleEditorPreview?.addEventListener('click', () => {
+    dom.btnToggleEditorPreview?.classList.add('active');
+    dom.btnToggleEditorForm?.classList.remove('active');
+    dom.editorSidebar?.classList.add('hidden-mobile');
+    dom.editorPreviewStage?.classList.remove('hidden-mobile');
+    if (editorLivePreview) editorLivePreview.updateNow();
+  });
 
   dom.searchInput.addEventListener('input', (e) => {
     searchQuery = e.target.value.trim().toLowerCase();

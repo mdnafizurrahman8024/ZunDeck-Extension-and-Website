@@ -310,9 +310,9 @@ export function renderPortfolioHtml(profile, options = {}) {
 
   <style>
     :root {
-      --primary: ${layout.primaryColor || '#0d9488'};
+      --primary: ${displayConfig.themeTokens?.primaryColor || layout.primaryColor || '#0d9488'};
       --primary-light: ${layout.primaryLight || 'rgba(13, 148, 136, 0.12)'};
-      --accent: ${layout.accentColor || '#0ea5e9'};
+      --accent: ${displayConfig.themeTokens?.accentColor || layout.accentColor || '#0ea5e9'};
       --accent-light: ${layout.accentLight || 'rgba(14, 165, 233, 0.12)'};
       --font-heading: ${layout.fontHeading || "'Space Grotesk', 'Inter', sans-serif"};
       --font-body: ${layout.fontBody || "'Inter', sans-serif"};
@@ -330,6 +330,27 @@ export function renderPortfolioHtml(profile, options = {}) {
       --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
       --sidebar-width: ${layout.sidebarWidth || '310px'};
     }
+
+    ${displayConfig.cardGridColumns === '3x' ? `
+    .cert-grid, .ref-grid, .skills-grid-inner { grid-template-columns: repeat(3, 1fr) !important; }
+    ` : (displayConfig.cardGridColumns === '1x' ? `
+    .cert-grid, .ref-grid, .skills-grid-inner { grid-template-columns: 1fr !important; }
+    ` : '')}
+
+    ${displayConfig.gradientBorders === 'hero' ? `
+    .about-hero-card {
+      border: 1px solid transparent !important;
+      background-image: linear-gradient(var(--bg-card), var(--bg-card)), linear-gradient(135deg, var(--primary), #f59e0b, #0ea5e9);
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
+    }
+    ` : ''}
+    ${displayConfig.gradientBorders === 'off' ? `
+    .card-perimeter-gradient {
+      background: var(--bg-card) !important;
+      border: 1px solid var(--border-color) !important;
+    }
+    ` : ''}
 
     [data-theme="dark"] {
       --bg-base: ${layout.bgBaseDark || '#0b131e'};
@@ -1683,10 +1704,19 @@ export function renderPortfolioHtml(profile, options = {}) {
         </section>
         ` : ''}
 
-        <!-- 12. Contact Card -->
+        <!-- 12. Contact Card & Map -->
         ${isVisible('contact') ? `
         <section class="feed-card" id="contact">
           ${renderSectionHeader('Where to Find Me & Get in Touch', 'Location, institutional office, and verified communication channels', 'fa-solid fa-location-dot')}
+          ${identity.location?.lat && identity.location?.lng ? `
+          <div class="loc-map-preview-wrap" style="margin-bottom: 16px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); background: var(--bg-subtle);">
+            <div style="padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid var(--border-color);">
+              <span><i class="fa-solid fa-map-pin" style="color: var(--primary);"></i> ${escapeHtml(identity.location.city || '')}, ${escapeHtml(identity.location.country || '')}</span>
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">${Number(identity.location.lat).toFixed(4)}° N, ${Number(identity.location.lng).toFixed(4)}° E</span>
+            </div>
+            <iframe width="100%" height="190" style="border:0;" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=${Number(identity.location.lng) - 0.02}%2C${Number(identity.location.lat) - 0.02}%2C${Number(identity.location.lng) + 0.02}%2C${Number(identity.location.lat) + 0.02}&amp;layer=mapnik&amp;marker=${identity.location.lat}%2C${identity.location.lng}"></iframe>
+          </div>
+          ` : ''}
           <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 16px;">
             ${identity.location?.rawAddress ? `<strong>Address:</strong> ${escapeHtml(identity.location.rawAddress)}<br>` : ''}
             ${identity.email ? `<strong>Email:</strong> <a href="mailto:${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</a><br>` : ''}
@@ -1694,9 +1724,21 @@ export function renderPortfolioHtml(profile, options = {}) {
             ${identity.phone ? `<strong>Phone:</strong> ${escapeHtml(identity.phone)}` : ''}
           </p>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            ${identity.email ? `<a href="mailto:${escapeHtml(identity.email)}" class="btn-action-primary"><i class="fa-solid fa-envelope"></i> Send Email</a>` : ''}
+            ${identity.email ? `<a href="mailto:${escapeHtml(identity.email)}" class="btn-action-primary"><i class="fa-solid fa-envelope"></i> Direct Email</a>` : ''}
             ${identity.whatsapp ? `<a href="${sanitizeUrl(identity.whatsapp)}" target="_blank" rel="noopener noreferrer" class="btn-subtle"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>` : ''}
           </div>
+          ${(displayConfig.contactConfig?.mode === 'web3forms' || displayConfig.contactConfig?.showForm) ? `
+          <form action="https://api.web3forms.com/submit" method="POST" class="portfolio-contact-form" style="margin-top: 16px; display: grid; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+            <input type="hidden" name="access_key" value="${escapeHtml(displayConfig.contactConfig?.accessKey || 'YOUR_ACCESS_KEY')}">
+            <input type="hidden" name="subject" value="New Collaboration Inquiry from ZunDeck Portfolio">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+              <input type="text" name="name" placeholder="Your Name" required style="padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-subtle); color: var(--text-primary); font-size: 0.88rem;">
+              <input type="email" name="email" placeholder="Your Email Address" required style="padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-subtle); color: var(--text-primary); font-size: 0.88rem;">
+            </div>
+            <textarea name="message" rows="3" placeholder="Collaboration or research message..." required style="padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-subtle); color: var(--text-primary); font-size: 0.88rem; resize: vertical;"></textarea>
+            <button type="submit" class="btn-action-primary" style="cursor: pointer; justify-content: center;"><i class="fa-solid fa-paper-plane"></i> Send to Gmail</button>
+          </form>
+          ` : ''}
         </section>
         ` : ''}
 

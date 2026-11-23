@@ -47,6 +47,10 @@
           <i class="fa-solid fa-lightbulb"></i>
           <span>Idea Scratchpad</span>
         </button>
+        <button type="button" class="mode-tab" data-mode="editor" id="tab-mode-editor">
+          <i class="fa-solid fa-pen-ruler"></i>
+          <span>Visual Editor</span>
+        </button>
       </div>
 
       <div class="sync-pill" id="sync-status-indicator" title="Connected to Mother Showcase">
@@ -68,6 +72,10 @@
       <button type="button" class="viewport-btn" data-viewport="mobile" title="Mobile Phone (390px)">
         <i class="fa-solid fa-mobile-screen"></i>
         <span>Mobile (390px)</span>
+      </button>
+      <button type="button" class="viewport-btn" data-viewport="a4" title="CV A4 Print Layout (794px)">
+        <i class="fa-solid fa-file-invoice"></i>
+        <span>CV A4 (794px)</span>
       </button>
     </div>
 
@@ -398,6 +406,42 @@
             <span class="notes-timestamp-label" id="web-note-timestamp">Created recently</span>
             <span class="notes-privacy-tag"><i class="fa-solid fa-shield-halved"></i> Strictly Private Local Vault</span>
           </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Visual Editor & Live Preview Split-Screen Workspace (Part 5) -->
+    <div class="editor-workspace" id="editor-workspace" style="display: none;">
+      <!-- Mobile Edit / Preview Toggle Bar -->
+      <div class="editor-mobile-toggle-bar">
+        <button type="button" class="mobile-toggle-btn active" data-view="form" id="btn-toggle-editor-form">
+          <i class="fa-solid fa-pen-to-square"></i> Edit Profile
+        </button>
+        <button type="button" class="mobile-toggle-btn" data-view="preview" id="btn-toggle-editor-preview">
+          <i class="fa-solid fa-eye"></i> Live Preview
+        </button>
+      </div>
+
+      <!-- Left Visual Editor Controls -->
+      <aside class="editor-sidebar" id="editor-sidebar">
+        <div id="visual-editor-container"></div>
+      </aside>
+
+      <!-- Right Split-Screen Live Preview Stage -->
+      <main class="editor-preview-stage" id="editor-preview-stage">
+        <div class="editor-preview-toolbar">
+          <div class="editor-preview-meta">
+            <span class="preview-mode-tag" id="editor-preview-mode-tag"><i class="fa-solid fa-bolt"></i> Real-Time Live Preview</span>
+            <span class="auto-save-status-badge" id="editor-auto-save-status"><i class="fa-solid fa-check"></i> Auto-Saved locally (2s)</span>
+          </div>
+          <div class="editor-preview-tools">
+            <button type="button" class="btn-sm btn-outline" id="btn-editor-popout" title="Pop-Out Live Preview to Full Browser Tab">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Pop-Out Full Tab
+            </button>
+          </div>
+        </div>
+        <div class="editor-device-frame" id="editor-device-frame">
+          <iframe id="editor-preview-iframe" class="editor-preview-iframe" title="ZunDeck Real-Time Live Preview"></iframe>
         </div>
       </main>
     </div>
