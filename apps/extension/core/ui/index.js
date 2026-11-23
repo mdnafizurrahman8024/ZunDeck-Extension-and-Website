@@ -35,3 +35,4 @@ export * from './capture-staging-review.js';
 export * from './guide-and-prompts.js';
 export * from './matcher-panel.js';
 export * from './vibe-studio-panel.js';
+export * from './deploy-panel.js';

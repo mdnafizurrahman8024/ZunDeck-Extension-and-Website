@@ -27,6 +27,7 @@ import { CapturePanelController } from '../core/ui/capture-panel.js';
 import { StagingReviewController } from '../core/ui/capture-staging-review.js';
 import { VibeStudioController } from '../core/ui/vibe-studio-panel.js';
 import { MatcherPanelController } from '../core/ui/matcher-panel.js';
+import { DeployPanelController } from '../core/ui/deploy-panel.js';
 
 let activeProfile = getMotherShowcaseFallback();
 let privateVault = null;
@@ -38,6 +39,7 @@ let spLivePreview = null;
 let spCapturePanel = null;
 let spVibeStudio = null;
 let spMatcherPanel = null;
+let spDeployPanel = null;
 
 const dom = {
   tabBtns: document.querySelectorAll('.sp-tab-btn'),
@@ -117,6 +119,24 @@ function switchTab(tabId) {
     initSidepanelMatcher();
   } else if (tabId === 'vibe') {
     initSidepanelVibe();
+  } else if (tabId === 'settings') {
+    initSpDeployPanel();
+  }
+}
+
+function initSpDeployPanel() {
+  const mount = document.getElementById('sp-deploy-panel-mount');
+  if (!mount) return;
+  if (!spDeployPanel) {
+    spDeployPanel = new DeployPanelController({
+      container: mount,
+      getActiveProfile: () => activeProfile,
+      onStatusUpdate: () => {}
+    });
+    spDeployPanel.init();
+  } else {
+    spDeployPanel.refreshBundle();
+    spDeployPanel.render();
   }
 }
 

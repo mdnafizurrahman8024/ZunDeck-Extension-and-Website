@@ -227,4 +227,31 @@ if (sampleMatch.matchScore < 40 || !sampleMatch.matchedStrengths.length) {
 }
 console.log('✓ Vibe Coding Agent, Universal Matcher, Timeline & 25+ Prompt Library: PASS');
 
+// 14. Check Part 9 1-Click GitHub Deploy, Pre-Push Security Gate & Multi-Browser Build
+const { generateStaticPortfolioBundle, validateBundleSecurity, buildPortfolioZipBuffer } = await import('../core/deploy/github-deployer.js');
+const { buildAllPackages } = await import('./build-all.mjs');
+
+const staticBundle = generateStaticPortfolioBundle(fallbackProfile);
+if (!Array.isArray(staticBundle) || staticBundle.length < 5) {
+  console.error('✕ Static portfolio bundle generation failed!');
+  process.exit(1);
+}
+const secGate = validateBundleSecurity(staticBundle);
+if (!secGate.passed || secGate.blocked) {
+  console.error('✕ Pre-Push Security Gate failed clean bundle check!');
+  process.exit(1);
+}
+const zipBuf = buildPortfolioZipBuffer(staticBundle);
+if (!Buffer.isBuffer(zipBuf) || zipBuf.readUInt32LE(0) !== 0x04034b50) {
+  console.error('✕ Offline ZIP generator failed ZIP signature check!');
+  process.exit(1);
+}
+
+const buildOutput = buildAllPackages();
+if (!buildOutput.chromeEdge || !buildOutput.firefox || !buildOutput.web) {
+  console.error('✕ Multi-browser production build failed to generate all targets!');
+  process.exit(1);
+}
+console.log('✓ 1-Click GitHub Deploy Engine, Pre-Push Security Shield & Multi-Browser Build: PASS');
+
 console.log('--- Verification Complete: ALL CHECKS PASSED ---');

@@ -39,15 +39,17 @@ import { StagingReviewController } from '../../core/ui/capture-staging-review.js
 import { VibeStudioController } from '../../core/ui/vibe-studio-panel.js';
 import { MatcherPanelController } from '../../core/ui/matcher-panel.js';
 import { GuideAndPromptsController } from '../../core/ui/guide-and-prompts.js';
+import { DeployPanelController } from '../../core/ui/deploy-panel.js';
 
 let activeProfile = getMotherShowcaseFallback();
-let studioMode = 'portfolio'; // 'portfolio' | 'cv' | 'letters' | 'notes' | 'editor' | 'capture' | 'vibe' | 'matcher'
+let studioMode = 'portfolio'; // 'portfolio' | 'cv' | 'letters' | 'notes' | 'editor' | 'capture' | 'vibe' | 'matcher' | 'deploy'
 let visualEditor = null;
 let editorLivePreview = null;
 let webCapturePanel = null;
 let webVibeStudio = null;
 let webMatcherPanel = null;
 let webGuidePrompts = null;
+let webDeployPanel = null;
 let activePortfolioTemplateId = 'acad-flagship';
 let activeCvTemplateId = 'cv-acad-flagship';
 let activeCvProfileId = 'cv-acad-flagship-profile';
@@ -86,12 +88,15 @@ const dom = {
   tabModeCapture: document.getElementById('tab-mode-capture'),
   tabModeVibe: document.getElementById('tab-mode-vibe'),
   tabModeMatcher: document.getElementById('tab-mode-matcher'),
+  tabModeDeploy: document.getElementById('tab-mode-deploy'),
   captureWorkspace: document.getElementById('capture-workspace'),
   vibeWorkspace: document.getElementById('vibe-workspace'),
   matcherWorkspace: document.getElementById('matcher-workspace'),
   webCapturePanelMount: document.getElementById('web-capture-panel-mount'),
   webVibePanelMount: document.getElementById('web-vibe-panel-mount'),
   webMatcherPanelMount: document.getElementById('web-matcher-panel-mount'),
+  deployWorkspace: document.getElementById('deploy-workspace'),
+  webDeployPanelMount: document.getElementById('web-deploy-panel-mount'),
   btnOpenGuideModal: document.getElementById('btn-open-guide-modal'),
   btnCloseGuideModal: document.getElementById('btn-close-guide-modal'),
   guidePromptsModal: document.getElementById('guide-prompts-modal'),
@@ -337,6 +342,7 @@ function switchStudioMode(mode) {
   if (dom.tabModeCapture) dom.tabModeCapture.classList.toggle('active', mode === 'capture');
   if (dom.tabModeVibe) dom.tabModeVibe.classList.toggle('active', mode === 'vibe');
   if (dom.tabModeMatcher) dom.tabModeMatcher.classList.toggle('active', mode === 'matcher');
+  if (dom.tabModeDeploy) dom.tabModeDeploy.classList.toggle('active', mode === 'deploy');
 
   if (mode === 'portfolio') {
     dom.catalogSidebar.style.display = 'flex';
@@ -347,6 +353,7 @@ function switchStudioMode(mode) {
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
     if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
     if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
+    if (dom.deployWorkspace) dom.deployWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -368,6 +375,7 @@ function switchStudioMode(mode) {
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
     if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
     if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
+    if (dom.deployWorkspace) dom.deployWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'flex';
     dom.letterHeaderTools.style.display = 'none';
@@ -390,6 +398,7 @@ function switchStudioMode(mode) {
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
     if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
     if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
+    if (dom.deployWorkspace) dom.deployWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'flex';
@@ -412,6 +421,7 @@ function switchStudioMode(mode) {
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
     if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
     if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
+    if (dom.deployWorkspace) dom.deployWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -430,6 +440,7 @@ function switchStudioMode(mode) {
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
     if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
     if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
+    if (dom.deployWorkspace) dom.deployWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -448,6 +459,7 @@ function switchStudioMode(mode) {
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'flex';
     if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
     if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
+    if (dom.deployWorkspace) dom.deployWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -466,6 +478,7 @@ function switchStudioMode(mode) {
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
     if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'flex';
     if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
+    if (dom.deployWorkspace) dom.deployWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -484,6 +497,7 @@ function switchStudioMode(mode) {
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
     if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
     if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'flex';
+    if (dom.deployWorkspace) dom.deployWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -493,6 +507,25 @@ function switchStudioMode(mode) {
 
     dom.labelActiveTemplate.textContent = 'Universal Multimodal Job & PhD Matcher';
     initMatcherWorkspace();
+  } else if (mode === 'deploy') {
+    dom.catalogSidebar.style.display = 'none';
+    dom.workbenchCanvas.style.display = 'none';
+    dom.lettersWorkspace.style.display = 'none';
+    dom.notesWorkspace.style.display = 'none';
+    if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
+    if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
+    if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
+    if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
+    if (dom.deployWorkspace) dom.deployWorkspace.style.display = 'flex';
+
+    dom.cvHeaderTools.style.display = 'none';
+    dom.letterHeaderTools.style.display = 'none';
+    dom.btnExportHtml.style.display = 'none';
+    dom.btnSyncToMaster.style.display = 'none';
+    dom.btnPullFromMaster.style.display = 'none';
+
+    dom.labelActiveTemplate.textContent = '1-Click Free GitHub Pages Auto-Deploy';
+    initDeployWorkspace();
   }
 }
 
@@ -643,6 +676,20 @@ function initGuideModal() {
   if (dom.guidePromptsModal) {
     dom.guidePromptsModal.style.display = 'flex';
     dom.guidePromptsModal.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function initDeployWorkspace() {
+  if (!webDeployPanel && dom.webDeployPanelMount) {
+    webDeployPanel = new DeployPanelController({
+      container: dom.webDeployPanelMount,
+      getActiveProfile: () => activeProfile,
+      onStatusUpdate: () => {}
+    });
+    webDeployPanel.init();
+  } else if (webDeployPanel) {
+    webDeployPanel.refreshBundle();
+    webDeployPanel.render();
   }
 }
 

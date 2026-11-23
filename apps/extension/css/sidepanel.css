@@ -1384,3 +1384,174 @@ body {
   gap: 6px;
 }
 
+/* ==========================================================================
+   PART 9: Side Panel GitHub Deploy & Web Companion Adjustments
+   ========================================================================== */
+.sp-deploy-panel-wrap .deploy-studio-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sp-deploy-panel-wrap .dep-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 10px;
+}
+
+.sp-deploy-panel-wrap .dep-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sp-deploy-panel-wrap .dep-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.sp-deploy-panel-wrap .dep-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.sp-deploy-panel-wrap .dep-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.sp-deploy-panel-wrap .dep-body-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sp-deploy-panel-wrap .dep-card {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sp-deploy-panel-wrap .dep-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+}
+
+.sp-deploy-panel-wrap .dep-step-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sp-deploy-panel-wrap .dep-card-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.sp-deploy-panel-wrap .dep-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sp-deploy-panel-wrap .dep-input,
+.sp-deploy-panel-wrap .dep-select {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  font-size: 0.8rem;
+}
+
+.sp-deploy-panel-wrap .dep-manifest-table-wrap {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+}
+
+.sp-deploy-panel-wrap .dep-manifest-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.sp-deploy-panel-wrap .dep-manifest-table th,
+.sp-deploy-panel-wrap .dep-manifest-table td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sp-deploy-panel-wrap .dep-security-shield {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.sp-deploy-panel-wrap .shield-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.sp-deploy-panel-wrap .shield-desc {
+  font-size: 0.72rem;
+}
+
+.sp-deploy-panel-wrap .dep-diff-box {
+  background: var(--bg-surface);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sp-deploy-panel-wrap .dep-commits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sp-deploy-panel-wrap .dep-commit-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  font-size: 0.75rem;
+}
+
+

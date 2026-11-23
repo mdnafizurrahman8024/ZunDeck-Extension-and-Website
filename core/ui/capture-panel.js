@@ -22,6 +22,22 @@ export function renderCapturePanelHtml(state = {}) {
 
   return `
     <div class="capture-panel-root">
+      ${!isExtension ? `
+        <div class="cap-web-companion-banner">
+          <div class="cap-banner-icon">
+            <i class="fa-brands fa-chrome"></i>
+          </div>
+          <div class="cap-banner-body">
+            <div class="cap-banner-title">Install ZunDeck Extension for Live Tab Scroll-Capture</div>
+            <div class="cap-banner-desc">Live progressive scroll-capture and mouse clipping run directly inside your Chrome or Edge Side Panel. On this Free Web Companion, Manual Text Paste, CV File Import (.pdf, .docx), Multimodal Job Matcher, and GitHub Deploy are 100% functional.</div>
+          </div>
+          <a href="https://github.com/mdnafizurrahman8024/ZunDeck-Extension-and-Website#readme" target="_blank" rel="noopener noreferrer" class="cap-banner-btn">
+            <i class="fa-solid fa-puzzle-piece"></i>
+            <span>Get Extension</span>
+          </a>
+        </div>
+      ` : ''}
+
       <!-- Mode Tabs -->
       <div class="capture-mode-tabs" role="tablist">
         ${isExtension ? `
