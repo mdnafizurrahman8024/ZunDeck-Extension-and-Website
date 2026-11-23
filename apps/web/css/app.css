@@ -425,17 +425,39 @@ button, input, select {
 }
 
 .btn-tool.btn-theme-cycle {
-  width: auto;
-  min-width: 86px;
-  padding: 0 12px;
-  gap: 7px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: -0.2px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .btn-tool.btn-theme-cycle i {
   color: var(--primary);
   font-size: 0.85rem;
+}
+
+.btn-tool.btn-export-dropdown {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .btn-primary {
@@ -664,23 +686,45 @@ button, input, select {
   display: flex;
   justify-content: center;
   padding: 0;
+  margin: 0;
   background: var(--bg-surface);
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 /* Draggable Resizable Splitter Divider */
 .panel-resizer {
-  width: 6px;
+  width: 8px;
   cursor: col-resize;
-  background: transparent;
-  transition: background 0.15s ease;
+  background: var(--border-subtle);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
   position: relative;
-  z-index: 10;
-  margin: 0 -3px;
+  z-index: 20;
+  margin: 0;
   flex-shrink: 0;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.panel-resizer::after {
+  content: '';
+  width: 2px;
+  height: 28px;
+  border-radius: 1px;
+  background: var(--text-dim);
+  opacity: 0.6;
+  transition: all 0.15s ease;
 }
 .panel-resizer:hover, .panel-resizer.resizing {
   background: var(--primary);
-  box-shadow: 0 0 8px rgba(13, 148, 136, 0.4);
+  box-shadow: 0 0 10px rgba(13, 148, 136, 0.4);
+}
+.panel-resizer:hover::after, .panel-resizer.resizing::after {
+  background: #ffffff;
+  height: 36px;
+  opacity: 1;
 }
 
 /* Live Sync Status Popover */
@@ -869,12 +913,13 @@ button, input, select {
 }
 
 .preview-device-wrapper {
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s ease;
+  background: var(--bg-surface);
+  border-radius: 0;
+  box-shadow: none;
+  transition: width 0.15s ease;
   overflow: hidden;
   height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   transform: scale(var(--preview-zoom, 1));
@@ -882,23 +927,42 @@ button, input, select {
 }
 
 .preview-device-wrapper.viewport-laptop {
-  width: 100%;
-  max-width: 100%;
-  border-radius: 0;
-  box-shadow: none;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
 }
 
 .preview-device-wrapper.viewport-tablet {
   width: 980px;
+  max-width: 980px;
   border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  margin: 12px auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .preview-device-wrapper.viewport-mobile {
   width: 390px;
+  max-width: 390px;
   border: 8px solid #1e293b;
   border-radius: 28px;
   height: 844px;
-  max-height: calc(100% - 20px);
+  max-height: calc(100% - 24px);
+  margin: 12px auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.preview-device-wrapper.viewport-a4 {
+  width: 794px;
+  max-width: 794px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  margin: 12px auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 #preview-iframe {
@@ -906,6 +970,7 @@ button, input, select {
   height: 100%;
   border: none;
   background: var(--bg-surface);
+  display: block;
 }
 
 /* ATS Robot X-Ray Modal Drawer */
@@ -2072,7 +2137,7 @@ button, input, select {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #060b11;
+  background: var(--bg-surface);
 }
 
 .editor-preview-toolbar {
@@ -2120,20 +2185,23 @@ button, input, select {
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding: 16px;
-  overflow-y: auto;
+  align-items: stretch;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
 }
 
 .editor-preview-iframe {
   width: 100%;
   height: 100%;
-  min-height: 850px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
-  transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 100%;
+  border: none;
+  border-radius: 0;
+  background: var(--bg-surface);
+  box-shadow: none;
+  display: block;
 }
 
 /* Visual Editor Components */

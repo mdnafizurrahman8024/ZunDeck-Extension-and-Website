@@ -182,10 +182,9 @@
 
       <!-- Unified Download / Export Dropdown Menu -->
       <div class="export-menu-wrap" id="export-menu-wrap">
-        <button type="button" class="btn-primary btn-export-dropdown" id="btn-export-dropdown-toggle" aria-haspopup="true" aria-expanded="false" title="Download or Export in various formats">
+        <button type="button" class="btn-tool btn-export-dropdown" id="btn-export-dropdown-toggle" aria-haspopup="true" aria-expanded="false" title="Download / Export Portfolio, CV &amp; Backup">
           <i class="fa-solid fa-download"></i>
-          <span>Download / Export</span>
-          <i class="fa-solid fa-chevron-down caret-icon"></i>
+          <span class="sr-only">Download / Export</span>
         </button>
         <div class="export-dropdown-menu" id="export-dropdown-menu" role="menu">
           <div class="export-menu-group-label">Portfolio &amp; Website</div>
@@ -240,13 +239,13 @@
 
       <button type="button" class="btn-tool" id="btn-open-guide-modal" title="User Manual &amp; 25+ Prompt Library">
         <i class="fa-solid fa-book-open"></i>
-        <span>Guide &amp; Prompts</span>
+        <span class="sr-only">Guide &amp; Prompts</span>
       </button>
 
       <!-- Sleek Single Clickable Theme Cycle Button: Dark -> Light -> System -> Dark -->
       <button type="button" class="btn-tool btn-theme-cycle" id="btn-theme-cycle" title="Cycle Theme: Dark → Light → System">
         <i class="fa-solid fa-moon" id="theme-cycle-icon"></i>
-        <span id="theme-cycle-label">Dark</span>
+        <span id="theme-cycle-label" class="sr-only">Dark</span>
       </button>
 
       <button type="button" class="btn-tool" id="btn-popout" title="Open Preview in New Tab">
@@ -284,7 +283,8 @@
       <div class="canvas-toolbar">
         <div class="canvas-meta">
           <span class="active-template-name" id="label-active-template">Flagship Academic &amp; Research Scholar</span>
-          <span class="active-viewport-size" id="label-active-size">1440 &times; auto</span>
+          <span class="badge-blueprint" id="badge-blueprint" title="Official Read-Only Blueprint"><i class="fa-solid fa-shield-halved"></i> Demo Blueprint</span>
+          <span class="active-viewport-size" id="label-active-size" style="display: none;">100% full-bleed</span>
 
           <!-- Viewport Switcher Pills in Canvas Toolbar (Preserved for automated tests) -->
           <div class="canvas-viewport-pills" id="canvas-viewport-pills" style="display: none;" aria-hidden="true">
@@ -307,24 +307,23 @@
           </div>
         </div>
 
-        <!-- Official Blueprint Protection & Clone Status -->
-        <div class="showcase-status-bar" id="showcase-status-bar">
-          <span class="badge-blueprint" id="badge-blueprint" title="Official Read-Only Blueprint"><i class="fa-solid fa-shield-halved"></i> Demo Blueprint</span>
-          <button type="button" class="btn-sm btn-primary" id="btn-clone-edit-blueprint" title="Clone this blueprint into your private vault workspace">
-            <i class="fa-solid fa-clone"></i> Use &amp; Edit This Design
-          </button>
-          <button type="button" class="btn-sm btn-subtle" id="btn-reset-demo-blueprint" title="Reset back to pristine Mother Showcase demo blueprint" style="display: none;">
-            <i class="fa-solid fa-rotate-left"></i> Reset Demo
-          </button>
-        </div>
-
         <div class="canvas-actions">
-          <!-- Preview Zoom & Auto-Fit Group -->
+          <!-- Official Blueprint Protection & Clone Status -->
+          <div class="showcase-status-bar" id="showcase-status-bar">
+            <button type="button" class="btn-sm btn-primary" id="btn-clone-edit-blueprint" title="Clone this blueprint into your private vault workspace">
+              <i class="fa-solid fa-clone"></i> Use &amp; Edit This Design
+            </button>
+            <button type="button" class="btn-sm btn-subtle" id="btn-reset-demo-blueprint" title="Reset back to pristine Mother Showcase demo blueprint" style="display: none;">
+              <i class="fa-solid fa-rotate-left"></i> Reset Demo
+            </button>
+          </div>
+
+          <!-- Preview Zoom Controls (- 100% +) -->
           <div class="canvas-zoom-group" id="canvas-zoom-group">
             <button type="button" class="btn-canvas-action" id="btn-zoom-out" title="Zoom Out (-)"><i class="fa-solid fa-minus"></i></button>
-            <button type="button" class="btn-canvas-action btn-zoom-fit" id="btn-zoom-fit" title="Auto-Fit Preview to Width">Fit</button>
-            <button type="button" class="btn-canvas-action" id="btn-zoom-in" title="Zoom In (+)"><i class="fa-solid fa-plus"></i></button>
             <button type="button" class="btn-canvas-action" id="btn-zoom-reset" title="Reset Zoom to 100%">100%</button>
+            <button type="button" class="btn-canvas-action" id="btn-zoom-in" title="Zoom In (+)"><i class="fa-solid fa-plus"></i></button>
+            <button type="button" class="btn-canvas-action btn-zoom-fit" id="btn-zoom-fit" title="Auto-Fit Preview to Width" style="display: none;">Fit</button>
           </div>
 
           <button type="button" class="btn-canvas-action" id="btn-sync-to-master" title="Sync CV Edits Back to Master Portfolio" style="display: none;">
@@ -587,6 +586,9 @@
       <aside class="editor-sidebar" id="editor-sidebar">
         <div id="visual-editor-container"></div>
       </aside>
+
+      <!-- Draggable Resizable Splitter Divider for Editor -->
+      <div class="panel-resizer" id="editor-panel-resizer" title="Drag left/right to resize editor sidebar"></div>
 
       <!-- Right Split-Screen Live Preview Stage -->
       <main class="editor-preview-stage" id="editor-preview-stage">

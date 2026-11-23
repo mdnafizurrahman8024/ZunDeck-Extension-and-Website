@@ -1355,27 +1355,38 @@ function initThemeMode() {
 let currentPreviewZoom = 1.0;
 
 function setPreviewZoom(scale) {
-  currentPreviewZoom = Math.max(0.4, Math.min(1.5, Number(scale.toFixed(2))));
+  currentPreviewZoom = Math.max(0.4, Math.min(2.0, Number(scale.toFixed(2))));
   if (dom.deviceWrapper) {
-    dom.deviceWrapper.style.setProperty('--preview-zoom', currentPreviewZoom);
+    if (currentPreviewZoom === 1.0) {
+      dom.deviceWrapper.style.removeProperty('--preview-zoom');
+      dom.deviceWrapper.style.transform = 'none';
+    } else {
+      dom.deviceWrapper.style.setProperty('--preview-zoom', currentPreviewZoom);
+      dom.deviceWrapper.style.transform = `scale(${currentPreviewZoom})`;
+    }
   }
-  if (dom.btnZoomFit) {
-    dom.btnZoomFit.textContent = `Fit (${Math.round(currentPreviewZoom * 100)}%)`;
+  if (dom.btnZoomReset) {
+    dom.btnZoomReset.textContent = `${Math.round(currentPreviewZoom * 100)}%`;
   }
 }
 
 function autoFitPreview() {
+  if (activeViewport === 'laptop' || !activeViewport) {
+    setPreviewZoom(1.0);
+    return;
+  }
   const stage = document.getElementById('frame-stage');
   if (!stage || !dom.deviceWrapper) return;
-  const stageWidth = stage.clientWidth - 40;
-  let targetWidth = 1440;
-  if (activeViewport === 'tablet') targetWidth = 980;
-  else if (activeViewport === 'mobile') targetWidth = 390;
+  const stageWidth = stage.clientWidth - 20;
+  let targetWidth = 980;
+  if (activeViewport === 'mobile') targetWidth = 390;
   else if (activeViewport === 'a4') targetWidth = 794;
 
-  if (stageWidth > 0 && targetWidth > 0) {
+  if (stageWidth > 0 && targetWidth > 0 && stageWidth < targetWidth) {
     const fitScale = Math.min(1.0, Math.max(0.4, (stageWidth / targetWidth)));
     setPreviewZoom(fitScale);
+  } else {
+    setPreviewZoom(1.0);
   }
 }
 
@@ -1386,84 +1397,100 @@ function initZoomControls() {
   if (dom.btnZoomFit) dom.btnZoomFit.addEventListener('click', autoFitPreview);
 
   window.addEventListener('resize', () => {
-    if (currentPreviewZoom !== 1.0) {
+    if (activeViewport !== 'laptop' && currentPreviewZoom !== 1.0) {
       autoFitPreview();
     }
   });
 
-  setTimeout(autoFitPreview, 150);
+  setPreviewZoom(1.0);
 }
 
 // --- Draggable Resizable Split Panels ---
 function initPanelResizer() {
-  const resizer = dom.panelResizer;
-  const sidebar = dom.catalogSidebar;
-  if (!resizer || !sidebar) return;
+  const setupResizer = (resizerEl, sidebarEl, storageKey, targetIframes) => {
+    if (!resizerEl || !sidebarEl) return;
 
-  try {
-    const savedWidth = localStorage.getItem('zundeck_sidebar_w');
-    if (savedWidth) {
-      sidebar.style.width = savedWidth;
-    }
-  } catch {}
-
-  let isDragging = false;
-
-  const onMouseDown = () => {
-    isDragging = true;
-    resizer.classList.add('resizing');
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    if (dom.previewIframe) dom.previewIframe.style.pointerEvents = 'none';
-  };
-
-  const onMouseMove = (e) => {
-    if (!isDragging) return;
-    const minWidth = 240;
-    const maxWidth = 520;
-    const newWidth = Math.max(minWidth, Math.min(maxWidth, e.clientX));
-    sidebar.style.width = `${newWidth}px`;
     try {
-      localStorage.setItem('zundeck_sidebar_w', `${newWidth}px`);
+      const savedWidth = localStorage.getItem(storageKey);
+      if (savedWidth) {
+        sidebarEl.style.width = savedWidth;
+      }
     } catch {}
+
+    let isDragging = false;
+
+    const onMouseDown = () => {
+      isDragging = true;
+      resizerEl.classList.add('resizing');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      if (dom.previewIframe) dom.previewIframe.style.pointerEvents = 'none';
+      targetIframes.forEach((ifr) => {
+        if (ifr) ifr.style.pointerEvents = 'none';
+      });
+    };
+
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
+      const minWidth = 260;
+      const maxWidth = Math.min(800, window.innerWidth - 300);
+      const newWidth = Math.max(minWidth, Math.min(maxWidth, e.clientX));
+      sidebarEl.style.width = `${newWidth}px`;
+      try {
+        localStorage.setItem(storageKey, `${newWidth}px`);
+      } catch {}
+    };
+
+    const onMouseUp = () => {
+      if (isDragging) {
+        isDragging = false;
+        resizerEl.classList.remove('resizing');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        if (dom.previewIframe) dom.previewIframe.style.pointerEvents = 'auto';
+        targetIframes.forEach((ifr) => {
+          if (ifr) ifr.style.pointerEvents = 'auto';
+        });
+      }
+    };
+
+    resizerEl.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    resizerEl.addEventListener('touchstart', () => {
+      isDragging = true;
+      resizerEl.classList.add('resizing');
+      targetIframes.forEach((ifr) => {
+        if (ifr) ifr.style.pointerEvents = 'none';
+      });
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+      if (!isDragging || !e.touches[0]) return;
+      const clientX = e.touches[0].clientX;
+      const minWidth = 260;
+      const maxWidth = Math.min(800, window.innerWidth - 300);
+      const newWidth = Math.max(minWidth, Math.min(maxWidth, clientX));
+      sidebarEl.style.width = `${newWidth}px`;
+      try {
+        localStorage.setItem(storageKey, `${newWidth}px`);
+      } catch {}
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => {
+      if (isDragging) {
+        isDragging = false;
+        resizerEl.classList.remove('resizing');
+        targetIframes.forEach((ifr) => {
+          if (ifr) ifr.style.pointerEvents = 'auto';
+        });
+      }
+    });
   };
 
-  const onMouseUp = () => {
-    if (isDragging) {
-      isDragging = false;
-      resizer.classList.remove('resizing');
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      if (dom.previewIframe) dom.previewIframe.style.pointerEvents = 'auto';
-      autoFitPreview();
-    }
-  };
-
-  resizer.addEventListener('mousedown', onMouseDown);
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup', onMouseUp);
-
-  resizer.addEventListener('touchstart', () => {
-    isDragging = true;
-    resizer.classList.add('resizing');
-    if (dom.previewIframe) dom.previewIframe.style.pointerEvents = 'none';
-  }, { passive: true });
-  document.addEventListener('touchmove', (e) => {
-    if (!isDragging || !e.touches[0]) return;
-    const clientX = e.touches[0].clientX;
-    const minWidth = 240;
-    const maxWidth = 520;
-    const newWidth = Math.max(minWidth, Math.min(maxWidth, clientX));
-    sidebar.style.width = `${newWidth}px`;
-  }, { passive: true });
-  document.addEventListener('touchend', () => {
-    if (isDragging) {
-      isDragging = false;
-      resizer.classList.remove('resizing');
-      if (dom.previewIframe) dom.previewIframe.style.pointerEvents = 'auto';
-      autoFitPreview();
-    }
-  });
+  setupResizer(dom.panelResizer, dom.catalogSidebar, 'zundeck_sidebar_w', [dom.previewIframe]);
+  setupResizer(document.getElementById('editor-panel-resizer'), document.getElementById('editor-sidebar'), 'zundeck_editor_sidebar_w', [dom.editorPreviewIframe]);
 }
 
 // --- Mother Showcase Blueprint Clone-on-Edit & Reset Demo ---
