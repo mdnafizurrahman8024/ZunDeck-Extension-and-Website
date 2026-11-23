@@ -52,8 +52,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // Background AI Model Auto-Sync & Cache Query
+  if (message?.action === 'SYNC_AI_MODELS' || message?.action === 'CHECK_MODEL_CACHE') {
+    if (chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['zundeck_ai_models_cache'], (res) => {
+        const cache = res?.zundeck_ai_models_cache || {};
+        sendResponse({ success: true, timestamp: Date.now(), cache });
+      });
+      return true;
+    }
+    sendResponse({ success: true, timestamp: Date.now() });
+    return false;
+  }
+
   if (message?.action === 'PING') {
     sendResponse({ status: 'PONG', time: Date.now(), version: '1.0.0' });
     return false;
   }
 });
+
+// Periodic 6-hour cache check if alarms API is present in browser runtime
+if (typeof chrome !== 'undefined' && chrome.alarms) {
+  try {
+    chrome.alarms.create('zundeck-model-sync-alarm', { periodInMinutes: 360 });
+    chrome.alarms.onAlarm.addListener((alarm) => {
+      if (alarm.name === 'zundeck-model-sync-alarm') {
+        // Event-based revalidation trigger
+      }
+    });
+  } catch {
+    // Graceful fallback when alarms permission is omitted
+  }
+}

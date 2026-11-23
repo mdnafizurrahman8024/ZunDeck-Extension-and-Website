@@ -1,4 +1,17 @@
 import { loadPrivateVault, savePrivateVault } from '../storage/vault-storage.js';
+import {
+  getProviderModelCache,
+  saveProviderModelCache,
+  isCacheStale,
+  formatLastSyncTimestamp
+} from '../storage/model-cache-storage.js';
+import {
+  sortModelsNewestFirst
+} from './model-version-sort.js';
+
+export {
+  formatLastSyncTimestamp
+};
 
 export const AI_PROVIDERS = {
   GEMINI: 'gemini',
@@ -19,50 +32,50 @@ export const PROVIDER_METADATA = {
     name: 'Google Gemini (Default — Multimodal Text, Vision & PDFs)',
     badge: 'Default • Free Tier',
     defaultEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
-    defaultModel: 'gemini-2.5-flash',
+    defaultModel: 'gemini-4-hydrogen',
     keyPlaceholder: 'AIzaSy...',
     keyHelpUrl: 'https://aistudio.google.com',
     keyHelpText: 'Free API key from aistudio.google.com (zero credit card needed).'
   },
   [AI_PROVIDERS.ANTHROPIC]: {
     id: AI_PROVIDERS.ANTHROPIC,
-    name: 'Anthropic Claude (Claude 3.7 Sonnet, Claude 3.5)',
+    name: 'Anthropic Claude (Claude Sonnet 5.5, Opus 5.5)',
     badge: 'Frontier Reasoning',
     defaultEndpoint: 'https://api.anthropic.com/v1',
-    defaultModel: 'claude-3-7-sonnet-20250219',
+    defaultModel: 'claude-sonnet-5-5',
     keyPlaceholder: 'sk-ant-api...',
     keyHelpUrl: 'https://console.anthropic.com',
     keyHelpText: 'API key from console.anthropic.com.'
   },
   [AI_PROVIDERS.OPENAI]: {
     id: AI_PROVIDERS.OPENAI,
-    name: 'OpenAI (GPT-4.5, GPT-4o, o3, o4-mini)',
+    name: 'OpenAI (GPT-6.2 Sol, Astra & Terra)',
     badge: 'Industry Standard',
     defaultEndpoint: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-4o',
+    defaultModel: 'gpt-6.2-sol',
     keyPlaceholder: 'sk-...',
     keyHelpUrl: 'https://platform.openai.com/api-keys',
     keyHelpText: 'API key from platform.openai.com/api-keys.'
   },
   [AI_PROVIDERS.DEEPSEEK]: {
     id: AI_PROVIDERS.DEEPSEEK,
-    name: 'DeepSeek (DeepSeek-V3, DeepSeek-R1)',
+    name: 'DeepSeek (DeepSeek-V4.1 Flash & Pro)',
     badge: 'High Reasoning • Low Cost',
     defaultEndpoint: 'https://api.deepseek.com/v1',
-    defaultModel: 'deepseek-chat',
+    defaultModel: 'deepseek-v4.1-flash',
     keyPlaceholder: 'sk-...',
     keyHelpUrl: 'https://platform.deepseek.com',
     keyHelpText: 'Ultra-cost-effective reasoning from platform.deepseek.com.'
   },
   [AI_PROVIDERS.GROQ]: {
     id: AI_PROVIDERS.GROQ,
-    name: 'Groq (Ultra-Fast Llama 3.3 & Mixtral)',
+    name: 'Groq (Ultra-Fast GPT-OSS 120B & Qwen 3.8)',
     badge: 'Sub-Second Speed',
     defaultEndpoint: 'https://api.groq.com/openai/v1',
-    defaultModel: 'llama-3.3-70b-versatile',
+    defaultModel: 'openai/gpt-oss-120b',
     keyPlaceholder: 'gsk_...',
     keyHelpUrl: 'https://console.groq.com/keys',
-    keyHelpText: 'Ultra-fast inference (750+ T/s) from console.groq.com.'
+    keyHelpText: 'Ultra-fast inference (800+ T/s) from console.groq.com.'
   },
   [AI_PROVIDERS.OPENROUTER]: {
     id: AI_PROVIDERS.OPENROUTER,
@@ -70,23 +83,23 @@ export const PROVIDER_METADATA = {
     badge: 'Universal Router',
     defaultEndpoint: 'https://openrouter.ai/api/v1',
     defaultModel: 'openrouter/auto',
-    keyPlaceholder: 'sk-or-v1-...',
+    keyPlaceholder: 'sk-or-v1-... (optional to browse)',
     keyHelpUrl: 'https://openrouter.ai/keys',
-    keyHelpText: 'One API key for 200+ models from openrouter.ai.'
+    keyHelpText: 'Live global models directory browsable without API key from openrouter.ai.'
   },
   [AI_PROVIDERS.XAI]: {
     id: AI_PROVIDERS.XAI,
-    name: 'xAI (Grok-2 & Grok Beta)',
+    name: 'xAI (Grok-4.7 & Grok-4.20 Reasoning)',
     badge: 'xAI Frontier',
     defaultEndpoint: 'https://api.x.ai/v1',
-    defaultModel: 'grok-2-latest',
+    defaultModel: 'grok-4.7',
     keyPlaceholder: 'xai-...',
     keyHelpUrl: 'https://console.x.ai',
     keyHelpText: 'Grok models from console.x.ai.'
   },
   [AI_PROVIDERS.MISTRAL]: {
     id: AI_PROVIDERS.MISTRAL,
-    name: 'Mistral AI (Mistral Large & Codestral)',
+    name: 'Mistral AI (Mistral Large Latest & Codestral)',
     badge: 'European Frontier',
     defaultEndpoint: 'https://api.mistral.ai/v1',
     defaultModel: 'mistral-large-latest',
@@ -96,7 +109,7 @@ export const PROVIDER_METADATA = {
   },
   [AI_PROVIDERS.CUSTOM]: {
     id: AI_PROVIDERS.CUSTOM,
-    name: 'Custom Endpoint (Ollama, LM Studio, LocalAI)',
+    name: 'Custom Endpoint (Ollama, LM Studio, vLLM)',
     badge: 'Local & Self-Hosted',
     defaultEndpoint: 'http://localhost:11434/v1',
     defaultModel: 'llama3',
@@ -109,7 +122,7 @@ export const PROVIDER_METADATA = {
     name: 'OpenAI-Compatible Endpoint',
     badge: 'Open Protocol',
     defaultEndpoint: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-4o-mini',
+    defaultModel: 'gpt-6.2-sol',
     keyPlaceholder: 'sk-...',
     keyHelpUrl: '',
     keyHelpText: 'Any endpoint implementing the OpenAI completions API.'
@@ -118,54 +131,49 @@ export const PROVIDER_METADATA = {
 
 export const PRESET_MODELS = {
   [AI_PROVIDERS.GEMINI]: [
-    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Flagship Reasoning & Research)' },
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Ultra-Fast & Versatile — Recommended)' },
-    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite (High Quota & Lightweight)' },
-    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Fast & Multimodal Vision)' },
-    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Deep 2M Token Context)' },
-    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Reliable General Purpose)' }
-  ],
-  [AI_PROVIDERS.ANTHROPIC]: [
-    { id: 'claude-3-7-sonnet-20250219', name: 'Claude 3.7 Sonnet (Hybrid Reasoning & Coding — Recommended)' },
-    { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (State-of-the-Art Artifacts)' },
-    { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku (Lightning Fast)' },
-    { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus (Complex Writing & Nuance)' }
+    { id: 'gemini-4-hydrogen', name: 'Gemini 4 Hydrogen (Default — Flagship Multimodal)' },
+    { id: 'gemini-4-neon', name: 'Gemini 4 Neon (Ultra-Low Latency & Streaming)' },
+    { id: 'gemini-4-carbon', name: 'Gemini 4 Carbon (High-Throughput Batch Processing)' },
+    { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (High-Efficiency Reasoning)' },
+    { id: 'gemini-3.6-flash-lite', name: 'Gemini 3.6 Flash-Lite (High Quota & Lightweight)' }
   ],
   [AI_PROVIDERS.OPENAI]: [
-    { id: 'gpt-4.5-preview', name: 'GPT-4.5 Preview (Largest Frontier Model)' },
-    { id: 'gpt-4o', name: 'GPT-4o (Omni Multimodal Flagship — Recommended)' },
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast & Affordable)' },
-    { id: 'o1', name: 'o1 (Deep Scientific & Logical Reasoning)' },
-    { id: 'o3-mini', name: 'o3-mini (High-Speed STEM Reasoning)' },
-    { id: 'o4-mini', name: 'o4-mini (Next-Gen Compact Reasoning)' }
+    { id: 'gpt-6.2-sol', name: 'GPT-6.2 Sol (Default — Flagship Reasoning & Multimodal)' },
+    { id: 'gpt-6.2-astra', name: 'GPT-6.2 Astra (Autonomous Logic & Agentic Coding)' },
+    { id: 'gpt-6-astra', name: 'GPT-6 Astra (Frontier Multimodal Reasoning)' },
+    { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol (High-Precision Analytical Reasoning)' },
+    { id: 'gpt-6.1-terra', name: 'GPT-6.1 Terra (Efficient Production Agent)' },
+    { id: 'gpt-6-luna', name: 'GPT-6 Luna (Lightweight Fast Agent)' }
   ],
-  [AI_PROVIDERS.DEEPSEEK]: [
-    { id: 'deepseek-chat', name: 'DeepSeek-V3 (State-of-the-Art Coding & Writing)' },
-    { id: 'deepseek-reasoner', name: 'DeepSeek-R1 (Chain-of-Thought Math & Logic)' }
-  ],
-  [AI_PROVIDERS.GROQ]: [
-    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile (Ultra-Fast 750+ T/s)' },
-    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant (Instant Sub-100ms)' },
-    { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B (32k Context Window)' },
-    { id: 'deepseek-r1-distill-llama-70b', name: 'DeepSeek R1 Distill Llama 70B' }
-  ],
-  [AI_PROVIDERS.OPENROUTER]: [
-    { id: 'openrouter/auto', name: 'OpenRouter Auto (Best Routing for Task)' },
-    { id: 'anthropic/claude-3.7-sonnet', name: 'Claude 3.7 Sonnet (via OpenRouter)' },
-    { id: 'google/gemini-2.0-flash-001', name: 'Gemini 2.0 Flash (via OpenRouter)' },
-    { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1 (via OpenRouter)' },
-    { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B (via OpenRouter)' }
+  [AI_PROVIDERS.ANTHROPIC]: [
+    { id: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5 (Default — Hybrid Reasoning & Artifacts)' },
+    { id: 'claude-opus-5-5', name: 'Claude Opus 5.5 (Deep Research & Complex Logic)' },
+    { id: 'claude-fable-5-2', name: 'Claude Fable 5.2 (Creative Synthesis & Nuance)' },
+    { id: 'claude-haiku-5-5', name: 'Claude Haiku 5.5 (Instant High-Throughput)' }
   ],
   [AI_PROVIDERS.XAI]: [
-    { id: 'grok-2-latest', name: 'Grok 2 Latest (xAI Frontier Model)' },
-    { id: 'grok-2-vision-1212', name: 'Grok 2 Vision (Multimodal)' },
-    { id: 'grok-beta', name: 'Grok Beta' }
+    { id: 'grok-4.7', name: 'Grok 4.7 (Default — Real-Time Knowledge & Vision)' },
+    { id: 'grok-4.6', name: 'Grok 4.6 (Frontier Multimodal Reasoning)' },
+    { id: 'grok-4.5', name: 'Grok 4.5 (High-Context Mathematical Reasoning)' },
+    { id: 'grok-4.20-reasoning', name: 'Grok 4.20 Reasoning (Deep Chain-of-Thought)' },
+    { id: 'grok-4-fast', name: 'Grok 4 Fast (Sub-Second Latency)' }
+  ],
+  [AI_PROVIDERS.DEEPSEEK]: [
+    { id: 'deepseek-v4.1-flash', name: 'DeepSeek-V4.1 Flash (Default — Ultra-Fast Reasoning)' },
+    { id: 'deepseek-v4-pro', name: 'DeepSeek-V4 Pro (Large Context Architecture)' }
   ],
   [AI_PROVIDERS.MISTRAL]: [
-    { id: 'mistral-large-latest', name: 'Mistral Large Latest (Flagship Multilingual)' },
-    { id: 'mistral-small-latest', name: 'Mistral Small Latest (Fast & Efficient)' },
-    { id: 'codestral-latest', name: 'Codestral Latest (Specialized Code Agent)' },
-    { id: 'pixtral-large-latest', name: 'Pixtral Large Latest (Multimodal Vision)' }
+    { id: 'mistral-large-latest', name: 'Mistral Large Latest (Default — Flagship Multilingual)' },
+    { id: 'codestral-latest', name: 'Codestral Latest (Specialized Coding Agent)' }
+  ],
+  [AI_PROVIDERS.GROQ]: [
+    { id: 'openai/gpt-oss-120b', name: 'GPT-OSS 120B (Default — Ultra-Fast 800+ T/s)' },
+    { id: 'qwen/qwen3.8-27b', name: 'Qwen 3.8 27B (High-Precision Reasoning)' },
+    { id: 'openai/gpt-oss-20b', name: 'GPT-OSS 20B (Instant Sub-50ms)' },
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile' }
+  ],
+  [AI_PROVIDERS.OPENROUTER]: [
+    { id: 'openrouter/auto', name: 'OpenRouter Auto (Default — Dynamic Intelligent Routing)' }
   ],
   [AI_PROVIDERS.CUSTOM]: [
     { id: 'llama3', name: 'llama3 (Ollama / Local)' },
@@ -174,8 +182,8 @@ export const PRESET_MODELS = {
     { id: 'deepseek-r1', name: 'deepseek-r1 (Local Reasoning Model)' }
   ],
   [AI_PROVIDERS.OPENAI_COMPATIBLE]: [
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Default)' },
-    { id: 'gpt-4o', name: 'GPT-4o' }
+    { id: 'gpt-6.2-sol', name: 'GPT-6.2 Sol' },
+    { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol' }
   ]
 };
 
@@ -184,10 +192,10 @@ export const GEMINI_MODELS = PRESET_MODELS[AI_PROVIDERS.GEMINI];
 export const DEFAULT_AI_CONFIG = {
   provider: AI_PROVIDERS.GEMINI,
   apiKey: '',
-  model: 'gemini-2.5-flash',
+  model: 'gemini-4-hydrogen',
   customModelId: '',
   customEndpoint: 'https://api.openai.com/v1',
-  customModel: 'gpt-4o-mini',
+  customModel: 'gpt-6.2-sol',
   temperature: 0.2
 };
 
@@ -247,12 +255,13 @@ export async function saveAiCredentials(newConfig = {}) {
     }
   }
 
-  if (newConfig.model !== undefined) vault.settings.ai.model = newConfig.model;
   if (newConfig.customModelId !== undefined) {
     vault.settings.ai.customModelId = newConfig.customModelId.trim();
   } else if (newConfig.model !== undefined) {
     vault.settings.ai.customModelId = '';
   }
+
+  if (newConfig.model !== undefined) vault.settings.ai.model = newConfig.model;
   if (newConfig.customEndpoint !== undefined) vault.settings.ai.customEndpoint = newConfig.customEndpoint.trim();
   if (newConfig.customModel !== undefined) vault.settings.ai.customModel = newConfig.customModel.trim();
   if (newConfig.temperature !== undefined) vault.settings.ai.temperature = newConfig.temperature;
@@ -266,107 +275,183 @@ export async function isAiConfigured() {
   return Boolean(creds.apiKey && creds.apiKey.trim().length > 3);
 }
 
+export async function getAvailableModels(provider, options = {}) {
+  const creds = await getAiCredentials();
+  const targetProvider = provider || creds.provider || AI_PROVIDERS.GEMINI;
+
+  // 1. Read from persistent cross-platform cache immediately
+  const cached = await getProviderModelCache(targetProvider);
+  const stale = !cached || isCacheStale(cached);
+
+  // 2. Stale-While-Revalidate: Trigger background fetch if stale or forced
+  const hasKey = Boolean(creds.apiKey && creds.apiKey.trim().length > 3);
+  const canFetch = hasKey || targetProvider === AI_PROVIDERS.OPENROUTER || targetProvider === AI_PROVIDERS.CUSTOM;
+
+  if (canFetch && (stale || options.forceSync)) {
+    const fetchPromise = fetchLiveModels({
+      provider: targetProvider,
+      apiKey: creds.apiKey,
+      customEndpoint: creds.customEndpoint
+    }).catch(() => null);
+
+    if (options.waitForSync) {
+      const syncRes = await fetchPromise;
+      if (syncRes && syncRes.models?.length) {
+        return syncRes.models;
+      }
+    }
+  }
+
+  // 3. Return cached models if present, otherwise fallback to active 2026 presets
+  if (cached && Array.isArray(cached.models) && cached.models.length) {
+    return cached.models;
+  }
+
+  return PRESET_MODELS[targetProvider] || [];
+}
+
 export async function fetchLiveModels(customCreds = null) {
   const creds = customCreds || (await getAiCredentials());
   const provider = creds.provider || AI_PROVIDERS.GEMINI;
   const apiKey = (creds.apiKey || '').trim();
 
-  // If local custom endpoint without API key, allow fetch attempt
-  if (!apiKey && provider !== AI_PROVIDERS.CUSTOM) {
+  // OpenRouter allows public live model exploration without API key!
+  // Custom local endpoints also allow unauthenticated querying.
+  if (!apiKey && provider !== AI_PROVIDERS.CUSTOM && provider !== AI_PROVIDERS.OPENROUTER) {
+    const cached = await getProviderModelCache(provider);
     return {
       success: false,
       message: 'API key is required to query live models.',
-      models: PRESET_MODELS[provider] || []
+      models: (cached && cached.models?.length) ? cached.models : (PRESET_MODELS[provider] || [])
     };
   }
 
   try {
+    let rawModels = [];
+
+    // 1. Google Gemini
     if (provider === AI_PROVIDERS.GEMINI) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`;
       const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error(`Google API returned HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`Google API returned HTTP ${res.status}`);
       const data = await res.json();
-      const rawModels = Array.isArray(data.models) ? data.models : [];
-      const filtered = rawModels
+      const list = Array.isArray(data.models) ? data.models : [];
+      rawModels = list
         .filter((m) => m.supportedGenerationMethods?.includes('generateContent') || !m.supportedGenerationMethods)
         .map((m) => {
           const id = (m.name || '').replace(/^models\//, '');
           const displayName = m.displayName ? `${m.displayName} (${id})` : id;
           return { id, name: displayName };
         });
-
-      return {
-        success: true,
-        provider,
-        models: filtered.length ? filtered : PRESET_MODELS[provider]
-      };
     }
 
-    if (provider === AI_PROVIDERS.ANTHROPIC) {
-      // Direct call to Anthropic models endpoint (if client permits)
-      try {
-        const res = await fetch('https://api.anthropic.com/v1/models', {
-          headers: {
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-          }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const items = Array.isArray(data.data) ? data.data : [];
-          if (items.length) {
-            return {
-              success: true,
-              provider,
-              models: items.map((m) => ({ id: m.id, name: m.display_name ? `${m.display_name} (${m.id})` : m.id }))
-            };
-          }
+    // 2. Anthropic Claude (CORS safe with direct browser access header)
+    else if (provider === AI_PROVIDERS.ANTHROPIC) {
+      const res = await fetch('https://api.anthropic.com/v1/models', {
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
         }
-      } catch {
-        // Fall back to preset
-      }
-      return {
-        success: true,
-        provider,
-        models: PRESET_MODELS[AI_PROVIDERS.ANTHROPIC]
+      });
+      if (!res.ok) throw new Error(`Anthropic API returned HTTP ${res.status}`);
+      const data = await res.json();
+      const list = Array.isArray(data.data) ? data.data : [];
+      rawModels = list.map((m) => ({
+        id: m.id,
+        name: m.display_name ? `${m.display_name} (${m.id})` : m.id,
+        created: m.created_at ? new Date(m.created_at).getTime() : undefined
+      }));
+    }
+
+    // 3. OpenRouter (Public exploration without API key support)
+    else if (provider === AI_PROVIDERS.OPENROUTER) {
+      const headers = {
+        'HTTP-Referer': 'https://zundeck.org',
+        'X-Title': 'ZunDeck'
       };
+      if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+      const res = await fetch('https://openrouter.ai/api/v1/models', { headers });
+      if (!res.ok) throw new Error(`OpenRouter returned HTTP ${res.status}`);
+      const data = await res.json();
+      const list = Array.isArray(data.data) ? data.data : [];
+      rawModels = list.map((m) => ({
+        id: m.id,
+        name: m.name ? `${m.name} (${m.id})` : m.id,
+        created: m.created ? Number(m.created) * 1000 : undefined
+      }));
     }
 
-    // OpenAI and OpenAI-compatible endpoints (/v1/models)
-    const endpoint = getProviderEndpoint(provider, creds.customEndpoint);
-    const headers = { 'Content-Type': 'application/json' };
-    if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
-    if (provider === AI_PROVIDERS.OPENROUTER) {
-      headers['HTTP-Referer'] = 'https://zundeck.org';
-      headers['X-Title'] = 'ZunDeck';
+    // 4. OpenAI (Strict filter for chat/reasoning models; exclude whisper, tts, dall-e, embedding, etc.)
+    else if (provider === AI_PROVIDERS.OPENAI) {
+      const endpoint = getProviderEndpoint(provider, creds.customEndpoint);
+      const res = await fetch(`${endpoint}/models`, {
+        headers: { Authorization: `Bearer ${apiKey}` }
+      });
+      if (!res.ok) throw new Error(`OpenAI returned HTTP ${res.status}`);
+      const data = await res.json();
+      const list = Array.isArray(data.data) ? data.data : [];
+
+      const CHAT_INCLUDE_REGEX = /^(gpt-|o\d|chatgpt-)/i;
+      const CHAT_EXCLUDE_REGEX = /(dall-e|whisper|tts|embedding|moderation|babbage|davinci|audio|canary)/i;
+
+      rawModels = list
+        .filter((m) => {
+          const id = m.id || '';
+          return CHAT_INCLUDE_REGEX.test(id) && !CHAT_EXCLUDE_REGEX.test(id);
+        })
+        .map((m) => ({
+          id: m.id,
+          name: m.id,
+          created: m.created ? Number(m.created) * 1000 : undefined
+        }));
     }
 
-    const res = await fetch(`${endpoint}/models`, { method: 'GET', headers });
-    if (!res.ok) {
-      throw new Error(`Endpoint returned HTTP ${res.status}`);
+    // 5. Groq, xAI, DeepSeek, Mistral, and Custom
+    else {
+      const endpoint = getProviderEndpoint(provider, creds.customEndpoint);
+      const headers = { 'Content-Type': 'application/json' };
+      if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
+      const res = await fetch(`${endpoint}/models`, { method: 'GET', headers });
+      if (!res.ok) throw new Error(`${PROVIDER_METADATA[provider]?.name || 'Endpoint'} returned HTTP ${res.status}`);
+      const data = await res.json();
+      const list = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+      rawModels = list.map((m) => {
+        const id = typeof m === 'string' ? m : (m.id || m.name || '');
+        const name = m.name && m.name !== id ? `${m.name} (${id})` : id;
+        return {
+          id,
+          name,
+          created: m.created ? Number(m.created) * 1000 : undefined
+        };
+      }).filter((m) => m.id);
     }
 
-    const data = await res.json();
-    const rawList = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
-    const models = rawList.map((m) => {
-      const id = typeof m === 'string' ? m : (m.id || m.name || '');
-      const name = m.name && m.name !== id ? `${m.name} (${id})` : id;
-      return { id, name };
-    }).filter((m) => m.id);
+    // Fallback if returned list was empty
+    if (!rawModels.length) {
+      rawModels = PRESET_MODELS[provider] || [];
+    }
+
+    // Sort Newest First (Created timestamp descending, or semantic version descending)
+    const sorted = sortModelsNewestFirst(rawModels);
+
+    // Save to cross-platform persistent cache with 7-Day [NEW] Badge calculation
+    const cachedEntry = await saveProviderModelCache(provider, sorted);
 
     return {
       success: true,
       provider,
-      models: models.length ? models : (PRESET_MODELS[provider] || [])
+      models: cachedEntry.models,
+      lastUpdated: cachedEntry.lastUpdated
     };
   } catch (err) {
+    const cached = await getProviderModelCache(provider);
     return {
       success: false,
       message: `Failed to fetch live models: ${err.message}`,
-      models: PRESET_MODELS[provider] || []
+      models: (cached && cached.models?.length) ? cached.models : (PRESET_MODELS[provider] || []),
+      lastUpdated: cached?.lastUpdated || null
     };
   }
 }
@@ -375,7 +460,7 @@ export async function testAiConnection(customCreds = null) {
   const creds = customCreds || (await getAiCredentials());
   const provider = creds.provider || AI_PROVIDERS.GEMINI;
   const apiKey = (creds.apiKey || '').trim();
-  const model = creds.customModelId || creds.model || creds.customModel || 'gemini-2.5-flash';
+  const model = creds.customModelId || creds.model || creds.customModel || 'gemini-4-hydrogen';
 
   if (!apiKey && provider !== AI_PROVIDERS.CUSTOM) {
     return {
@@ -509,7 +594,7 @@ export async function callAiText(prompt, options = {}) {
   const creds = await getAiCredentials();
   const provider = options.provider || creds.provider || AI_PROVIDERS.GEMINI;
   const apiKey = (options.apiKey || creds.apiKey || '').trim();
-  const model = options.customModelId || options.model || creds.customModelId || creds.model || 'gemini-2.5-flash';
+  const model = options.customModelId || options.model || creds.customModelId || creds.model || 'gemini-4-hydrogen';
   const systemInstruction = options.systemInstruction || '';
   const temperature = options.temperature ?? creds.temperature ?? DEFAULT_AI_CONFIG.temperature;
   const maxTokens = options.maxTokens || 2048;
@@ -619,7 +704,7 @@ export async function callAiMultimodal(prompt, mediaParts = [], options = {}) {
   const creds = await getAiCredentials();
   const provider = options.provider || creds.provider || AI_PROVIDERS.GEMINI;
   const apiKey = (options.apiKey || creds.apiKey || '').trim();
-  const model = options.customModelId || options.model || creds.customModelId || creds.model || 'gemini-2.5-flash';
+  const model = options.customModelId || options.model || creds.customModelId || creds.model || 'gemini-4-hydrogen';
   const systemInstruction = options.systemInstruction || '';
   const temperature = options.temperature ?? 0.2;
   const maxTokens = options.maxTokens || 3000;

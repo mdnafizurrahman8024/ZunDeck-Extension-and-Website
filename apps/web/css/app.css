@@ -4524,6 +4524,13 @@ button, input, select {
   margin: 0;
 }
 
+.model-last-updated {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: auto;
+}
+
 .vibe-settings-actions {
   display: flex;
   justify-content: flex-end;

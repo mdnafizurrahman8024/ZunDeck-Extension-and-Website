@@ -8,6 +8,7 @@ import {
   saveAiCredentials,
   testAiConnection,
   fetchLiveModels,
+  getAvailableModels,
   isAiConfigured,
   AI_PROVIDERS,
   PROVIDER_METADATA,
@@ -15,6 +16,10 @@ import {
   GEMINI_MODELS,
   callAiText
 } from '../ai/byok-client.js';
+import {
+  getProviderModelCache,
+  formatLastSyncTimestamp
+} from '../storage/model-cache-storage.js';
 import {
   PROMPT_LIBRARY,
   generateStructuredPrompt
@@ -282,8 +287,9 @@ export function renderVibeStudioHtml(state = {}) {
             <div class="form-group" id="group-ai-model">
               <div class="model-select-header">
                 <label class="form-label" for="select-ai-model">Select Model</label>
-                <button type="button" class="btn-micro btn-outline" id="btn-fetch-live-models" title="Fetch current live model catalog from provider">
-                  <i class="fa-solid fa-arrows-rotate"></i> Fetch Live Models
+                <span class="model-last-updated" id="model-last-updated">Last updated: Just now</span>
+                <button type="button" class="btn-micro btn-outline" id="btn-sync-models" data-alias="btn-fetch-live-models" title="Sync live model catalog from provider">
+                  <i class="fa-solid fa-arrows-rotate"></i> Sync Models
                 </button>
               </div>
               <select id="select-ai-model" class="form-select">
@@ -293,7 +299,7 @@ export function renderVibeStudioHtml(state = {}) {
 
             <div class="form-group" id="group-custom-model-id">
               <label class="form-label" for="input-custom-model-id">Custom Model ID (Optional Override)</label>
-              <input type="text" id="input-custom-model-id" class="form-input" placeholder="e.g. gemini-2.5-pro or claude-3-7-sonnet-20250219">
+              <input type="text" id="input-custom-model-id" class="form-input" placeholder="e.g. gemini-4-hydrogen or gpt-6.2-sol">
               <span class="form-hint">Override preset list with any exact model identifier.</span>
             </div>
 
@@ -515,10 +521,19 @@ export class VibeStudioController {
       await this.handleProviderChange(e.target.value);
     });
 
-    // Fetch Live Models Button
-    const btnFetchModels = this.container.querySelector('#btn-fetch-live-models');
-    btnFetchModels?.addEventListener('click', async () => {
+    // Sync / Fetch Live Models Button
+    const btnSyncModels = this.container.querySelector('#btn-sync-models') || this.container.querySelector('#btn-fetch-live-models');
+    btnSyncModels?.addEventListener('click', async () => {
       await this.runFetchLiveModels();
+    });
+
+    // Auto-sync on API Key blur or input change
+    const inpAiKey = this.container.querySelector('#input-ai-key');
+    inpAiKey?.addEventListener('blur', async () => {
+      const key = (inpAiKey.value || '').trim();
+      if (key.length > 5) {
+        await this.runFetchLiveModels(true);
+      }
     });
 
     // Test connection button
@@ -781,17 +796,24 @@ Output ONLY the structured prompt with zero filler preamble.`;
     const hint = this.container.querySelector('#hint-ai-provider');
     const inpEndpoint = this.container.querySelector('#input-custom-endpoint');
     const selectModel = this.container.querySelector('#select-ai-model');
+    const lastUpdatedEl = this.container.querySelector('#model-last-updated');
 
     const isCustom = provider === AI_PROVIDERS.CUSTOM || provider === AI_PROVIDERS.OPENAI_COMPATIBLE;
     if (groupEndpoint) groupEndpoint.style.display = isCustom ? 'block' : 'none';
     if (inpEndpoint && !inpEndpoint.value) inpEndpoint.value = meta.defaultEndpoint;
     if (hint) hint.innerHTML = meta.keyHelpText;
 
-    // Populate model options from presets
-    const models = PRESET_MODELS[provider] || [];
+    // Load available models from persistent cache or 2026 presets (stale-while-revalidate)
+    const models = await getAvailableModels(provider);
+    const cache = await getProviderModelCache(provider);
+
+    if (lastUpdatedEl) {
+      lastUpdatedEl.textContent = `Last updated: ${formatLastSyncTimestamp(cache?.lastUpdated)}`;
+    }
+
     if (selectModel) {
       selectModel.innerHTML = models.map((m) => `
-        <option value="${m.id}" ${selectedModel === m.id ? 'selected' : ''}>${escapeHtml(m.name)}</option>
+        <option value="${m.id}" ${selectedModel === m.id ? 'selected' : ''}>${escapeHtml(m.name)}${m.isNew ? ' [NEW]' : ''}</option>
       `).join('');
       if (selectedModel && !models.some((m) => m.id === selectedModel)) {
         selectModel.innerHTML += `<option value="${selectedModel}" selected>${escapeHtml(selectedModel)} (Active)</option>`;
@@ -799,17 +821,18 @@ Output ONLY the structured prompt with zero filler preamble.`;
     }
   }
 
-  async runFetchLiveModels() {
-    const btn = this.container.querySelector('#btn-fetch-live-models');
+  async runFetchLiveModels(isBackground = false) {
+    const btn = this.container.querySelector('#btn-sync-models') || this.container.querySelector('#btn-fetch-live-models');
     const selectProv = this.container.querySelector('#select-ai-provider');
     const inpKey = this.container.querySelector('#input-ai-key');
     const inpEndpoint = this.container.querySelector('#input-custom-endpoint');
     const selectModel = this.container.querySelector('#select-ai-model');
+    const lastUpdatedEl = this.container.querySelector('#model-last-updated');
     const feedback = this.container.querySelector('#ai-test-status');
 
-    if (btn) {
+    if (btn && !isBackground) {
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
+      btn.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin"></i> Syncing...';
     }
 
     const provider = selectProv?.value || AI_PROVIDERS.GEMINI;
@@ -820,22 +843,30 @@ Output ONLY the structured prompt with zero filler preamble.`;
 
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Fetch Live Models';
+      btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Sync Models';
+    }
+
+    if (lastUpdatedEl) {
+      lastUpdatedEl.textContent = `Last updated: ${formatLastSyncTimestamp(res.lastUpdated || Date.now())}`;
     }
 
     if (res.success && Array.isArray(res.models) && res.models.length) {
+      const currentSelected = selectModel?.value;
       if (selectModel) {
         selectModel.innerHTML = res.models.map((m) => `
-          <option value="${m.id}">${escapeHtml(m.name)}</option>
+          <option value="${m.id}" ${currentSelected === m.id ? 'selected' : ''}>${escapeHtml(m.name)}${m.isNew ? ' [NEW]' : ''}</option>
         `).join('');
+        if (currentSelected && !res.models.some((m) => m.id === currentSelected)) {
+          selectModel.value = res.models[0]?.id || '';
+        }
       }
-      if (feedback) {
+      if (feedback && !isBackground) {
         feedback.style.display = 'block';
         feedback.className = 'ai-test-feedback success';
         feedback.innerHTML = `<i class="fa-solid fa-circle-check"></i> Found ${res.models.length} live models for ${PROVIDER_METADATA[provider]?.name || provider}.`;
       }
     } else {
-      if (feedback) {
+      if (feedback && !isBackground) {
         feedback.style.display = 'block';
         feedback.className = 'ai-test-feedback error';
         feedback.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(res.message || 'Could not fetch live models. Presets remain available.')}`;

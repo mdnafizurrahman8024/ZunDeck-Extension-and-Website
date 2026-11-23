@@ -58,19 +58,19 @@ test('1. BYOK AI Client supports all major providers and latest model presets', 
 
   // Verify flagship models
   const geminiModels = PRESET_MODELS[AI_PROVIDERS.GEMINI].map((m) => m.id);
-  assert.ok(geminiModels.includes('gemini-2.5-pro'), 'Includes Gemini 2.5 Pro');
-  assert.ok(geminiModels.includes('gemini-2.5-flash'), 'Includes Gemini 2.5 Flash');
-  assert.ok(geminiModels.includes('gemini-2.5-flash-lite'), 'Includes Gemini 2.5 Flash-Lite');
+  assert.ok(geminiModels.includes('gemini-4-hydrogen'), 'Includes Gemini 4 Hydrogen');
+  assert.ok(geminiModels.includes('gemini-4-neon'), 'Includes Gemini 4 Neon');
+  assert.ok(geminiModels.includes('gemini-3.8-flash'), 'Includes Gemini 3.8 Flash');
 
   const claudeModels = PRESET_MODELS[AI_PROVIDERS.ANTHROPIC].map((m) => m.id);
-  assert.ok(claudeModels.some((id) => id.includes('claude-3-7-sonnet')), 'Includes Claude 3.7 Sonnet');
+  assert.ok(claudeModels.some((id) => id.includes('claude-sonnet-5-5')), 'Includes Claude Sonnet 5.5');
 
   const deepseekModels = PRESET_MODELS[AI_PROVIDERS.DEEPSEEK].map((m) => m.id);
-  assert.ok(deepseekModels.includes('deepseek-chat'), 'Includes DeepSeek-V3');
-  assert.ok(deepseekModels.includes('deepseek-reasoner'), 'Includes DeepSeek-R1');
+  assert.ok(deepseekModels.includes('deepseek-v4.1-flash'), 'Includes DeepSeek V4.1 Flash');
+  assert.ok(deepseekModels.includes('deepseek-v4-pro'), 'Includes DeepSeek V4 Pro');
 
   const groqModels = PRESET_MODELS[AI_PROVIDERS.GROQ].map((m) => m.id);
-  assert.ok(groqModels.some((id) => id.includes('llama-3.3-70b')), 'Includes Groq Llama 3.3');
+  assert.ok(groqModels.some((id) => id.includes('gpt-oss-120b')), 'Includes Groq GPT OSS 120B');
 });
 
 test('2. BYOK Credential Vault stores per-provider keys and custom model IDs safely', async () => {
@@ -78,7 +78,7 @@ test('2. BYOK Credential Vault stores per-provider keys and custom model IDs saf
   await saveAiCredentials({
     provider: AI_PROVIDERS.ANTHROPIC,
     apiKey: 'sk-ant-test-anthropic-key-12345',
-    model: 'claude-3-7-sonnet-20250219',
+    model: 'claude-sonnet-5-5',
     customModelId: 'claude-custom-special'
   });
 
@@ -92,13 +92,13 @@ test('2. BYOK Credential Vault stores per-provider keys and custom model IDs saf
   await saveAiCredentials({
     provider: AI_PROVIDERS.GEMINI,
     apiKey: 'AIzaSyTestGeminiKey12345',
-    model: 'gemini-2.5-flash'
+    model: 'gemini-4-hydrogen'
   });
 
   creds = await getAiCredentials();
   assert.strictEqual(creds.provider, AI_PROVIDERS.GEMINI);
   assert.strictEqual(creds.apiKey, 'AIzaSyTestGeminiKey12345');
-  assert.strictEqual(creds.model, 'gemini-2.5-flash');
+  assert.strictEqual(creds.model, 'gemini-4-hydrogen');
 
   const configured = await isAiConfigured();
   assert.strictEqual(configured, true);
@@ -112,7 +112,7 @@ test('3. Live Model Query returns valid fallback models when offline or unauthen
 
   assert.strictEqual(result.success, false);
   assert.ok(Array.isArray(result.models) && result.models.length > 0);
-  assert.ok(result.models.some((m) => m.id.includes('gpt-4o')));
+  assert.ok(result.models.some((m) => m.id.includes('gpt-6')));
 });
 
 test('4. Structured Pro Prompt Library defines 30 prompts across 6 distinct categories', () => {
