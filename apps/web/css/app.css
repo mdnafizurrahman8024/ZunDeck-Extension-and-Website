@@ -4135,6 +4135,31 @@ button, input, select {
   white-space: nowrap;
 }
 
+.vibe-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 12px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  transition: all 0.15s ease;
+}
+
+.vibe-mode-pill.mode-free {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.vibe-mode-pill.mode-byok {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
 .vibe-status-pill {
   display: inline-flex;
   align-items: center;
@@ -4762,6 +4787,52 @@ button, input, select {
   align-items: center;
   margin-bottom: 4px;
   gap: 8px;
+}
+
+.free-filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.73rem;
+  font-weight: 500;
+  color: #10b981;
+  cursor: pointer;
+  user-select: none;
+  background: rgba(16, 185, 129, 0.08);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  transition: all 0.15s ease;
+}
+
+.free-filter-label:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.free-filter-label input[type="checkbox"] {
+  accent-color: #10b981;
+  cursor: pointer;
+  margin: 0;
+}
+
+.banner-paid-unlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.77rem;
+  line-height: 1.35;
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.banner-paid-unlock i {
+  flex-shrink: 0;
+  font-size: 0.85rem;
 }
 
 .model-select-header .form-label {

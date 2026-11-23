@@ -14,7 +14,8 @@ import {
   PROVIDER_METADATA,
   PRESET_MODELS,
   GEMINI_MODELS,
-  callAiText
+  callAiText,
+  isOpenRouterFreeModel
 } from '../ai/byok-client.js';
 import {
   getProviderModelCache,
@@ -35,6 +36,7 @@ import {
 export function renderVibeStudioHtml(state = {}) {
   const isExtension = Boolean(state.isExtension);
   const isOnline = Boolean(state.isConfigured);
+  const hasPersonalKey = Boolean(state.hasPersonalKey);
   const messages = Array.isArray(state.messages) ? state.messages : [];
   const latestDiff = state.latestDiff || null;
   const isPromptPaneOpen = Boolean(state.isPromptPaneOpen);
@@ -46,7 +48,10 @@ export function renderVibeStudioHtml(state = {}) {
       <header class="vibe-top-bar">
         <div class="vibe-title-group">
           <span class="vibe-badge"><i class="fa-solid fa-terminal"></i> Vibe Coding Agent</span>
-          <span class="vibe-status-pill ${isOnline ? 'online' : 'offline'}" id="vibe-status-indicator" title="${isOnline ? 'Connected to BYOK AI Provider' : 'Offline Heuristics (Deterministic Rules)'}">
+          <span class="vibe-mode-pill ${hasPersonalKey ? 'mode-byok' : 'mode-free'}" id="vibe-mode-indicator" title="${hasPersonalKey ? 'Direct calls with your personal API key' : 'ZunDeck Built-in Free Tier (Zero-Cost Models)'}">
+            <span>${hasPersonalKey ? '🔑 Personal API Key' : '⚡ ZunDeck Free Tier'}</span>
+          </span>
+          <span class="vibe-status-pill ${isOnline ? 'online' : 'offline'}" id="vibe-status-indicator" title="${isOnline ? 'Connected to AI Engine' : 'Offline Heuristics (Deterministic Rules)'}">
             <span class="vibe-dot"></span>
             <span>${isOnline ? 'AI Connected' : 'Offline Heuristics'}</span>
           </span>
@@ -289,6 +294,10 @@ export function renderVibeStudioHtml(state = {}) {
             <div class="form-group" id="group-ai-model">
               <div class="model-select-header">
                 <label class="form-label" for="select-ai-model">Select Model</label>
+                <label class="free-filter-label" for="check-free-only" title="Filter to show only 100% free models">
+                  <input type="checkbox" id="check-free-only" class="form-checkbox">
+                  <span>Free Only</span>
+                </label>
                 <span class="model-last-updated" id="model-last-updated">Last updated: Just now</span>
                 <button type="button" class="btn-micro btn-outline" id="btn-sync-models" data-alias="btn-fetch-live-models" title="Sync live model catalog from provider">
                   <i class="fa-solid fa-arrows-rotate"></i> Sync Models
@@ -297,6 +306,10 @@ export function renderVibeStudioHtml(state = {}) {
               <select id="select-ai-model" class="form-select">
                 <!-- Dynamically populated -->
               </select>
+              <div class="banner-paid-unlock" id="banner-paid-unlock" style="display: none;">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Enter your own API key to unlock paid models, or switch to a FREE model.</span>
+              </div>
             </div>
 
             <div class="form-group" id="group-custom-model-id">
@@ -331,6 +344,9 @@ export class VibeStudioController {
     this.promptEngMessages = [];
     this.latestDiff = null;
     this.isConfigured = false;
+    this.hasPersonalKey = false;
+    this.executionMode = 'free';
+    this.freeOnly = false;
     this.isProcessing = false;
     this.isPromptPaneOpen = false;
     this.isKeyVisible = false;
@@ -339,6 +355,9 @@ export class VibeStudioController {
   }
 
   async init() {
+    const creds = await getAiCredentials();
+    this.hasPersonalKey = creds.hasPersonalKey;
+    this.executionMode = creds.executionMode;
     this.isConfigured = await isAiConfigured();
     this.render();
   }
@@ -353,6 +372,8 @@ export class VibeStudioController {
     this.container.innerHTML = renderVibeStudioHtml({
       isExtension: this.isExtension,
       isConfigured: this.isConfigured,
+      hasPersonalKey: this.hasPersonalKey,
+      executionMode: this.executionMode,
       messages: this.messages,
       latestDiff: this.latestDiff,
       isPromptPaneOpen: this.isPromptPaneOpen,
@@ -523,6 +544,19 @@ export class VibeStudioController {
       await this.handleProviderChange(e.target.value);
     });
 
+    // Model select change handler
+    const selectModel = this.container.querySelector('#select-ai-model');
+    selectModel?.addEventListener('change', () => {
+      this.updatePaidModelBanner();
+    });
+
+    // Free Only checkbox filter
+    const checkFreeOnly = this.container.querySelector('#check-free-only');
+    checkFreeOnly?.addEventListener('change', () => {
+      this.freeOnly = Boolean(checkFreeOnly.checked);
+      this.filterModelsByFreeOnly(this.freeOnly);
+    });
+
     // Sync / Fetch Live Models Button
     const btnSyncModels = this.container.querySelector('#btn-sync-models') || this.container.querySelector('#btn-fetch-live-models');
     btnSyncModels?.addEventListener('click', async () => {
@@ -531,6 +565,9 @@ export class VibeStudioController {
 
     // Auto-sync on API Key blur or input change
     const inpAiKey = this.container.querySelector('#input-ai-key');
+    inpAiKey?.addEventListener('input', () => {
+      this.updatePaidModelBanner();
+    });
     inpAiKey?.addEventListener('blur', async () => {
       const key = (inpAiKey.value || '').trim();
       if (key.length > 5) {
@@ -814,12 +851,20 @@ Output ONLY the structured prompt with zero filler preamble.`;
     }
 
     if (selectModel) {
-      selectModel.innerHTML = models.map((m) => `
-        <option value="${m.id}" ${selectedModel === m.id ? 'selected' : ''}>${escapeHtml(m.name)}${m.isNew ? ' [NEW]' : ''}</option>
-      `).join('');
+      selectModel.innerHTML = models.map((m) => {
+        const isFree = m.isFree || isOpenRouterFreeModel(m);
+        const freeBadge = isFree && !m.name.includes('[FREE]') ? ' [FREE]' : '';
+        const newBadge = m.isNew ? ' [NEW]' : '';
+        return `
+          <option value="${m.id}" data-free="${isFree ? 'true' : 'false'}" ${selectedModel === m.id ? 'selected' : ''}>${escapeHtml(m.name)}${freeBadge}${newBadge}</option>
+        `;
+      }).join('');
       if (selectedModel && !models.some((m) => m.id === selectedModel)) {
-        selectModel.innerHTML += `<option value="${selectedModel}" selected>${escapeHtml(selectedModel)} (Active)</option>`;
+        const isFree = isOpenRouterFreeModel(selectedModel);
+        selectModel.innerHTML += `<option value="${selectedModel}" data-free="${isFree ? 'true' : 'false'}" selected>${escapeHtml(selectedModel)} (Active)${isFree ? ' [FREE]' : ''}</option>`;
       }
+      this.filterModelsByFreeOnly(this.freeOnly);
+      this.updatePaidModelBanner();
     }
   }
 
@@ -855,12 +900,19 @@ Output ONLY the structured prompt with zero filler preamble.`;
     if (res.success && Array.isArray(res.models) && res.models.length) {
       const currentSelected = selectModel?.value;
       if (selectModel) {
-        selectModel.innerHTML = res.models.map((m) => `
-          <option value="${m.id}" ${currentSelected === m.id ? 'selected' : ''}>${escapeHtml(m.name)}${m.isNew ? ' [NEW]' : ''}</option>
-        `).join('');
+        selectModel.innerHTML = res.models.map((m) => {
+          const isFree = m.isFree || isOpenRouterFreeModel(m);
+          const freeBadge = isFree && !m.name.includes('[FREE]') ? ' [FREE]' : '';
+          const newBadge = m.isNew ? ' [NEW]' : '';
+          return `
+            <option value="${m.id}" data-free="${isFree ? 'true' : 'false'}" ${currentSelected === m.id ? 'selected' : ''}>${escapeHtml(m.name)}${freeBadge}${newBadge}</option>
+          `;
+        }).join('');
         if (currentSelected && !res.models.some((m) => m.id === currentSelected)) {
           selectModel.value = res.models[0]?.id || '';
         }
+        this.filterModelsByFreeOnly(this.freeOnly);
+        this.updatePaidModelBanner();
       }
       if (feedback && !isBackground) {
         feedback.style.display = 'block';
@@ -910,6 +962,51 @@ Output ONLY the structured prompt with zero filler preamble.`;
     }
   }
 
+  filterModelsByFreeOnly(freeOnly = false) {
+    const selectModel = this.container.querySelector('#select-ai-model');
+    if (!selectModel) return;
+    const options = Array.from(selectModel.options);
+    let currentSelectedValid = false;
+
+    options.forEach((opt) => {
+      const isFree = opt.getAttribute('data-free') === 'true';
+      if (freeOnly && !isFree) {
+        opt.style.display = 'none';
+        opt.disabled = true;
+      } else {
+        opt.style.display = '';
+        opt.disabled = false;
+        if (opt.selected) currentSelectedValid = true;
+      }
+    });
+
+    if (freeOnly && !currentSelectedValid) {
+      const firstFree = options.find((opt) => opt.getAttribute('data-free') === 'true');
+      if (firstFree) {
+        firstFree.selected = true;
+      }
+    }
+    this.updatePaidModelBanner();
+  }
+
+  updatePaidModelBanner() {
+    const banner = this.container.querySelector('#banner-paid-unlock');
+    const selectModel = this.container.querySelector('#select-ai-model');
+    const inpKey = this.container.querySelector('#input-ai-key');
+    const key = (inpKey?.value || '').trim();
+    const hasKey = key.length > 3 || this.hasPersonalKey;
+    const selectedOption = selectModel?.selectedOptions?.[0];
+    const isFree = selectedOption ? selectedOption.getAttribute('data-free') === 'true' : false;
+
+    if (banner) {
+      if (!hasKey && !isFree) {
+        banner.style.display = 'flex';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+  }
+
   async saveSettingsFromForm() {
     const selectProv = this.container.querySelector('#select-ai-provider');
     const inpKey = this.container.querySelector('#input-ai-key');
@@ -931,6 +1028,9 @@ Output ONLY the structured prompt with zero filler preamble.`;
       customEndpoint
     });
 
+    const creds = await getAiCredentials();
+    this.hasPersonalKey = creds.hasPersonalKey;
+    this.executionMode = creds.executionMode;
     this.isConfigured = await isAiConfigured();
     this.render();
   }

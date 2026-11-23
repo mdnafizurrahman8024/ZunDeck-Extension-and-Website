@@ -8,9 +8,19 @@ import {
 import {
   sortModelsNewestFirst
 } from './model-version-sort.js';
+import {
+  getFreeProxyUrl,
+  isOpenRouterFreeModel,
+  callFreeProxyChat,
+  testFreeProxyConnection
+} from './free-proxy.js';
 
 export {
-  formatLastSyncTimestamp
+  formatLastSyncTimestamp,
+  getFreeProxyUrl,
+  isOpenRouterFreeModel,
+  callFreeProxyChat,
+  testFreeProxyConnection
 };
 
 export const AI_PROVIDERS = {
@@ -173,7 +183,12 @@ export const PRESET_MODELS = {
     { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile' }
   ],
   [AI_PROVIDERS.OPENROUTER]: [
-    { id: 'openrouter/auto', name: 'OpenRouter Auto (Default — Dynamic Intelligent Routing)' }
+    { id: 'openrouter/auto', name: 'OpenRouter Auto (Default — Dynamic Intelligent Routing)' },
+    { id: 'openrouter/free', name: 'OpenRouter Free (Top Auto-Selected Zero Cost) [FREE]', isFree: true },
+    { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Llama 3.3 70B Instruct [FREE]', isFree: true },
+    { id: 'google/gemini-2.0-flash-exp:free', name: 'Gemini 2.0 Flash Experimental [FREE]', isFree: true },
+    { id: 'qwen/qwen-2.5-72b-instruct:free', name: 'Qwen 2.5 72B Instruct [FREE]', isFree: true },
+    { id: 'mistralai/mistral-7b-instruct:free', name: 'Mistral 7B Instruct [FREE]', isFree: true }
   ],
   [AI_PROVIDERS.CUSTOM]: [
     { id: 'llama3', name: 'llama3 (Ollama / Local)' },
@@ -211,19 +226,40 @@ export async function getAiCredentials() {
   const vault = await loadPrivateVault();
   const keys = vault.keys || {};
   const settings = vault.settings?.ai || {};
-  const provider = settings.provider || AI_PROVIDERS.GEMINI;
 
-  let apiKey = keys[provider] || '';
+  const savedProvider = settings.provider;
+  let apiKey = savedProvider ? (keys[savedProvider] || '') : '';
   if (!apiKey) {
-    if (provider === AI_PROVIDERS.GEMINI) {
-      apiKey = keys.gemini || '';
-    } else if (provider === AI_PROVIDERS.OPENAI_COMPATIBLE || provider === AI_PROVIDERS.OPENAI || provider === AI_PROVIDERS.CUSTOM) {
-      apiKey = keys.openai || '';
-    }
+    apiKey = keys.gemini || keys.openai || keys.openrouter || keys.anthropic || '';
+  }
+  const hasPersonalKey = Boolean(apiKey && apiKey.trim().length > 3);
+
+  // Fresh install default: if no saved provider and no personal key, default to OPENROUTER Free Tier
+  let provider = savedProvider;
+  if (!provider) {
+    provider = hasPersonalKey ? AI_PROVIDERS.GEMINI : AI_PROVIDERS.OPENROUTER;
+  }
+
+  if (keys[provider]) {
+    apiKey = keys[provider];
+  } else if (!keys[provider] && (provider === AI_PROVIDERS.OPENAI_COMPATIBLE || provider === AI_PROVIDERS.OPENAI || provider === AI_PROVIDERS.CUSTOM)) {
+    apiKey = keys.openai || '';
+  } else if (!keys[provider] && provider === AI_PROVIDERS.GEMINI) {
+    apiKey = keys.gemini || '';
   }
 
   const meta = PROVIDER_METADATA[provider] || PROVIDER_METADATA[AI_PROVIDERS.GEMINI];
-  const model = settings.customModelId || settings.model || meta.defaultModel;
+  let model = settings.customModelId || settings.model;
+  if (!model) {
+    if (provider === AI_PROVIDERS.OPENROUTER && !hasPersonalKey) {
+      model = 'openrouter/free';
+    } else {
+      model = meta.defaultModel;
+    }
+  }
+
+  const isModelFree = isOpenRouterFreeModel(model);
+  const executionMode = hasPersonalKey ? 'byok' : 'free';
 
   return {
     provider,
@@ -232,7 +268,10 @@ export async function getAiCredentials() {
     customModelId: settings.customModelId || '',
     customEndpoint: settings.customEndpoint || meta.defaultEndpoint,
     customModel: settings.customModel || settings.customModelId || meta.defaultModel,
-    temperature: settings.temperature ?? DEFAULT_AI_CONFIG.temperature
+    temperature: settings.temperature ?? DEFAULT_AI_CONFIG.temperature,
+    executionMode,
+    hasPersonalKey,
+    isModelFree
   };
 }
 
@@ -272,7 +311,12 @@ export async function saveAiCredentials(newConfig = {}) {
 
 export async function isAiConfigured() {
   const creds = await getAiCredentials();
-  return Boolean(creds.apiKey && creds.apiKey.trim().length > 3);
+  return Boolean(creds.hasPersonalKey || (creds.executionMode === 'free' && creds.isModelFree));
+}
+
+export async function hasUserApiKey() {
+  const creds = await getAiCredentials();
+  return Boolean(creds.hasPersonalKey);
 }
 
 export async function getAvailableModels(provider, options = {}) {
@@ -375,11 +419,18 @@ export async function fetchLiveModels(customCreds = null) {
       if (!res.ok) throw new Error(`OpenRouter returned HTTP ${res.status}`);
       const data = await res.json();
       const list = Array.isArray(data.data) ? data.data : [];
-      rawModels = list.map((m) => ({
-        id: m.id,
-        name: m.name ? `${m.name} (${m.id})` : m.id,
-        created: m.created ? Number(m.created) * 1000 : undefined
-      }));
+      rawModels = list.map((m) => {
+        const isFree = isOpenRouterFreeModel(m);
+        const baseName = m.name ? `${m.name} (${m.id})` : m.id;
+        const name = isFree ? (baseName.includes('[FREE]') ? baseName : `[FREE] ${baseName}`) : baseName;
+        return {
+          id: m.id,
+          name,
+          isFree,
+          pricing: m.pricing,
+          created: m.created ? Number(m.created) * 1000 : undefined
+        };
+      });
     }
 
     // 4. OpenAI (Strict filter for chat/reasoning models; exclude whisper, tts, dall-e, embedding, etc.)
@@ -461,12 +512,16 @@ export async function testAiConnection(customCreds = null) {
   const provider = creds.provider || AI_PROVIDERS.GEMINI;
   const apiKey = (creds.apiKey || '').trim();
   const model = creds.customModelId || creds.model || creds.customModel || 'gemini-4-hydrogen';
+  const isFree = isOpenRouterFreeModel(model);
 
   if (!apiKey && provider !== AI_PROVIDERS.CUSTOM) {
+    if (isFree) {
+      return testFreeProxyConnection(model);
+    }
     return {
       success: false,
       code: 'MISSING_API_KEY',
-      message: `No API key provided for ${PROVIDER_METADATA[provider]?.name || provider}. Please paste your key.`
+      message: 'Enter your own API key to unlock paid models, or switch to a FREE model.'
     };
   }
 
@@ -599,8 +654,20 @@ export async function callAiText(prompt, options = {}) {
   const temperature = options.temperature ?? creds.temperature ?? DEFAULT_AI_CONFIG.temperature;
   const maxTokens = options.maxTokens || 2048;
 
-  if (!apiKey && provider !== AI_PROVIDERS.CUSTOM) {
-    throw new Error('NO_API_KEY: Please configure your API key in BYOK Settings.');
+  const isFreeModel = isOpenRouterFreeModel(model);
+  const hasUserKey = Boolean(apiKey && apiKey.length > 3);
+
+  if (!hasUserKey && provider !== AI_PROVIDERS.CUSTOM) {
+    if (isFreeModel) {
+      return callFreeProxyChat({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        systemInstruction,
+        temperature,
+        maxTokens
+      });
+    }
+    throw new Error('Enter your own API key to unlock paid models, or switch to a FREE model.');
   }
 
   // 1. Google Gemini
@@ -709,8 +776,29 @@ export async function callAiMultimodal(prompt, mediaParts = [], options = {}) {
   const temperature = options.temperature ?? 0.2;
   const maxTokens = options.maxTokens || 3000;
 
-  if (!apiKey && provider !== AI_PROVIDERS.CUSTOM) {
-    throw new Error('NO_API_KEY: Please configure your API key in BYOK Settings.');
+  const isFreeModel = isOpenRouterFreeModel(model);
+  const hasUserKey = Boolean(apiKey && apiKey.length > 3);
+
+  if (!hasUserKey && provider !== AI_PROVIDERS.CUSTOM) {
+    if (isFreeModel) {
+      const contentParts = [{ type: 'text', text: prompt }];
+      for (const part of mediaParts) {
+        if (part.base64 && part.mimeType) {
+          const dataUrl = part.base64.startsWith('data:') ? part.base64 : `data:${part.mimeType};base64,${part.base64}`;
+          contentParts.push({ type: 'image_url', image_url: { url: dataUrl } });
+        } else if (part.url) {
+          contentParts.push({ type: 'image_url', image_url: { url: part.url } });
+        }
+      }
+      return callFreeProxyChat({
+        model,
+        messages: [{ role: 'user', content: contentParts }],
+        systemInstruction,
+        temperature,
+        maxTokens
+      });
+    }
+    throw new Error('Enter your own API key to unlock paid models, or switch to a FREE model.');
   }
 
   // 1. Google Gemini Multimodal
