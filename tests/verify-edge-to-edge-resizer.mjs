@@ -47,16 +47,16 @@ describe('Full-Bleed Edge-to-Edge Preview, Draggable Resizer & Clean Single-Row 
 
   it('3. Clean Single-Row Preview Toolbar & Icon-Only Top Bar', () => {
     // Toolbar elements sit cleanly in single line
-    assert.ok(appCss.includes('.canvas-toolbar {\n  height: 42px;'), 'canvas-toolbar has fixed height and single row');
+    assert.ok(appCss.includes('.canvas-toolbar {') && appCss.includes('overflow-x: auto;'), 'canvas-toolbar has single row and no-wrap scroll protection');
     assert.ok(indexHtml.includes('id="showcase-status-bar"'), 'showcase-status-bar exists');
     assert.ok(indexHtml.includes('id="canvas-zoom-group"'), 'canvas-zoom-group exists');
     assert.ok(indexHtml.includes('id="btn-refresh-preview"'), 'btn-refresh-preview exists');
 
-    // Top-right utility buttons are compact icon-only with tooltips
+    // Top-right utility buttons are compact icon-only with tooltips (clean 3-tool header)
     assert.ok(indexHtml.includes('id="btn-export-dropdown-toggle"'), 'btn-export-dropdown-toggle exists');
     assert.ok(indexHtml.includes('id="btn-open-guide-modal"'), 'btn-open-guide-modal exists');
     assert.ok(indexHtml.includes('id="btn-theme-cycle"'), 'btn-theme-cycle exists');
-    assert.ok(indexHtml.includes('id="btn-popout"'), 'btn-popout exists');
+    assert.ok(!indexHtml.includes('id="btn-popout"'), 'btn-popout cleanly removed from header for streamlined 3-button layout');
     assert.ok(appCss.includes('.btn-tool.btn-theme-cycle {\n  width: 36px;\n  height: 36px;'), 'theme cycle button is compact 36x36 icon-only');
     assert.ok(appCss.includes('.btn-tool.btn-export-dropdown {\n  width: 36px;\n  height: 36px;'), 'export button is compact 36x36 icon-only');
   });

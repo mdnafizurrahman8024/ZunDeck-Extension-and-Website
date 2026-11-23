@@ -806,38 +806,50 @@ export function renderPortfolioHtml(profile, options = {}) {
       color: var(--accent);
     }
 
-    /* Top Sticky Navigation Bar */
+    /* Top Sticky Navigation Bar (Exact 1:1 mdnafizurrahman8024.github.io) */
     .navbar {
       position: sticky;
       top: 0;
-      z-index: 1000;
-      background: rgba(17, 28, 42, 0.88);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border-color);
+      left: 0;
+      width: 100%;
       height: 60px;
+      z-index: 9999 !important;
+      overflow: visible !important;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-color);
+      transition: all 0.25s ease;
     }
     [data-theme="light"] .navbar {
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.94);
+    }
+    .navbar.scrolled {
+      box-shadow: var(--shadow-md);
+      background: var(--bg-surface-elevated, #111c2a);
     }
 
-    .nav-container {
+    .nav-inner, .nav-container {
+      width: 100%;
       max-width: 1320px;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 0 1.25rem;
       height: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      box-sizing: border-box;
+      gap: 12px;
     }
 
     .nav-brand {
       display: flex;
       align-items: center;
-      gap: 12px;
-      min-width: 0;
+      gap: 0.75rem;
+      color: var(--text-primary);
+      text-decoration: none;
       flex-shrink: 0;
+      min-width: max-content;
     }
 
     .nav-brand-avatar {
@@ -845,74 +857,338 @@ export function renderPortfolioHtml(profile, options = {}) {
       height: 36px;
       border-radius: 50%;
       object-fit: cover;
-      border: 1.5px solid var(--primary);
+      object-position: center top;
+      border: 2px solid var(--primary);
+      box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2);
+      flex-shrink: 0;
+    }
+    [data-theme="dark"] .nav-brand-avatar {
+      border-color: #14b8a6;
+      box-shadow: 0 2px 8px rgba(20, 184, 166, 0.3);
     }
 
-    .nav-brand-text {
+    .nav-brand-info, .nav-brand-text {
       display: flex;
       flex-direction: column;
-      min-width: 0;
+      justify-content: center;
+      flex-shrink: 0;
+      min-width: max-content;
     }
 
     .nav-brand-name {
       font-weight: 700;
-      font-size: 0.92rem;
+      font-size: 14.5px;
+      line-height: 1.25;
+      margin: 0;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       color: var(--text-primary);
     }
 
-    .nav-brand-role {
-      font-size: 0.72rem;
-      color: var(--text-muted);
+    .nav-brand-sub, .nav-brand-role {
+      font-size: 11px;
+      color: var(--primary);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      line-height: 1.25;
+      margin: 0;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
-    .nav-links-menu {
+    .nav-menu, .nav-links-menu {
       display: flex;
       align-items: center;
-      gap: 6px;
       list-style: none;
+      gap: 10px;
+      flex-wrap: nowrap;
+      margin: 0;
+      padding: 0;
     }
 
     .nav-pill {
-      display: inline-block;
-      padding: 6px 12px;
-      font-size: 0.82rem;
-      font-weight: 500;
       color: var(--text-secondary);
-      border-radius: 9999px;
-      transition: background 0.15s ease, color 0.15s ease;
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+      text-decoration: none;
     }
-    .nav-pill:hover, .nav-pill.active {
+    .nav-pill:hover {
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    /* Bulletproof Active Nav Tab Highlighting (1:1 with mdnafizurrahman8024.github.io) */
+    .nav-tab-active,
+    #nav-menu a.nav-tab-active,
+    #universal-nav-drawer a.nav-tab-active,
+    .nav-pill.nav-tab-active,
+    .universal-nav-link.nav-tab-active,
+    .nav-dropdown-item.nav-tab-active,
+    #more-dropdown-btn.nav-tab-active,
+    #nav-menu a.active,
+    #universal-nav-drawer a.active,
+    .nav-pill.active,
+    .universal-nav-link.active,
+    .nav-dropdown-item.active,
+    #more-dropdown-btn.active {
+      background: rgba(13, 148, 136, 0.16) !important;
+      color: #0f766e !important;
+      font-weight: 700 !important;
+      border-radius: 999px !important;
+      padding: 5px 12px !important;
+      box-shadow: inset 0 0 0 1.5px rgba(13, 148, 136, 0.42) !important;
+      transition: all 0.25s ease !important;
+    }
+    [data-theme="dark"] .nav-tab-active,
+    [data-theme="dark"] #nav-menu a.nav-tab-active,
+    [data-theme="dark"] #universal-nav-drawer a.nav-tab-active,
+    [data-theme="dark"] .nav-pill.nav-tab-active,
+    [data-theme="dark"] .universal-nav-link.nav-tab-active,
+    [data-theme="dark"] .nav-dropdown-item.nav-tab-active,
+    [data-theme="dark"] #more-dropdown-btn.nav-tab-active,
+    [data-theme="dark"] #nav-menu a.active,
+    [data-theme="dark"] #universal-nav-drawer a.active,
+    [data-theme="dark"] .nav-pill.active,
+    [data-theme="dark"] .universal-nav-link.active,
+    [data-theme="dark"] .nav-dropdown-item.active,
+    [data-theme="dark"] #more-dropdown-btn.active {
+      background: rgba(45, 212, 191, 0.18) !important;
+      color: #2dd4bf !important;
+      box-shadow: inset 0 0 0 1.5px rgba(45, 212, 191, 0.42) !important;
+    }
+
+    /* Nav Dropdown for "More ▾" */
+    .nav-dropdown {
+      position: relative;
+    }
+    .nav-dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 0.5rem;
+      background: var(--bg-surface-elevated, #111c2a);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+      min-width: 190px;
+      list-style: none;
+      padding: 0.5rem;
+      display: none;
+      flex-direction: column;
+      z-index: 1050;
+      animation: dropdownPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    [data-theme="light"] .nav-dropdown-menu {
+      background: #ffffff;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+    }
+    .nav-dropdown:hover .nav-dropdown-menu,
+    .nav-dropdown:focus-within .nav-dropdown-menu,
+    .nav-dropdown.active .nav-dropdown-menu,
+    .nav-dropdown.open .nav-dropdown-menu {
+      display: flex !important;
+    }
+    @keyframes dropdownPop {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .nav-dropdown-item {
+      color: var(--text-secondary);
+      padding: 0.5rem 0.8rem;
+      font-size: 0.82rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .nav-dropdown-item:hover {
       background: var(--primary-light);
       color: var(--primary);
+    }
+    .nav-dropdown-item i {
+      color: var(--primary);
+      width: 16px;
+      text-align: center;
     }
 
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 0.5rem;
+      flex-shrink: 0;
     }
 
-    .theme-toggle-btn, .mobile-toggle-btn {
+    .theme-toggle-btn {
+      background: var(--bg-secondary, rgba(255, 255, 255, 0.06));
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
       width: 36px;
       height: 36px;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      background: var(--bg-card);
-      color: var(--text-primary);
+      border-radius: 50%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: border-color 0.15s ease;
+      transition: all 0.2s ease;
     }
+    .theme-toggle-btn:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .header-nav-toggle-btn,
+    .mobile-menu-btn,
     .mobile-toggle-btn {
+      background: var(--bg-secondary, rgba(255, 255, 255, 0.06));
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
       display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    .header-nav-toggle-btn:hover,
+    .mobile-menu-btn:hover,
+    .mobile-toggle-btn:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    .header-nav-toggle-btn.active,
+    .mobile-menu-btn.active,
+    .mobile-toggle-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    /* Universal Navigation Drawer (#universal-nav-drawer) */
+    #universal-nav-drawer,
+    .universal-nav-drawer,
+    .mobile-drawer {
+      position: fixed !important;
+      right: 16px !important;
+      left: auto !important;
+      top: 68px !important;
+      width: 280px !important;
+      max-width: calc(100vw - 32px) !important;
+      max-height: calc(100vh - 84px) !important;
+      overflow-y: auto !important;
+      border-radius: 14px !important;
+      padding: 10px !important;
+      z-index: 99999 !important;
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.2) !important;
+      border: 1px solid rgba(13, 148, 136, 0.25) !important;
+      background: #0f172a !important;
+      box-sizing: border-box !important;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: none;
+    }
+    [data-theme="light"] #universal-nav-drawer,
+    [data-theme="light"] .universal-nav-drawer,
+    [data-theme="light"] .mobile-drawer {
+      background: #ffffff !important;
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12) !important;
+      border: 1px solid rgba(13, 148, 136, 0.2) !important;
+    }
+    #universal-nav-drawer.open,
+    #universal-nav-drawer.active,
+    .universal-nav-drawer.open,
+    .universal-nav-drawer.active,
+    .mobile-drawer.open {
+      display: block !important;
+      animation: universalDropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .universal-nav-inner,
+    .header-nav-panel-inner,
+    .header-nav-drawer-inner {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 3px !important;
+      width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      box-sizing: border-box !important;
+    }
+    .universal-nav-link,
+    .header-nav-pill,
+    .header-drawer-link,
+    .mobile-drawer-link {
+      width: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      padding: 9px 12px !important;
+      border-radius: 8px !important;
+      font-size: 13.5px !important;
+      font-weight: 600 !important;
+      background: transparent !important;
+      color: var(--text-primary, #0f172a) !important;
+      text-decoration: none !important;
+      border: 1px solid transparent !important;
+      transition: all 0.18s ease !important;
+      box-sizing: border-box !important;
+    }
+    .universal-nav-link i,
+    .header-nav-pill i,
+    .header-drawer-link i,
+    .mobile-drawer-link i {
+      color: var(--primary) !important;
+      font-size: 14px !important;
+      width: 20px !important;
+      text-align: center !important;
+      flex-shrink: 0 !important;
+    }
+    .universal-nav-link:hover,
+    .header-nav-pill:hover,
+    .header-drawer-link:hover,
+    .mobile-drawer-link:hover {
+      background: var(--primary-light) !important;
+      color: var(--primary) !important;
+    }
+
+    /* Responsive Intermediate & Mobile Header */
+    .nav-text-compact { display: none !important; }
+    .nav-text-full { display: inline !important; }
+
+    @media (min-width: 769px) and (max-width: 1279px) {
+      .navbar { height: 56px !important; }
+      .nav-inner, .nav-container { padding: 0 10px !important; gap: 0.4rem !important; }
+      .nav-brand { gap: 0.45rem !important; }
+      .nav-brand-avatar { width: 30px !important; height: 30px !important; }
+      .nav-brand-name { font-size: 13px !important; }
+      .nav-brand-sub, .nav-brand-role { display: none !important; }
+      .nav-menu, .nav-links-menu { gap: 3px !important; }
+      .nav-pill { font-size: 11px !important; padding: 4px 6px !important; }
+      .nav-text-full { display: none !important; }
+      .nav-text-compact { display: inline !important; }
+    }
+
+    @media (max-width: 900px) {
+      .nav-menu, .nav-links-menu { display: none !important; }
+      .header-nav-toggle-btn, .mobile-menu-btn, .mobile-toggle-btn { display: inline-flex !important; }
+    }
+
+    @media (max-width: 960px) {
+      .layout-container { padding: 0 12px; margin: 16px auto 40px; }
+      .split-layout-wrapper { grid-template-columns: 1fr; gap: 16px; }
+      .sticky-sidebar-card { position: static; }
     }
 
     /* Layout Wrapper */
@@ -2089,55 +2365,70 @@ export function renderPortfolioHtml(profile, options = {}) {
 </head>
 <body class="${isDemoMode ? 'demo-view-only' : ''}">
 
-  <!-- Top Sticky Navigation Bar -->
-  <header class="navbar" id="top-navbar">
-    <div class="nav-container">
-      <a href="#about" class="nav-brand">
+  <!-- Top Sticky Navigation Bar (Exact 1:1 mdnafizurrahman8024.github.io) -->
+  <header class="navbar" id="navbar">
+    <div class="main-container nav-inner nav-container">
+      <a href="#home" class="nav-brand">
         ${identity.navAvatar || identity.avatar ? `
-          <img src="${sanitizeUrl(identity.navAvatar || identity.avatar)}" alt="${escapeHtml(identity.fullName)}" class="nav-brand-avatar" onerror="this.onerror=null; this.src='assets/Image-2.png';">
+          <img src="${sanitizeUrl(identity.navAvatar || identity.avatar)}" alt="${escapeHtml(identity.fullName)}" class="nav-brand-avatar" id="nav-avatar" loading="eager" decoding="async" onerror="this.onerror=null; this.src='assets/Image-2.png';">
         ` : ''}
-        <div class="nav-brand-text">
-          <span class="nav-brand-name">${escapeHtml(identity.fullName)}</span>
-          <span class="nav-brand-role">${escapeHtml(identity.roleBadge || '')}</span>
+        <div class="nav-brand-info nav-brand-text">
+          <span class="nav-brand-name" id="nav-name">${escapeHtml(identity.fullName)}</span>
+          <span class="nav-brand-sub nav-brand-role">${escapeHtml(identity.roleBadge || '')}</span>
         </div>
       </a>
 
       <nav>
-        <ul class="nav-links-menu">
+        <ul class="nav-menu nav-links-menu" id="nav-menu">
           ${isVisible('about') ? `<li><a href="#about" class="nav-pill">About</a></li>` : ''}
           ${isVisible('education') ? `<li><a href="#education" class="nav-pill">Education</a></li>` : ''}
           ${isVisible('updates') ? `<li><a href="#updates" class="nav-pill">Updates</a></li>` : ''}
-          ${isVisible('research') ? `<li><a href="#research" class="nav-pill">Research</a></li>` : ''}
-          ${isVisible('projects') ? `<li><a href="#projects" class="nav-pill">Projects</a></li>` : ''}
+          ${isVisible('research') ? `<li><a href="#research" class="nav-pill"><span class="nav-text-full">Research &amp; Appointments</span><span class="nav-text-compact">Research</span></a></li>` : ''}
+          ${isVisible('projects') ? `<li><a href="#projects" class="nav-pill"><span class="nav-text-full">Projects &amp; Platforms</span><span class="nav-text-compact">Projects</span></a></li>` : ''}
           ${isVisible('skills') ? `<li><a href="#skills" class="nav-pill">Skills</a></li>` : ''}
           ${isVisible('publications') ? `<li><a href="#publications" class="nav-pill">Publications</a></li>` : ''}
-          ${isVisible('certifications') ? `<li><a href="#training" class="nav-pill">Training</a></li>` : ''}
-          ${isVisible('contact') ? `<li><a href="#contact" class="nav-pill">Contact</a></li>` : ''}
+          ${isVisible('certifications') ? `<li><a href="#training" class="nav-pill"><span class="nav-text-full">Training &amp; Certifications</span><span class="nav-text-compact">Certifications</span></a></li>` : ''}
+          <li class="nav-dropdown" id="nav-dropdown-more">
+            <a href="javascript:void(0)" class="nav-pill" id="more-dropdown-btn">More <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px;"></i></a>
+            <ul class="nav-dropdown-menu" id="nav-dropdown-menu">
+              ${isVisible('leadership') ? `<li><a href="#leadership" class="nav-dropdown-item"><i class="fa-solid fa-users"></i> Leadership</a></li>` : ''}
+              ${isVisible('gallery') ? `<li><a href="#gallery" class="nav-dropdown-item"><i class="fa-solid fa-images"></i> Gallery</a></li>` : ''}
+              ${isVisible('references') ? `<li><a href="#references" class="nav-dropdown-item"><i class="fa-solid fa-user-tie"></i> References</a></li>` : ''}
+              ${isVisible('contact') ? `<li><a href="#contact" class="nav-dropdown-item"><i class="fa-solid fa-location-dot"></i> Where to Find Me</a></li>` : ''}
+              ${isVisible('contact') ? `<li><a href="#contact" class="nav-dropdown-item"><i class="fa-solid fa-envelope"></i> Contact Me</a></li>` : ''}
+            </ul>
+          </li>
         </ul>
       </nav>
 
       <div class="nav-actions">
-        <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Toggle Theme" title="Toggle Dark/Light Mode">
-          <i class="fa-solid fa-circle-half-stroke"></i>
+        <button type="button" class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Dark/Light Mode" title="Toggle Dark/Light Mode">
+          <i class="fa-solid fa-sun" id="theme-toggle-icon"></i>
         </button>
-        <button type="button" class="mobile-toggle-btn" id="mobile-toggle-btn" aria-label="Toggle Navigation Menu">
-          <i class="fa-solid fa-bars"></i>
+        <button type="button" class="header-nav-toggle-btn mobile-menu-btn mobile-toggle-btn" id="header-nav-toggle" onclick="window.toggleUniversalNav(event)" aria-label="Toggle Navigation Menu" title="Navigation Menu (☰)">
+          <i class="fa-solid fa-bars" id="header-nav-icon"></i>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Mobile Navigation Drawer -->
-  <div class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
-    ${isVisible('about') ? `<a href="#about" class="mobile-drawer-link"><i class="fa-solid fa-user"></i> About</a>` : ''}
-    ${isVisible('education') ? `<a href="#education" class="mobile-drawer-link"><i class="fa-solid fa-graduation-cap"></i> Education</a>` : ''}
-    ${isVisible('updates') ? `<a href="#updates" class="mobile-drawer-link"><i class="fa-solid fa-bolt"></i> Updates</a>` : ''}
-    ${isVisible('research') ? `<a href="#research" class="mobile-drawer-link"><i class="fa-solid fa-flask-vial"></i> Research &amp; Findings</a>` : ''}
-    ${isVisible('projects') ? `<a href="#projects" class="mobile-drawer-link"><i class="fa-solid fa-laptop-code"></i> Projects &amp; Docs</a>` : ''}
-    ${isVisible('skills') ? `<a href="#skills" class="mobile-drawer-link"><i class="fa-solid fa-screwdriver-wrench"></i> Skills</a>` : ''}
-    ${isVisible('publications') ? `<a href="#publications" class="mobile-drawer-link"><i class="fa-solid fa-newspaper"></i> Publications</a>` : ''}
-    ${isVisible('certifications') ? `<a href="#training" class="mobile-drawer-link"><i class="fa-solid fa-certificate"></i> Training &amp; Certs</a>` : ''}
-    ${isVisible('contact') ? `<a href="#contact" class="mobile-drawer-link"><i class="fa-solid fa-envelope"></i> Contact</a>` : ''}
+  <!-- Universal Bulletproof Navigation Drawer (Direct Child of <body>, 1:1 mdnafizurrahman8024.github.io) -->
+  <div id="universal-nav-drawer" class="universal-nav-drawer header-nav-panel header-nav-drawer mobile-drawer" aria-hidden="true" style="display: none;">
+    <div class="universal-nav-inner header-nav-panel-inner header-nav-drawer-inner">
+      ${isVisible('about') ? `<a href="#about" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="about"><i class="fa-solid fa-user"></i> <span>About</span></a>` : ''}
+      ${isVisible('education') ? `<a href="#education" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="education"><i class="fa-solid fa-graduation-cap"></i> <span>Education</span></a>` : ''}
+      ${isVisible('updates') ? `<a href="#updates" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="updates"><i class="fa-solid fa-bolt"></i> <span>Updates</span></a>` : ''}
+      ${isVisible('research') ? `<a href="#research" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="research"><i class="fa-solid fa-flask-vial"></i> <span>Research &amp; Appointments</span></a>` : ''}
+      ${isVisible('projects') ? `<a href="#projects" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="projects"><i class="fa-solid fa-laptop-code"></i> <span>Projects &amp; Platforms</span></a>` : ''}
+      ${isVisible('skills') ? `<a href="#skills" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="skills"><i class="fa-solid fa-screwdriver-wrench"></i> <span>Skills</span></a>` : ''}
+      ${isVisible('publications') ? `<a href="#publications" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="publications"><i class="fa-solid fa-newspaper"></i> <span>Publications</span></a>` : ''}
+      ${isVisible('certifications') ? `<a href="#training" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="training"><i class="fa-solid fa-certificate"></i> <span>Training &amp; Certifications</span></a>` : ''}
+      ${isVisible('leadership') ? `<a href="#leadership" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="leadership"><i class="fa-solid fa-users"></i> <span>Leadership</span></a>` : ''}
+      ${isVisible('gallery') ? `<a href="#gallery" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="gallery"><i class="fa-solid fa-images"></i> <span>Gallery</span></a>` : ''}
+      ${isVisible('references') ? `<a href="#references" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="references"><i class="fa-solid fa-user-tie"></i> <span>References</span></a>` : ''}
+      ${isVisible('contact') ? `<a href="#contact" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="location"><i class="fa-solid fa-location-dot"></i> <span>Where to Find Me</span></a>` : ''}
+      ${isVisible('contact') ? `<a href="#contact" class="universal-nav-link header-nav-pill header-drawer-link mobile-drawer-link" data-target="contact"><i class="fa-solid fa-envelope"></i> <span>Contact</span></a>` : ''}
+    </div>
   </div>
 
   <main class="layout-container">
@@ -2386,7 +2677,79 @@ export function renderPortfolioHtml(profile, options = {}) {
 
   <script>
     (function() {
-      // 1. Intercept all in-iframe hash anchor clicks to prevent recursive app reloads
+      // 1. Exact 1:1 Universal Navigation Drawer & Scroll Engine (mdnafizurrahman8024.github.io)
+      function openUniversalNav() {
+        var drawer = document.getElementById('universal-nav-drawer') || document.getElementById('mobile-drawer');
+        var toggleBtn = document.getElementById('header-nav-toggle') || document.getElementById('mobile-toggle-btn');
+        var header = document.getElementById('navbar') || document.getElementById('top-navbar');
+        if (!drawer) return;
+        if (header) {
+          var rect = header.getBoundingClientRect();
+          drawer.style.top = (rect.bottom > 0 ? (rect.bottom + 6) : 66) + 'px';
+        }
+        drawer.classList.add('open', 'active');
+        drawer.style.display = 'block';
+        drawer.setAttribute('aria-hidden', 'false');
+        if (toggleBtn) {
+          toggleBtn.classList.add('active');
+          toggleBtn.setAttribute('aria-expanded', 'true');
+        }
+      }
+
+      function closeUniversalNav() {
+        var drawer = document.getElementById('universal-nav-drawer') || document.getElementById('mobile-drawer');
+        var toggleBtn = document.getElementById('header-nav-toggle') || document.getElementById('mobile-toggle-btn');
+        if (!drawer) return;
+        drawer.classList.remove('open', 'active');
+        drawer.style.display = 'none';
+        drawer.setAttribute('aria-hidden', 'true');
+        if (toggleBtn) {
+          toggleBtn.classList.remove('active');
+          toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+      }
+
+      window.toggleUniversalNav = function(e) {
+        if (e) {
+          if (typeof e.preventDefault === 'function') e.preventDefault();
+          if (typeof e.stopPropagation === 'function') e.stopPropagation();
+        }
+        var drawer = document.getElementById('universal-nav-drawer') || document.getElementById('mobile-drawer');
+        if (!drawer) return;
+        var isOpen = drawer.classList.contains('open') || drawer.style.display === 'block';
+        if (isOpen) closeUniversalNav(); else openUniversalNav();
+      };
+      window.openUniversalNav = openUniversalNav;
+      window.closeUniversalNav = closeUniversalNav;
+
+      // Close drawer & dropdown on outside click
+      document.addEventListener('click', function(e) {
+        var drawer = document.getElementById('universal-nav-drawer') || document.getElementById('mobile-drawer');
+        var toggleBtn = document.getElementById('header-nav-toggle') || document.getElementById('mobile-toggle-btn');
+        if (drawer && (drawer.classList.contains('open') || drawer.style.display === 'block')) {
+          if (!drawer.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) {
+            closeUniversalNav();
+          }
+        }
+        var moreDropdown = document.getElementById('nav-dropdown-more');
+        if (moreDropdown && !moreDropdown.contains(e.target)) {
+          moreDropdown.classList.remove('active', 'open');
+        }
+      });
+
+      // More dropdown toggle on click
+      var moreBtn = document.getElementById('more-dropdown-btn');
+      var moreDropdown = document.getElementById('nav-dropdown-more');
+      if (moreBtn && moreDropdown) {
+        moreBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          moreDropdown.classList.toggle('open');
+          moreDropdown.classList.toggle('active');
+        });
+      }
+
+      // Smooth scroll for all internal anchor links (smoothly scrolls INSIDE iframe, zero reload)
       document.addEventListener('click', function(e) {
         var anchor = e.target.closest('a');
         if (!anchor) return;
@@ -2394,17 +2757,51 @@ export function renderPortfolioHtml(profile, options = {}) {
         if (href && href.startsWith('#')) {
           e.preventDefault();
           e.stopPropagation();
+          closeUniversalNav();
+          if (moreDropdown) moreDropdown.classList.remove('active', 'open');
+
           if (href === '#' || href === '#top' || href === '#home') {
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
           }
-          var targetId = href.slice(1);
+          var targetId = href.replace(/^#/, '');
           var targetEl = document.getElementById(targetId);
+          if (!targetEl && (targetId === 'location' || targetId === 'contact')) {
+            targetEl = document.getElementById('contact') || document.getElementById('location');
+          }
           if (targetEl) {
             targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
         }
       }, true);
+
+      // Active Section Highlighting
+      var activeSectionIds = ['about', 'education', 'updates', 'research', 'projects', 'skills', 'publications', 'training', 'leadership', 'gallery', 'references', 'contact'];
+      var moreSectionIds = ['leadership', 'gallery', 'references', 'location', 'contact'];
+      if ('IntersectionObserver' in window) {
+        var observedSections = document.querySelectorAll('section[id], div[id="home"]');
+        var sectionObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              var sId = entry.target.id;
+              var isMoreActive = moreSectionIds.indexOf(sId) !== -1;
+              if (moreBtn) {
+                moreBtn.classList.toggle('active', isMoreActive);
+                moreBtn.classList.toggle('nav-tab-active', isMoreActive);
+              }
+              var allLinks = document.querySelectorAll('#nav-menu a[href^="#"], #universal-nav-drawer a[href^="#"]');
+              allLinks.forEach(function(l) {
+                if (l.id === 'more-dropdown-btn') return;
+                var h = l.getAttribute('href');
+                var match = h === ('#' + sId);
+                l.classList.toggle('active', match);
+                l.classList.toggle('nav-tab-active', match);
+              });
+            }
+          });
+        }, { threshold: 0.2 });
+        observedSections.forEach(function(s) { sectionObserver.observe(s); });
+      }
 
       // 2. Google Map Satellite vs Standard View Switcher
       window.switchMapMode = function(mode) {
@@ -2448,7 +2845,7 @@ export function renderPortfolioHtml(profile, options = {}) {
       }
 
       // 5. Theme Toggle Logic
-      var toggleBtn = document.getElementById('theme-toggle-btn');
+      var toggleBtn = document.getElementById('theme-toggle') || document.getElementById('theme-toggle-btn');
       var html = document.documentElement;
       if (toggleBtn) {
         toggleBtn.addEventListener('click', function() {
@@ -2456,23 +2853,6 @@ export function renderPortfolioHtml(profile, options = {}) {
           var next = current === 'dark' ? 'light' : 'dark';
           html.setAttribute('data-theme', next);
           try { localStorage.setItem('zundeck_theme', next); } catch(e) {}
-        });
-      }
-
-      // 6. Mobile Drawer Toggle
-      var mobileBtn = document.getElementById('mobile-toggle-btn');
-      var drawer = document.getElementById('mobile-drawer');
-      if (mobileBtn && drawer) {
-        mobileBtn.addEventListener('click', function() {
-          var isOpen = drawer.classList.toggle('open');
-          drawer.setAttribute('aria-hidden', !isOpen);
-        });
-
-        drawer.querySelectorAll('a').forEach(function(link) {
-          link.addEventListener('click', function() {
-            drawer.classList.remove('open');
-            drawer.setAttribute('aria-hidden', 'true');
-          });
         });
       }
 

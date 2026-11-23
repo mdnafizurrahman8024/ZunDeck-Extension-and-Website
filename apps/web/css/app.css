@@ -632,26 +632,40 @@ button, input, select {
 }
 
 .canvas-toolbar {
-  height: 42px;
+  height: 44px;
   padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface);
   flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.canvas-toolbar::-webkit-scrollbar {
+  display: none;
 }
 
 .canvas-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-size: 0.78rem;
+  flex-shrink: 1;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .active-template-name {
   font-weight: 600;
   color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
 }
 
 .active-viewport-size {
@@ -871,11 +885,26 @@ button, input, select {
   font-weight: 600;
 }
 
+/* Canvas Actions Flex Container (Single row, zero overlap) */
+.canvas-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* Official Blueprint Status in Toolbar */
 .showcase-status-bar {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.showcase-status-bar .btn-sm {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .badge-blueprint {
   display: inline-flex;
@@ -888,6 +917,8 @@ button, input, select {
   font-size: 0.72rem;
   font-weight: 600;
   border: 1px solid rgba(13, 148, 136, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Canvas Zoom & Auto-Fit Group */
@@ -898,6 +929,8 @@ button, input, select {
   border-radius: 6px;
   background: var(--bg-surface-elevated);
   overflow: hidden;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .canvas-zoom-group .btn-canvas-action {
   border-radius: 0;
@@ -4070,18 +4103,26 @@ button, input, select {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 18px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface-elevated);
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.vibe-top-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .vibe-title-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
+  flex-shrink: 1;
+  white-space: nowrap;
 }
 
 .vibe-badge {
@@ -4125,19 +4166,23 @@ button, input, select {
 
 .vibe-header-tools {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .vibe-header-tools .btn-tool {
   white-space: nowrap;
   flex-shrink: 0;
-  min-height: 32px;
-  padding: 6px 12px;
+  min-height: 30px;
+  padding: 5px 10px;
+  font-size: 0.74rem;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  border-radius: 6px;
 }
 
 .vibe-header-tools .btn-tool.active {
@@ -4216,6 +4261,29 @@ button, input, select {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface);
+  gap: 10px;
+}
+
+.btn-close-prompt-pane {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-close-prompt-pane:hover {
+  background: var(--bg-surface);
+  color: var(--text-main);
+  border-color: var(--border-color);
 }
 
 .prompt-pane-title-wrap {
@@ -5119,6 +5187,14 @@ button, input, select {
   color: var(--primary);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.gp-tab-pane {
+  display: none;
+}
+
+.gp-tab-pane.active {
+  display: block;
 }
 
 .gp-filter-bar {

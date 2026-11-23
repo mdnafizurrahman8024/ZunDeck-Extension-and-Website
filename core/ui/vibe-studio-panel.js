@@ -154,7 +154,9 @@ export function renderVibeStudioHtml(state = {}) {
                 <p class="prompt-pane-sub">English • বাংলা • Banglish &rarr; 5-Point Pro Prompt</p>
               </div>
             </div>
-            <button type="button" class="btn-micro" id="btn-close-prompt-pane" title="Close Prompt Studio">&times;</button>
+            <button type="button" class="btn-close-prompt-pane" id="btn-close-prompt-pane" aria-label="Close Prompt Studio" title="Close Prompt Studio (✕)">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
           </div>
 
           <div class="prompt-pane-body" id="prompt-pane-messages">

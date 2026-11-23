@@ -119,7 +119,17 @@ export const USER_GUIDES = [
   }
 ];
 
-export function renderGuideAndPromptsHtml(activeTab = 'prompts') {
+export function renderGuideAndPromptsHtml(activeTab = 'prompts', activeCategory = 'all', searchQuery = '') {
+  const filteredPrompts = PROMPT_LIBRARY.filter((p) => {
+    const matchesCat = activeCategory === 'all' || p.category === activeCategory;
+    const matchesQuery = !searchQuery ||
+      p.title.toLowerCase().includes(searchQuery) ||
+      (p.summary && p.summary.toLowerCase().includes(searchQuery)) ||
+      p.prompt.toLowerCase().includes(searchQuery) ||
+      p.categoryLabel.toLowerCase().includes(searchQuery);
+    return matchesCat && matchesQuery;
+  });
+
   return `
     <div class="guide-prompts-root">
       <!-- Header Tabs -->
@@ -135,15 +145,15 @@ export function renderGuideAndPromptsHtml(activeTab = 'prompts') {
       </div>
 
       <!-- Tab 1: Prompt Library -->
-      <div class="gp-tab-pane ${activeTab === 'prompts' ? 'active' : ''}" id="gp-pane-prompts">
+      <div class="gp-tab-pane ${activeTab === 'prompts' ? 'active' : ''}" id="gp-pane-prompts" style="${activeTab === 'prompts' ? 'display: block;' : 'display: none;'}">
         <div class="gp-filter-bar">
           <div class="gp-search-wrap">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="input-search-prompts" class="gp-search-input" placeholder="Search 30+ structured pro prompts (AMR, Bento, ATS CV, SOP, Widgets)...">
+            <input type="text" id="input-search-prompts" class="gp-search-input" placeholder="Search 30+ structured pro prompts (AMR, Bento, ATS CV, SOP, Widgets)..." value="${escapeHtml(searchQuery)}">
           </div>
           <div class="gp-category-chips" id="gp-prompt-categories">
-            ${PROMPT_CATEGORIES.map((cat, i) => `
-              <button type="button" class="gp-chip ${i === 0 ? 'active' : ''}" data-cat="${cat.id}">
+            ${PROMPT_CATEGORIES.map((cat) => `
+              <button type="button" class="gp-chip ${cat.id === activeCategory ? 'active' : ''}" data-cat="${cat.id}">
                 ${escapeHtml(cat.label)}
               </button>
             `).join('')}
@@ -151,12 +161,12 @@ export function renderGuideAndPromptsHtml(activeTab = 'prompts') {
         </div>
 
         <div class="gp-cards-grid" id="gp-prompts-list">
-          ${renderPromptsListHtml(PROMPT_LIBRARY)}
+          ${renderPromptsListHtml(filteredPrompts)}
         </div>
       </div>
 
       <!-- Tab 2: User Manual -->
-      <div class="gp-tab-pane ${activeTab === 'manual' ? 'active' : ''}" id="gp-pane-manual">
+      <div class="gp-tab-pane ${activeTab === 'manual' ? 'active' : ''}" id="gp-pane-manual" style="${activeTab === 'manual' ? 'display: block;' : 'display: none;'}">
         <div class="gp-manual-intro">
           <h3 class="gp-manual-heading">ZunDeck Complete System Manual</h3>
           <p class="gp-manual-sub">Clear, step-by-step guides to master your academic portfolio, ATS CV studio, and free deployments.</p>
@@ -225,50 +235,69 @@ export class GuideAndPromptsController {
   constructor(options = {}) {
     this.container = options.container || null;
     this.activeTab = options.activeTab || 'prompts';
-    this.activeCategory = 'all';
-    this.searchQuery = '';
+    this.activeCategory = options.activeCategory || 'all';
+    this.searchQuery = options.searchQuery || '';
     this.onSelectPrompt = typeof options.onSelectPrompt === 'function' ? options.onSelectPrompt : () => {};
+    this._eventsBound = false;
   }
 
   render() {
     if (!this.container) return;
-    this.container.innerHTML = renderGuideAndPromptsHtml(this.activeTab);
+    this.container.innerHTML = renderGuideAndPromptsHtml(this.activeTab, this.activeCategory, this.searchQuery);
     this.bindEvents();
   }
 
   bindEvents() {
-    if (!this.container) return;
+    if (!this.container || this._eventsBound) return;
+    this._eventsBound = true;
 
-    // Tab switcher
-    this.container.querySelectorAll('.gp-nav-tab').forEach((tab) => {
-      tab.addEventListener('click', () => {
-        this.activeTab = tab.getAttribute('data-gp-tab');
-        this.render();
-      });
-    });
-
-    // Category filter chips
-    this.container.querySelectorAll('.gp-chip').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        this.container.querySelectorAll('.gp-chip').forEach((c) => c.classList.remove('active'));
-        chip.classList.add('active');
-        this.activeCategory = chip.getAttribute('data-cat');
-        this.filterPrompts();
-      });
-    });
-
-    // Search input
-    const searchInp = this.container.querySelector('#input-search-prompts');
-    searchInp?.addEventListener('input', (e) => {
-      this.searchQuery = e.target.value.trim().toLowerCase();
-      this.filterPrompts();
-    });
-
-    // Delegated click handler
+    // Delegated click handler on container
     this.container.addEventListener('click', async (e) => {
-      // Use prompt in vibe
+      // 1. Tab Switcher
+      const navTab = e.target.closest('.gp-nav-tab');
+      if (navTab) {
+        e.preventDefault();
+        const tabKey = navTab.getAttribute('data-gp-tab');
+        if (tabKey && tabKey !== this.activeTab) {
+          this.activeTab = tabKey;
+          // Toggle tab headers
+          this.container.querySelectorAll('.gp-nav-tab').forEach((t) => {
+            t.classList.toggle('active', t.getAttribute('data-gp-tab') === tabKey);
+          });
+          // Toggle tab panes
+          const panePrompts = this.container.querySelector('#gp-pane-prompts');
+          const paneManual = this.container.querySelector('#gp-pane-manual');
+          if (panePrompts) {
+            panePrompts.classList.toggle('active', tabKey === 'prompts');
+            panePrompts.style.display = tabKey === 'prompts' ? 'block' : 'none';
+          }
+          if (paneManual) {
+            paneManual.classList.toggle('active', tabKey === 'manual');
+            paneManual.style.display = tabKey === 'manual' ? 'block' : 'none';
+          }
+        }
+        return;
+      }
+
+      // 2. Category filter chips
+      const chip = e.target.closest('.gp-chip');
+      if (chip) {
+        e.preventDefault();
+        const catId = chip.getAttribute('data-cat');
+        if (catId) {
+          this.activeCategory = catId;
+          this.container.querySelectorAll('.gp-chip').forEach((c) => {
+            c.classList.toggle('active', c.getAttribute('data-cat') === catId);
+          });
+          this.filterPrompts();
+        }
+        return;
+      }
+
+      // 3. Use prompt in vibe
       const btnUse = e.target.closest('[data-use-prompt]');
       if (btnUse) {
+        e.preventDefault();
         const idx = parseInt(btnUse.getAttribute('data-use-prompt'), 10);
         const item = PROMPT_LIBRARY[idx];
         if (item) {
@@ -277,25 +306,43 @@ export class GuideAndPromptsController {
         return;
       }
 
-      // Copy prompt to clipboard
+      // 4. Copy prompt to clipboard
       const btnCopy = e.target.closest('[data-copy-prompt]');
       if (btnCopy) {
+        e.preventDefault();
         const idx = parseInt(btnCopy.getAttribute('data-copy-prompt'), 10);
         const item = PROMPT_LIBRARY[idx];
         if (item && item.prompt) {
           try {
             await navigator.clipboard.writeText(item.prompt);
-            const origHtml = btnCopy.innerHTML;
-            btnCopy.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
-            btnCopy.classList.add('copied');
-            setTimeout(() => {
-              btnCopy.innerHTML = origHtml;
-              btnCopy.classList.remove('copied');
-            }, 1800);
           } catch {
-            // Fallback for older browsers
+            const ta = document.createElement('textarea');
+            ta.value = item.prompt;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
           }
+          const origHtml = btnCopy.innerHTML;
+          btnCopy.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+          btnCopy.classList.add('copied');
+          setTimeout(() => {
+            btnCopy.innerHTML = origHtml;
+            btnCopy.classList.remove('copied');
+          }, 1800);
         }
+        return;
+      }
+    });
+
+    // Delegated input handler for search input
+    this.container.addEventListener('input', (e) => {
+      const searchInp = e.target.closest('#input-search-prompts');
+      if (searchInp) {
+        this.searchQuery = searchInp.value.trim().toLowerCase();
+        this.filterPrompts();
       }
     });
   }
@@ -308,7 +355,7 @@ export class GuideAndPromptsController {
       const matchesCat = this.activeCategory === 'all' || p.category === this.activeCategory;
       const matchesQuery = !this.searchQuery ||
         p.title.toLowerCase().includes(this.searchQuery) ||
-        p.summary.toLowerCase().includes(this.searchQuery) ||
+        (p.summary && p.summary.toLowerCase().includes(this.searchQuery)) ||
         p.prompt.toLowerCase().includes(this.searchQuery) ||
         p.categoryLabel.toLowerCase().includes(this.searchQuery);
       return matchesCat && matchesQuery;

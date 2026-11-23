@@ -1439,6 +1439,16 @@ function initPanelResizer() {
       try {
         localStorage.setItem(storageKey, `${newWidth}px`);
       } catch {}
+      if (dom.previewIframe && dom.previewIframe.contentWindow) {
+        try {
+          dom.previewIframe.contentWindow.dispatchEvent(new Event('resize'));
+        } catch (_) {}
+      }
+      if (dom.editorPreviewIframe && dom.editorPreviewIframe.contentWindow) {
+        try {
+          dom.editorPreviewIframe.contentWindow.dispatchEvent(new Event('resize'));
+        } catch (_) {}
+      }
     };
 
     const onMouseUp = () => {
@@ -1451,6 +1461,7 @@ function initPanelResizer() {
         targetIframes.forEach((ifr) => {
           if (ifr) ifr.style.pointerEvents = 'auto';
         });
+        autoFitPreview();
       }
     };
 
@@ -1476,6 +1487,16 @@ function initPanelResizer() {
       try {
         localStorage.setItem(storageKey, `${newWidth}px`);
       } catch {}
+      if (dom.previewIframe && dom.previewIframe.contentWindow) {
+        try {
+          dom.previewIframe.contentWindow.dispatchEvent(new Event('resize'));
+        } catch (_) {}
+      }
+      if (dom.editorPreviewIframe && dom.editorPreviewIframe.contentWindow) {
+        try {
+          dom.editorPreviewIframe.contentWindow.dispatchEvent(new Event('resize'));
+        } catch (_) {}
+      }
     }, { passive: true });
 
     document.addEventListener('touchend', () => {
@@ -1485,6 +1506,7 @@ function initPanelResizer() {
         targetIframes.forEach((ifr) => {
           if (ifr) ifr.style.pointerEvents = 'auto';
         });
+        autoFitPreview();
       }
     });
   };
@@ -1760,7 +1782,9 @@ function initEventListeners() {
   if (dom.btnExportHtml) {
     dom.btnExportHtml.addEventListener('click', exportCurrentDocument);
   }
-  dom.btnPopout.addEventListener('click', openPopout);
+  if (dom.btnPopout) {
+    dom.btnPopout.addEventListener('click', openPopout);
+  }
   dom.btnRefresh.addEventListener('click', updatePreview);
 
   // CV Studio tools
