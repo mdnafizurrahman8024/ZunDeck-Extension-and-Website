@@ -103,9 +103,10 @@ export function renderPortfolioHtml(profile, options = {}) {
     </div>
   `).join('\n');
 
-  // Updates Ticker
-  const updatesHtml = updates.map((u) => `
-    <li class="update-feed-item">
+  // Updates Ticker (Continuous Smooth Vertical Scroll with Hover Pause)
+  const updatesItems = updates.slice(0, 10);
+  const updatesItemsMarkup = updatesItems.map((u) => `
+    <li class="update-feed-item ticker-item">
       <div class="update-feed-meta">
         <span class="update-badge">${escapeHtml(u.badge || 'Milestone')}</span>
         <span class="update-date">${escapeHtml(u.date)}</span>
@@ -115,6 +116,15 @@ export function renderPortfolioHtml(profile, options = {}) {
       ${u.link && u.link !== '#' ? `<a href="${sanitizeUrl(u.link)}" target="_blank" rel="noopener noreferrer" class="link-arrow">View Milestone <i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : ''}
     </li>
   `).join('\n');
+  // Duplicate for seamless vertical scroll loop
+  const updatesTickerHtml = `
+    <div class="updates-ticker-viewport" id="updates-ticker-box">
+      <ul class="updates-ticker-list">
+        ${updatesItemsMarkup}
+        ${updatesItemsMarkup}
+      </ul>
+    </div>
+  `;
 
   // Research Items with Evidence & Findings
   const researchItems = research.slice(0, seeAllLimit.research || 3);
@@ -362,20 +372,37 @@ export function renderPortfolioHtml(profile, options = {}) {
     `;
   }).join('\n');
 
-  // Photo Gallery Grid
-  const galleryHtml = gallery.map((item, idx) => {
+  // Photo Gallery with Smooth Horizontal Marquee & Robust Fallback
+  const galleryItems = gallery.slice(0, 16);
+  const galleryCardsHtml = galleryItems.map((item, idx) => {
     const isObj = typeof item === 'object' && item !== null;
-    const url = isObj ? (item.url || '') : item;
-    const caption = isObj ? (item.caption || item.alt || `Photo ${idx + 1}`) : `Photo ${idx + 1}`;
+    const url = isObj ? (item.imageUrl || item.url || item.mediaUrl || item.thumbnail || '') : item;
+    const caption = isObj ? (item.caption || item.title || item.alt || `Photo ${idx + 1}`) : `Photo ${idx + 1}`;
+    const badge = isObj && item.badge ? item.badge : (isObj && item.category ? item.category : '');
     return `
-      <div class="gallery-card-item">
+      <div class="gallery-photo-card">
         <a href="${sanitizeUrl(url)}" target="_blank" rel="noopener noreferrer" class="gallery-thumb-link">
-          <img src="${sanitizeUrl(url)}" alt="${escapeHtml(caption)}" loading="lazy" class="gallery-thumb-img" onerror="this.style.opacity='0.4'">
+          <img src="${sanitizeUrl(url)}" alt="${escapeHtml(caption)}" loading="lazy" class="gallery-thumb-img" onerror="this.onerror=null; this.src='assets/ZUN.png';">
+          ${badge ? `<span class="gallery-photo-badge">${escapeHtml(badge)}</span>` : ''}
         </a>
-        ${caption ? `<div class="gallery-caption">${escapeHtml(caption)}</div>` : ''}
+        ${caption ? `<div class="gallery-caption" title="${escapeHtml(caption)}">${escapeHtml(caption)}</div>` : ''}
       </div>
     `;
   }).join('\n');
+
+  const galleryHtml = `
+    <div class="gallery-filter-pills">
+      <span class="gallery-pill active" data-filter="all"><i class="fa-solid fa-shapes"></i> All Verified Artifacts (${galleryItems.length})</span>
+      <span class="gallery-pill" data-filter="academic"><i class="fa-solid fa-graduation-cap"></i> Clinical &amp; Field</span>
+      <span class="gallery-pill" data-filter="lab"><i class="fa-solid fa-microscope"></i> Laboratory Triage</span>
+    </div>
+    <div class="gallery-marquee-viewport">
+      <div class="gallery-marquee-track">
+        ${galleryCardsHtml}
+        ${galleryCardsHtml}
+      </div>
+    </div>
+  `;
 
   const isSplitLayout = layout.type === 'split-sticky-sidebar' || layout.type === 'custom';
 
@@ -415,6 +442,296 @@ export function renderPortfolioHtml(profile, options = {}) {
       --sidebar-width: ${layout.sidebarWidth || '310px'};
     }
 
+    /* Shifting Gradient Perimeter & Radiant Glow Keyframes */
+    @keyframes borderPerimeterShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .card-perimeter-gradient {
+      position: relative;
+      border: none !important;
+    }
+
+    .card-perimeter-gradient::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 2.5px;
+      background: linear-gradient(
+        135deg,
+        #0d9488 0%,
+        #0ea5e9 20%,
+        #6366f1 40%,
+        #ec4899 60%,
+        #f59e0b 80%,
+        #10b981 100%
+      );
+      background-size: 300% 300%;
+      animation: borderPerimeterShift 7s ease infinite;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+      z-index: 5;
+      box-sizing: border-box;
+    }
+
+    .card-perimeter-gradient::after {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      border-radius: inherit;
+      background: linear-gradient(
+        135deg,
+        #0d9488 0%,
+        #0ea5e9 20%,
+        #6366f1 40%,
+        #ec4899 60%,
+        #f59e0b 80%,
+        #10b981 100%
+      );
+      background-size: 300% 300%;
+      animation: borderPerimeterShift 7s ease infinite;
+      filter: blur(20px);
+      opacity: 0.55;
+      pointer-events: none;
+      z-index: -1;
+      transition: opacity 0.3s ease, filter 0.3s ease;
+    }
+
+    ${displayConfig.effects?.glow === 'subtle' ? `
+    .card-perimeter-gradient::after { opacity: 0.22 !important; filter: blur(10px) !important; }
+    ` : (displayConfig.effects?.glow === 'off' ? `
+    .card-perimeter-gradient::after { display: none !important; }
+    ` : '')}
+
+    ${displayConfig.motion?.ticker === 'off' ? `
+    .updates-ticker-list { animation: none !important; }
+    ` : (displayConfig.motion?.ticker ? `
+    .updates-ticker-list { animation-duration: ${escapeHtml(displayConfig.motion.ticker)} !important; }
+    ` : '')}
+
+    ${displayConfig.motion?.marquee === 'off' ? `
+    .gallery-marquee-track { animation: none !important; flex-wrap: wrap !important; width: 100% !important; }
+    ` : (displayConfig.motion?.marquee ? `
+    .gallery-marquee-track { animation-duration: ${escapeHtml(displayConfig.motion.marquee)} !important; }
+    ` : '')}
+
+    /* Vertical Updates Ticker */
+    .updates-ticker-viewport {
+      max-height: 380px;
+      overflow: hidden;
+      position: relative;
+      mask-image: linear-gradient(to bottom, transparent, black 14px, black calc(100% - 14px), transparent);
+      -webkit-mask-image: linear-gradient(to bottom, transparent, black 14px, black calc(100% - 14px), transparent);
+    }
+    .updates-ticker-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      animation: scrollVertical 22s linear infinite;
+    }
+    .updates-ticker-viewport:hover .updates-ticker-list {
+      animation-play-state: paused;
+    }
+    @keyframes scrollVertical {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-50%); }
+    }
+    .ticker-item {
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .ticker-item:hover {
+      transform: translateX(4px);
+      border-color: var(--primary);
+    }
+
+    /* Horizontal Photo Gallery Marquee */
+    .gallery-filter-pills {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .gallery-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      border-radius: 9999px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .gallery-pill:hover, .gallery-pill.active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .gallery-marquee-viewport {
+      overflow: hidden;
+      position: relative;
+      width: 100%;
+      mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+      padding: 8px 0;
+    }
+    .gallery-marquee-track {
+      display: flex;
+      gap: 14px;
+      width: max-content;
+      animation: scrollHorizontal 110s linear infinite;
+    }
+    .gallery-marquee-viewport:hover .gallery-marquee-track {
+      animation-play-state: paused;
+    }
+    @keyframes scrollHorizontal {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .gallery-photo-card {
+      width: 270px;
+      flex-shrink: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+    }
+    .gallery-photo-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary);
+    }
+    .gallery-photo-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 600;
+      z-index: 2;
+    }
+
+    /* Google Map & Interactive Location Controls */
+    .map-embed-container {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1.5px solid rgba(13, 148, 136, 0.3);
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      background: var(--bg-subtle);
+      margin-bottom: 12px;
+    }
+    .map-toggle-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .map-toggle-group {
+      display: inline-flex;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bg-subtle);
+    }
+    .map-toggle-pill {
+      padding: 5px 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.76rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .map-toggle-pill.active {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+    }
+    .coord-copy-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .coord-copy-pill:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .live-pulse-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: livePulse 2s infinite;
+    }
+    @keyframes livePulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Floating CV PDF Action Pill */
+    .floating-cv-pill {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 990;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 9999px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.84rem;
+      box-shadow: 0 8px 24px rgba(13, 148, 136, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      text-decoration: none;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .floating-cv-pill:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(13, 148, 136, 0.55);
+      color: #fff;
+    }
+
     ${displayConfig.cardGridColumns === '3x' ? `
     .cert-grid, .ref-grid, .skills-grid-inner { grid-template-columns: repeat(3, 1fr) !important; }
     ` : (displayConfig.cardGridColumns === '1x' ? `
@@ -430,6 +747,10 @@ export function renderPortfolioHtml(profile, options = {}) {
     }
     ` : ''}
     ${displayConfig.gradientBorders === 'off' ? `
+    .card-perimeter-gradient::before,
+    .card-perimeter-gradient::after {
+      display: none !important;
+    }
     .card-perimeter-gradient {
       background: var(--bg-card) !important;
       border: 1px solid var(--border-color) !important;
@@ -1718,7 +2039,7 @@ export function renderPortfolioHtml(profile, options = {}) {
     <div class="nav-container">
       <a href="#about" class="nav-brand">
         ${identity.navAvatar || identity.avatar ? `
-          <img src="${sanitizeUrl(identity.navAvatar || identity.avatar)}" alt="${escapeHtml(identity.fullName)}" class="nav-brand-avatar" onerror="this.style.display='none'">
+          <img src="${sanitizeUrl(identity.navAvatar || identity.avatar)}" alt="${escapeHtml(identity.fullName)}" class="nav-brand-avatar" onerror="this.onerror=null; this.src='assets/Image-2.png';">
         ` : ''}
         <div class="nav-brand-text">
           <span class="nav-brand-name">${escapeHtml(identity.fullName)}</span>
@@ -1771,7 +2092,7 @@ export function renderPortfolioHtml(profile, options = {}) {
       <!-- Left Sticky Sidebar -->
       <aside class="sticky-sidebar-card">
         <div class="sidebar-avatar-wrap">
-          <img src="${sanitizeUrl(identity.avatar || '')}" alt="${escapeHtml(identity.fullName)}" class="sidebar-avatar-img" onerror="this.src='${sanitizeUrl(identity.introAvatar || '')}'">
+          <img src="${sanitizeUrl(identity.avatar || '')}" alt="${escapeHtml(identity.fullName)}" class="sidebar-avatar-img" onerror="this.onerror=null; this.src='assets/ZUN.png';">
           <span class="sidebar-status-dot" title="Active"></span>
         </div>
 
@@ -1804,7 +2125,7 @@ export function renderPortfolioHtml(profile, options = {}) {
         <!-- 1. Top Cover Banner (Animated Perimeter Gradient) -->
         ${layout.heroBanner && identity.banner ? `
           <div class="hero-banner-card card-perimeter-gradient" id="home">
-            <img src="${sanitizeUrl(identity.banner)}" alt="Cover Banner" class="hero-banner-img" onerror="this.style.display='none'">
+            <img src="${sanitizeUrl(identity.banner)}" alt="Cover Banner" class="hero-banner-img" onerror="this.onerror=null; this.src='assets/Banner.png';">
           </div>
         ` : ''}
 
@@ -1813,7 +2134,7 @@ export function renderPortfolioHtml(profile, options = {}) {
         <section class="feed-card" id="about">
           <div class="about-intro-header">
             ${identity.introAvatar ? `
-              <img src="${sanitizeUrl(identity.introAvatar)}" alt="${escapeHtml(identity.fullName)}" class="about-avatar-img" onerror="this.style.display='none'">
+              <img src="${sanitizeUrl(identity.introAvatar)}" alt="${escapeHtml(identity.fullName)}" class="about-avatar-img" onerror="this.onerror=null; this.src='assets/Image-1.png';">
             ` : ''}
             <div>
               <h2 class="card-heading">${escapeHtml(identity.salutation || 'Hi, This is ' + (identity.shortName || identity.fullName))}</h2>
@@ -1849,13 +2170,11 @@ export function renderPortfolioHtml(profile, options = {}) {
         </section>
         ` : ''}
 
-        <!-- 4. Recent Updates -->
+        <!-- 4. Recent Updates (Auto-moving Vertical Ticker) -->
         ${isVisible('updates') && updates.length ? `
         <section class="feed-card" id="updates">
           ${renderSectionHeader('Recent Updates & Milestones', 'Active manuscripts, registered protocols & computational deployments', 'fa-solid fa-bolt', 'var(--accent)')}
-          <ul class="updates-list">
-            ${updatesHtml}
-          </ul>
+          ${updatesTickerHtml}
         </section>
         ` : ''}
 
@@ -1930,29 +2249,39 @@ export function renderPortfolioHtml(profile, options = {}) {
         </section>
         ` : ''}
 
-        <!-- 11c. Photo Gallery & Field Documentation -->
+        <!-- 11c. Photo Gallery & Field Documentation (Auto-moving Horizontal Marquee) -->
         ${isVisible('gallery') && gallery.length ? `
         <section class="feed-card" id="gallery">
           ${renderSectionHeader('Photo Gallery & Field Documentation', 'Verified field visits, wildlife rescues, and laboratory bench documentation', 'fa-regular fa-images')}
-          <div class="gallery-portfolio-grid">
-            ${galleryHtml}
-          </div>
+          ${galleryHtml}
         </section>
         ` : ''}
 
-        <!-- 12. Contact Card & Map -->
+        <!-- 12. Contact Card & Interactive Google Map -->
         ${isVisible('contact') ? `
         <section class="feed-card" id="contact">
           ${renderSectionHeader('Where to Find Me & Get in Touch', 'Location, institutional office, and verified communication channels', 'fa-solid fa-location-dot')}
-          ${identity.location?.lat && identity.location?.lng ? `
-          <div class="loc-map-preview-wrap" style="margin-bottom: 16px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); background: var(--bg-subtle);">
-            <div style="padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid var(--border-color);">
-              <span><i class="fa-solid fa-map-pin" style="color: var(--primary);"></i> ${escapeHtml(identity.location.city || '')}, ${escapeHtml(identity.location.country || '')}</span>
-              <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">${Number(identity.location.lat).toFixed(4)}° N, ${Number(identity.location.lng).toFixed(4)}° E</span>
+          
+          <div class="map-toggle-bar">
+            <div class="map-toggle-group">
+              <button type="button" class="map-toggle-pill active" id="map-btn-satellite" onclick="window.switchMapMode('satellite')">
+                <i class="fa-solid fa-satellite"></i> Satellite View
+              </button>
+              <button type="button" class="map-toggle-pill" id="map-btn-standard" onclick="window.switchMapMode('standard')">
+                <i class="fa-solid fa-map"></i> Standard Map
+              </button>
             </div>
-            <iframe width="100%" height="190" style="border:0;" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=${Number(identity.location.lng) - 0.02}%2C${Number(identity.location.lat) - 0.02}%2C${Number(identity.location.lng) + 0.02}%2C${Number(identity.location.lat) + 0.02}&amp;layer=mapnik&amp;marker=${identity.location.lat}%2C${identity.location.lng}"></iframe>
+            <button type="button" class="coord-copy-pill" id="coord-copy-pill" onclick="window.copyCoordinates()" title="Click to copy GPS coordinates">
+              <span class="live-pulse-dot"></span>
+              <span>24.374043° N, 88.644182° E</span>
+              <i class="fa-solid fa-copy"></i>
+            </button>
           </div>
-          ` : ''}
+
+          <div class="map-embed-container">
+            <iframe id="google-map-iframe" src="https://maps.google.com/maps?q=24.374042779653543,88.64418181747487&amp;t=h&amp;z=17&amp;ie=UTF8&amp;iwloc=A&amp;output=embed" width="100%" height="290" style="border:0; display:block;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Google Map Location"></iframe>
+          </div>
+
           <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 16px;">
             ${identity.location?.rawAddress ? `<strong>Address:</strong> ${escapeHtml(identity.location.rawAddress)}<br>` : ''}
             ${identity.email ? `<strong>Email:</strong> <a href="mailto:${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</a><br>` : ''}
@@ -1962,6 +2291,7 @@ export function renderPortfolioHtml(profile, options = {}) {
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             ${identity.email ? `<a href="mailto:${escapeHtml(identity.email)}" class="btn-action-primary"><i class="fa-solid fa-envelope"></i> Direct Email</a>` : ''}
             ${identity.whatsapp ? `<a href="${sanitizeUrl(identity.whatsapp)}" target="_blank" rel="noopener noreferrer" class="btn-subtle"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>` : ''}
+            <a href="https://maps.google.com/?q=24.374042779653543,88.64418181747487" target="_blank" rel="noopener noreferrer" class="btn-subtle"><i class="fa-solid fa-diamond-turn-right"></i> Directions</a>
           </div>
           ${(displayConfig.contactConfig?.mode === 'web3forms' || displayConfig.contactConfig?.showForm) ? `
           <form action="https://api.web3forms.com/submit" method="POST" class="portfolio-contact-form" style="margin-top: 16px; display: grid; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 16px;">
@@ -1993,12 +2323,78 @@ export function renderPortfolioHtml(profile, options = {}) {
     </div>
   </main>
 
+  <!-- Floating CV PDF Action Pill -->
+  <a href="${sanitizeUrl(documents.find(d => (typeof d === 'object' && d?.docType === 'pdf'))?.url || 'https://mdnafizurrahman8024.github.io/CV_Nafiz.pdf')}" target="_blank" rel="noopener noreferrer" class="floating-cv-pill" title="Download Verified Curriculum Vitae">
+    <i class="fa-solid fa-file-pdf"></i>
+    <span>Download CV (PDF)</span>
+  </a>
+
   <script>
     (function() {
-      // Theme Toggle Logic
+      // 1. Intercept all in-iframe hash anchor clicks to prevent recursive app reloads
+      document.addEventListener('click', function(e) {
+        var anchor = e.target.closest('a');
+        if (!anchor) return;
+        var href = anchor.getAttribute('href');
+        if (href && href.startsWith('#')) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (href === '#' || href === '#top' || href === '#home') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+          }
+          var targetId = href.slice(1);
+          var targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }, true);
+
+      // 2. Google Map Satellite vs Standard View Switcher
+      window.switchMapMode = function(mode) {
+        var mapIframe = document.getElementById('google-map-iframe');
+        var btnSat = document.getElementById('map-btn-satellite');
+        var btnStd = document.getElementById('map-btn-standard');
+        if (!mapIframe) return;
+        var lat = '24.374042779653543';
+        var lng = '88.64418181747487';
+        var tParam = mode === 'satellite' ? 'h' : 'm';
+        mapIframe.src = 'https://maps.google.com/maps?q=' + lat + ',' + lng + '&t=' + tParam + '&z=17&ie=UTF8&iwloc=A&output=embed';
+        if (btnSat) btnSat.classList.toggle('active', mode === 'satellite');
+        if (btnStd) btnStd.classList.toggle('active', mode === 'standard');
+      };
+
+      // 3. Coordinate Copy Button
+      window.copyCoordinates = function() {
+        var coords = '24.374043° N, 88.644182° E';
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(coords);
+          }
+          var pill = document.getElementById('coord-copy-pill');
+          if (pill) {
+            var oldHtml = pill.innerHTML;
+            pill.innerHTML = '<span class="live-pulse-dot"></span><span>Copied to Clipboard!</span><i class="fa-solid fa-check" style="color:#10b981;"></i>';
+            setTimeout(function() { pill.innerHTML = oldHtml; }, 2000);
+          }
+        } catch(err) {}
+      };
+
+      // 4. Gallery Category Filter Pills
+      var galleryPills = document.querySelectorAll('.gallery-pill');
+      if (galleryPills.length) {
+        galleryPills.forEach(function(pill) {
+          pill.addEventListener('click', function() {
+            galleryPills.forEach(function(p) { p.classList.remove('active'); });
+            pill.classList.add('active');
+          });
+        });
+      }
+
+      // 5. Theme Toggle Logic
       var toggleBtn = document.getElementById('theme-toggle-btn');
       var html = document.documentElement;
-
       if (toggleBtn) {
         toggleBtn.addEventListener('click', function() {
           var current = html.getAttribute('data-theme') || 'dark';
@@ -2008,7 +2404,7 @@ export function renderPortfolioHtml(profile, options = {}) {
         });
       }
 
-      // Mobile Drawer Toggle
+      // 6. Mobile Drawer Toggle
       var mobileBtn = document.getElementById('mobile-toggle-btn');
       var drawer = document.getElementById('mobile-drawer');
       if (mobileBtn && drawer) {

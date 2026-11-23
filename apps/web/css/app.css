@@ -424,6 +424,20 @@ button, input, select {
   color: var(--primary);
 }
 
+.btn-tool.btn-theme-cycle {
+  width: auto;
+  min-width: 86px;
+  padding: 0 12px;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+.btn-tool.btn-theme-cycle i {
+  color: var(--primary);
+  font-size: 0.85rem;
+}
+
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -659,15 +673,106 @@ button, input, select {
   );
 }
 
+/* Draggable Resizable Splitter Divider */
+.panel-resizer {
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.15s ease;
+  position: relative;
+  z-index: 10;
+  margin: 0 -3px;
+  flex-shrink: 0;
+}
+.panel-resizer:hover, .panel-resizer.resizing {
+  background: var(--primary);
+  box-shadow: 0 0 8px rgba(13, 148, 136, 0.4);
+}
+
+/* Canvas Viewport Pills in Canvas Toolbar */
+.canvas-viewport-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 2px;
+}
+.canvas-viewport-pills .viewport-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.canvas-viewport-pills .viewport-btn:hover {
+  color: var(--text-main);
+}
+.canvas-viewport-pills .viewport-btn.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Official Blueprint Status in Toolbar */
+.showcase-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.badge-blueprint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: rgba(13, 148, 136, 0.12);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid rgba(13, 148, 136, 0.3);
+}
+
+/* Canvas Zoom & Auto-Fit Group */
+.canvas-zoom-group {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-surface-elevated);
+  overflow: hidden;
+}
+.canvas-zoom-group .btn-canvas-action {
+  border-radius: 0;
+  padding: 4px 8px;
+  border-right: 1px solid var(--border-subtle);
+}
+.canvas-zoom-group .btn-canvas-action:last-child {
+  border-right: none;
+}
+.btn-zoom-fit {
+  font-weight: 600;
+  color: var(--primary) !important;
+}
+
 .preview-device-wrapper {
   background: #ffffff;
   border-radius: 8px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s ease;
   overflow: hidden;
   height: 100%;
   display: flex;
   flex-direction: column;
+  transform: scale(var(--preview-zoom, 1));
+  transform-origin: top center;
 }
 
 .preview-device-wrapper.viewport-laptop {

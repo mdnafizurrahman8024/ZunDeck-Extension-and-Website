@@ -519,6 +519,51 @@ export class VisualEditorController {
               <button type="button" class="seg-btn ${themeTokens.theme === 'light' ? 'active' : ''}" data-val="light">Light Theme</button>
             </div>
           </div>
+
+          <!-- Visual Effects & Motion Controls Drawer -->
+          <div class="effects-motion-drawer" style="grid-column: 1 / -1; background: var(--bg-surface-elevated, #f8fafc); border: 1px solid var(--border-subtle, #e2e8f0); border-radius: 10px; padding: 14px; margin-top: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 7px; margin: 0;">
+                <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i>
+                Visual Effects &amp; Motion Controls
+              </h4>
+              <span class="pill-badge pill-info" style="font-size: 0.68rem;">Mother Showcase Sync</span>
+            </div>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+              Control animated shifting perimeter gradient borders, glowing blur halo, vertical Updates ticker timing, and horizontal Photo Gallery marquee flow.
+            </p>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label" for="ve-effect-glow">Border &amp; Radiant Glow</label>
+                <select id="ve-effect-glow" class="form-select">
+                  <option value="vibrant" ${(cfg.effects?.glow !== 'subtle' && cfg.effects?.glow !== 'off') ? 'selected' : ''}>Vibrant Radiant Glow (Flagship)</option>
+                  <option value="subtle" ${cfg.effects?.glow === 'subtle' ? 'selected' : ''}>Subtle Minimal Glow</option>
+                  <option value="off" ${cfg.effects?.glow === 'off' ? 'selected' : ''}>Disabled (Clean Flat)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="ve-motion-ticker">Updates Ticker Motion</label>
+                <select id="ve-motion-ticker" class="form-select">
+                  <option value="22s" ${(cfg.motion?.ticker !== '30s' && cfg.motion?.ticker !== '14s' && cfg.motion?.ticker !== 'off') ? 'selected' : ''}>Continuous Smooth (22s)</option>
+                  <option value="30s" ${cfg.motion?.ticker === '30s' ? 'selected' : ''}>Relaxed Slow (30s)</option>
+                  <option value="14s" ${cfg.motion?.ticker === '14s' ? 'selected' : ''}>Snappy Fast (14s)</option>
+                  <option value="off" ${cfg.motion?.ticker === 'off' ? 'selected' : ''}>Static (No Auto-Scroll)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="ve-motion-marquee">Gallery Marquee Speed</label>
+                <select id="ve-motion-marquee" class="form-select">
+                  <option value="110s" ${(cfg.motion?.marquee !== '160s' && cfg.motion?.marquee !== '60s' && cfg.motion?.marquee !== 'off') ? 'selected' : ''}>Panoramic Flow (110s)</option>
+                  <option value="160s" ${cfg.motion?.marquee === '160s' ? 'selected' : ''}>Gentle Slow (160s)</option>
+                  <option value="60s" ${cfg.motion?.marquee === '60s' ? 'selected' : ''}>Active Fast (60s)</option>
+                  <option value="off" ${cfg.motion?.marquee === 'off' ? 'selected' : ''}>Static (No Auto-Scroll)</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Per-section See All Item Limits -->
@@ -806,6 +851,37 @@ export class VisualEditorController {
           this.profile.displayConfig = this.profile.displayConfig || {};
           this.profile.displayConfig.themeTokens = this.profile.displayConfig.themeTokens || {};
           this.profile.displayConfig.themeTokens.primaryColor = e.target.value;
+          this.notifyChange();
+        });
+      }
+
+      // Visual Effects & Motion Controls
+      const selGlow = this.container.querySelector('#ve-effect-glow');
+      if (selGlow) {
+        selGlow.addEventListener('change', (e) => {
+          this.profile.displayConfig = this.profile.displayConfig || {};
+          this.profile.displayConfig.effects = this.profile.displayConfig.effects || {};
+          this.profile.displayConfig.effects.glow = e.target.value;
+          this.notifyChange();
+        });
+      }
+
+      const selTicker = this.container.querySelector('#ve-motion-ticker');
+      if (selTicker) {
+        selTicker.addEventListener('change', (e) => {
+          this.profile.displayConfig = this.profile.displayConfig || {};
+          this.profile.displayConfig.motion = this.profile.displayConfig.motion || {};
+          this.profile.displayConfig.motion.ticker = e.target.value;
+          this.notifyChange();
+        });
+      }
+
+      const selMarquee = this.container.querySelector('#ve-motion-marquee');
+      if (selMarquee) {
+        selMarquee.addEventListener('change', (e) => {
+          this.profile.displayConfig = this.profile.displayConfig || {};
+          this.profile.displayConfig.motion = this.profile.displayConfig.motion || {};
+          this.profile.displayConfig.motion.marquee = e.target.value;
           this.notifyChange();
         });
       }

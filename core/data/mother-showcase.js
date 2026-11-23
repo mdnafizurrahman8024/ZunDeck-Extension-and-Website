@@ -187,10 +187,11 @@ export function transformMotherJsonToProfile(src) {
     })),
     gallery: (src.gallery || []).slice(0, 16).map((g, i) => ({
       id: g.id || `gal-${i + 1}`,
-      title: g.title,
-      category: g.category,
-      imageUrl: g.image ? resolveShowcaseMedia(g.image) : '',
-      caption: g.caption || g.title
+      title: g.title || g.caption || `Artifact ${i + 1}`,
+      category: g.category || 'Academic Field & Clinical Exposure',
+      imageUrl: resolveShowcaseMedia(g.mediaUrl || g.thumbnail || g.imageUrl || g.image || ''),
+      thumbnailUrl: resolveShowcaseMedia(g.thumbnail || g.mediaUrl || g.imageUrl || ''),
+      caption: g.caption || g.title || g.category || ''
     })),
     documents: [
       {

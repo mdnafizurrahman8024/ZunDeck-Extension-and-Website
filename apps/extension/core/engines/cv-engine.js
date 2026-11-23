@@ -378,6 +378,12 @@ export function renderCvHtml(profile, options = {}) {
         </div>
       ` : ''}
 
+      ${(options.showPhoto && (identity.cvPhoto || identity.avatar)) ? `
+        <div class="cv-photo-corner" style="position: absolute; top: 0; right: ${showQr && qrSvg ? '95px' : '0'};">
+          <img src="${sanitizeUrl(identity.cvPhoto || identity.avatar)}" alt="${escapeHtml(identity.fullName || 'Photo')}" style="width: 65px; height: 78px; object-fit: cover; border-radius: 4px; border: 1px solid var(--divider); display: block;" onerror="this.onerror=null; this.src='assets/ZUN.png';">
+        </div>
+      ` : ''}
+
       <h1 class="cv-name-title">${escapeHtml(identity.fullName || 'Md. Nafizur Rahman')}</h1>
       <div class="cv-inst-line">${escapeHtml(identity.institution || identity.roleBadge || '')}</div>
 

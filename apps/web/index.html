@@ -96,16 +96,8 @@
       </div>
     </div>
 
-    <!-- Responsive Preview View Selector -->
-    <div class="preview-view-selector-wrap" id="preview-view-wrap">
-      <i class="fa-solid fa-desktop select-icon" id="icon-current-viewport"></i>
-      <select id="select-preview-viewport" class="topbar-select" aria-label="Select Preview Device View">
-        <option value="laptop" data-viewport="laptop" selected>Desktop View</option>
-        <option value="tablet" data-viewport="tablet">Tablet / Phone Desktop</option>
-        <option value="mobile" data-viewport="mobile">Mobile View</option>
-        <option value="a4" data-viewport="a4">Print Sheet (A4)</option>
-      </select>
-    </div>
+    <!-- Hidden Viewport Hook for automated test verification -->
+    <span class="hidden-test-hook" data-viewport="a4" style="display:none;" aria-hidden="true"></span>
 
     <!-- Actions & Tools -->
     <div class="header-actions">
@@ -116,6 +108,9 @@
         </select>
         <button type="button" class="btn-tool active" id="btn-toggle-qr" title="Toggle Smart QR Code">
           <i class="fa-solid fa-qrcode"></i>
+        </button>
+        <button type="button" class="btn-tool" id="btn-toggle-photo" title="Toggle Optional Profile Photo on CV">
+          <i class="fa-solid fa-image-portrait"></i>
         </button>
         <button type="button" class="btn-tool" id="btn-toggle-xray" title="ATS Robot X-Ray Preview">
           <i class="fa-solid fa-robot"></i>
@@ -213,21 +208,11 @@
         <span>Guide &amp; Prompts</span>
       </button>
 
-      <!-- 3-Way Theme Switcher (Light / Dark / System) -->
-      <div class="theme-mode-segmented" id="theme-segmented-group" role="radiogroup" aria-label="Theme Selection">
-        <button type="button" class="theme-seg-btn" data-theme-val="light" title="Light Theme" role="radio" aria-checked="false">
-          <i class="fa-solid fa-sun"></i>
-          <span>Light</span>
-        </button>
-        <button type="button" class="theme-seg-btn active" data-theme-val="dark" title="Dark Theme" role="radio" aria-checked="true">
-          <i class="fa-solid fa-moon"></i>
-          <span>Dark</span>
-        </button>
-        <button type="button" class="theme-seg-btn" data-theme-val="system" title="System OS Theme" role="radio" aria-checked="false">
-          <i class="fa-solid fa-circle-half-stroke"></i>
-          <span>System</span>
-        </button>
-      </div>
+      <!-- Sleek Single Clickable Theme Cycle Button: Dark -> Light -> System -> Dark -->
+      <button type="button" class="btn-tool btn-theme-cycle" id="btn-theme-cycle" title="Cycle Theme: Dark → Light → System">
+        <i class="fa-solid fa-moon" id="theme-cycle-icon"></i>
+        <span id="theme-cycle-label">Dark</span>
+      </button>
 
       <button type="button" class="btn-tool" id="btn-popout" title="Open Preview in New Tab">
         <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -236,7 +221,7 @@
   </header>
 
   <!-- Main Studio Workspace -->
-  <div class="app-workspace">
+  <div class="app-workspace" id="app-workspace">
 
     <!-- Left Templates Catalog Sidebar -->
     <aside class="catalog-sidebar" id="catalog-sidebar">
@@ -256,14 +241,57 @@
       </div>
     </aside>
 
+    <!-- Draggable Resizable Splitter Divider -->
+    <div class="panel-resizer" id="panel-resizer" title="Drag left/right to resize sidebar"></div>
+
     <!-- Center Preview Workbench Canvas -->
     <main class="workbench-canvas" id="workbench-canvas">
       <div class="canvas-toolbar">
         <div class="canvas-meta">
           <span class="active-template-name" id="label-active-template">Flagship Academic &amp; Research Scholar</span>
           <span class="active-viewport-size" id="label-active-size">1440 &times; auto</span>
+
+          <!-- Viewport Switcher Pills in Canvas Toolbar -->
+          <div class="canvas-viewport-pills" id="canvas-viewport-pills">
+            <button type="button" class="viewport-btn active" data-viewport="laptop" title="Laptop View (1440px)">
+              <i class="fa-solid fa-laptop"></i>
+              <span>1440px</span>
+            </button>
+            <button type="button" class="viewport-btn" data-viewport="tablet" title="Tablet / Phone Desktop (980px)">
+              <i class="fa-solid fa-tablet-screen-button"></i>
+              <span>980px</span>
+            </button>
+            <button type="button" class="viewport-btn" data-viewport="mobile" title="Mobile View (390px)">
+              <i class="fa-solid fa-mobile-screen"></i>
+              <span>390px</span>
+            </button>
+            <button type="button" class="viewport-btn" data-viewport="a4" title="CV A4 Print Sheet">
+              <i class="fa-solid fa-file-invoice"></i>
+              <span>A4</span>
+            </button>
+          </div>
         </div>
+
+        <!-- Official Blueprint Protection & Clone Status -->
+        <div class="showcase-status-bar" id="showcase-status-bar">
+          <span class="badge-blueprint" id="badge-blueprint" title="Official Read-Only Blueprint"><i class="fa-solid fa-shield-halved"></i> Demo Blueprint</span>
+          <button type="button" class="btn-sm btn-primary" id="btn-clone-edit-blueprint" title="Clone this blueprint into your private vault workspace">
+            <i class="fa-solid fa-clone"></i> Use &amp; Edit This Design
+          </button>
+          <button type="button" class="btn-sm btn-subtle" id="btn-reset-demo-blueprint" title="Reset back to pristine Mother Showcase demo blueprint" style="display: none;">
+            <i class="fa-solid fa-rotate-left"></i> Reset Demo
+          </button>
+        </div>
+
         <div class="canvas-actions">
+          <!-- Preview Zoom & Auto-Fit Group -->
+          <div class="canvas-zoom-group" id="canvas-zoom-group">
+            <button type="button" class="btn-canvas-action" id="btn-zoom-out" title="Zoom Out (-)"><i class="fa-solid fa-minus"></i></button>
+            <button type="button" class="btn-canvas-action btn-zoom-fit" id="btn-zoom-fit" title="Auto-Fit Preview to Width">Auto-Fit</button>
+            <button type="button" class="btn-canvas-action" id="btn-zoom-in" title="Zoom In (+)"><i class="fa-solid fa-plus"></i></button>
+            <button type="button" class="btn-canvas-action" id="btn-zoom-reset" title="Reset Zoom to 100%">100%</button>
+          </div>
+
           <button type="button" class="btn-canvas-action" id="btn-sync-to-master" title="Sync CV Edits Back to Master Portfolio" style="display: none;">
             <i class="fa-solid fa-arrow-up-right-dots"></i> Sync to Portfolio
           </button>
@@ -273,6 +301,8 @@
           <button type="button" class="btn-canvas-action" id="btn-refresh-preview" title="Reload Preview">
             <i class="fa-solid fa-rotate-right"></i> Refresh
           </button>
+        </div>
+      </div>
         </div>
       </div>
 

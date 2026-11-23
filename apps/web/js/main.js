@@ -61,6 +61,7 @@ let activeWebNoteId = null;
 let activeWebNoteTag = 'all';
 let webNotesSearch = '';
 let showQr = true;
+let showCvPhoto = true;
 let includeLetterhead = true;
 let activeViewport = 'laptop';
 let activeCategory = 'all';
@@ -82,9 +83,20 @@ const dom = {
   btnExportDropdownToggle: document.getElementById('btn-export-dropdown-toggle'),
   exportDropdownMenu: document.getElementById('export-dropdown-menu'),
   exportMenuItems: document.querySelectorAll('.export-menu-item'),
+  btnThemeCycle: document.getElementById('btn-theme-cycle'),
+  themeCycleIcon: document.getElementById('theme-cycle-icon'),
+  themeCycleLabel: document.getElementById('theme-cycle-label'),
   themeSegmentedGroup: document.getElementById('theme-segmented-group'),
   themeSegBtns: document.querySelectorAll('.theme-seg-btn'),
   viewportBtns: document.querySelectorAll('.viewport-btn'),
+  btnZoomOut: document.getElementById('btn-zoom-out'),
+  btnZoomIn: document.getElementById('btn-zoom-in'),
+  btnZoomFit: document.getElementById('btn-zoom-fit'),
+  btnZoomReset: document.getElementById('btn-zoom-reset'),
+  panelResizer: document.getElementById('panel-resizer'),
+  badgeBlueprint: document.getElementById('badge-blueprint'),
+  btnCloneBlueprint: document.getElementById('btn-clone-edit-blueprint'),
+  btnResetBlueprint: document.getElementById('btn-reset-demo-blueprint'),
   btnThemeToggle: document.getElementById('btn-theme-toggle'),
   btnPopout: document.getElementById('btn-popout'),
   btnExportHtml: document.getElementById('btn-export-html'),
@@ -123,6 +135,7 @@ const dom = {
   cvHeaderTools: document.getElementById('cv-header-tools'),
   selectCvProfile: document.getElementById('select-cv-profile'),
   btnToggleQr: document.getElementById('btn-toggle-qr'),
+  btnTogglePhoto: document.getElementById('btn-toggle-photo'),
   btnToggleXray: document.getElementById('btn-toggle-xray'),
   btnPrintPdf: document.getElementById('btn-print-pdf'),
   btnExportDocx: document.getElementById('btn-export-docx'),
@@ -322,6 +335,9 @@ function setViewport(viewport) {
   dom.viewportBtns.forEach((btn) => {
     btn.classList.toggle('active', btn.getAttribute('data-viewport') === viewport);
   });
+  document.querySelectorAll('.canvas-viewport-pills .viewport-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.getAttribute('data-viewport') === viewport);
+  });
 
   dom.deviceWrapper.className = `preview-device-wrapper viewport-${viewport}`;
   if (viewport === 'laptop') {
@@ -337,6 +353,7 @@ function setViewport(viewport) {
   if (editorLivePreview) {
     editorLivePreview.setViewport(viewport);
   }
+  autoFitPreview();
 }
 
 function updatePreview() {
@@ -354,6 +371,7 @@ function updatePreview() {
     const markup = renderCvHtml(activeProfile, {
       templateId: activeCvTemplateId,
       showQr,
+      showPhoto: showCvPhoto,
       includedSections: activeCvProf?.includedSections
     });
     dom.previewIframe.srcdoc = markup;
@@ -1256,13 +1274,46 @@ function applyTheme(pref) {
   activeTheme = effectiveTheme;
   document.documentElement.setAttribute('data-theme', effectiveTheme);
 
-  dom.themeSegBtns.forEach((btn) => {
-    const isTarget = btn.getAttribute('data-theme-val') === pref;
-    btn.classList.toggle('active', isTarget);
-    btn.setAttribute('aria-checked', String(isTarget));
-  });
+  // Update Single Theme Cycle Button
+  if (dom.themeCycleIcon && dom.themeCycleLabel) {
+    if (pref === 'dark') {
+      dom.themeCycleIcon.className = 'fa-solid fa-moon';
+      dom.themeCycleLabel.textContent = 'Dark';
+    } else if (pref === 'light') {
+      dom.themeCycleIcon.className = 'fa-solid fa-sun';
+      dom.themeCycleLabel.textContent = 'Light';
+    } else {
+      dom.themeCycleIcon.className = 'fa-solid fa-circle-half-stroke';
+      dom.themeCycleLabel.textContent = 'System';
+    }
+  }
 
-  updatePreview();
+  if (dom.themeSegBtns) {
+    dom.themeSegBtns.forEach((btn) => {
+      const isTarget = btn.getAttribute('data-theme-val') === pref;
+      btn.classList.toggle('active', isTarget);
+      btn.setAttribute('aria-checked', String(isTarget));
+    });
+  }
+
+  // Seamless in-place theme toggle on iframe without reloading srcdoc
+  try {
+    const iframeDoc = dom.previewIframe?.contentDocument;
+    if (iframeDoc && iframeDoc.documentElement) {
+      iframeDoc.documentElement.setAttribute('data-theme', effectiveTheme);
+    } else {
+      updatePreview();
+    }
+  } catch {
+    updatePreview();
+  }
+}
+
+function cycleTheme() {
+  const sequence = ['dark', 'light', 'system'];
+  const currentIndex = sequence.indexOf(currentThemePreference);
+  const nextIndex = (currentIndex + 1) % sequence.length;
+  applyTheme(sequence[nextIndex]);
 }
 
 function initThemeMode() {
@@ -1273,12 +1324,18 @@ function initThemeMode() {
 
   applyTheme(saved);
 
-  dom.themeSegBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const val = btn.getAttribute('data-theme-val');
-      if (val) applyTheme(val);
+  if (dom.btnThemeCycle) {
+    dom.btnThemeCycle.addEventListener('click', cycleTheme);
+  }
+
+  if (dom.themeSegBtns) {
+    dom.themeSegBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const val = btn.getAttribute('data-theme-val');
+        if (val) applyTheme(val);
+      });
     });
-  });
+  }
 
   if (window.matchMedia) {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
@@ -1287,6 +1344,159 @@ function initThemeMode() {
       }
     });
   }
+}
+
+// --- Preview Zoom & Auto-Fit Controls ---
+let currentPreviewZoom = 1.0;
+
+function setPreviewZoom(scale) {
+  currentPreviewZoom = Math.max(0.4, Math.min(1.5, Number(scale.toFixed(2))));
+  if (dom.deviceWrapper) {
+    dom.deviceWrapper.style.setProperty('--preview-zoom', currentPreviewZoom);
+  }
+  if (dom.btnZoomFit) {
+    dom.btnZoomFit.textContent = `Fit (${Math.round(currentPreviewZoom * 100)}%)`;
+  }
+}
+
+function autoFitPreview() {
+  const stage = document.getElementById('frame-stage');
+  if (!stage || !dom.deviceWrapper) return;
+  const stageWidth = stage.clientWidth - 40;
+  let targetWidth = 1440;
+  if (activeViewport === 'tablet') targetWidth = 980;
+  else if (activeViewport === 'mobile') targetWidth = 390;
+  else if (activeViewport === 'a4') targetWidth = 794;
+
+  if (stageWidth > 0 && targetWidth > 0) {
+    const fitScale = Math.min(1.0, Math.max(0.4, (stageWidth / targetWidth)));
+    setPreviewZoom(fitScale);
+  }
+}
+
+function initZoomControls() {
+  if (dom.btnZoomOut) dom.btnZoomOut.addEventListener('click', () => setPreviewZoom(currentPreviewZoom - 0.1));
+  if (dom.btnZoomIn) dom.btnZoomIn.addEventListener('click', () => setPreviewZoom(currentPreviewZoom + 0.1));
+  if (dom.btnZoomReset) dom.btnZoomReset.addEventListener('click', () => setPreviewZoom(1.0));
+  if (dom.btnZoomFit) dom.btnZoomFit.addEventListener('click', autoFitPreview);
+
+  window.addEventListener('resize', () => {
+    if (currentPreviewZoom !== 1.0) {
+      autoFitPreview();
+    }
+  });
+
+  setTimeout(autoFitPreview, 150);
+}
+
+// --- Draggable Resizable Split Panels ---
+function initPanelResizer() {
+  const resizer = dom.panelResizer;
+  const sidebar = dom.catalogSidebar;
+  if (!resizer || !sidebar) return;
+
+  try {
+    const savedWidth = localStorage.getItem('zundeck_sidebar_w');
+    if (savedWidth) {
+      sidebar.style.width = savedWidth;
+    }
+  } catch {}
+
+  let isDragging = false;
+
+  const onMouseDown = () => {
+    isDragging = true;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  const onMouseMove = (e) => {
+    if (!isDragging) return;
+    const minWidth = 240;
+    const maxWidth = 520;
+    const newWidth = Math.max(minWidth, Math.min(maxWidth, e.clientX));
+    sidebar.style.width = `${newWidth}px`;
+    try {
+      localStorage.setItem('zundeck_sidebar_w', `${newWidth}px`);
+    } catch {}
+  };
+
+  const onMouseUp = () => {
+    if (isDragging) {
+      isDragging = false;
+      resizer.classList.remove('resizing');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      autoFitPreview();
+    }
+  };
+
+  resizer.addEventListener('mousedown', onMouseDown);
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+
+  resizer.addEventListener('touchstart', () => {
+    isDragging = true;
+    resizer.classList.add('resizing');
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!isDragging || !e.touches[0]) return;
+    const clientX = e.touches[0].clientX;
+    const minWidth = 240;
+    const maxWidth = 520;
+    const newWidth = Math.max(minWidth, Math.min(maxWidth, clientX));
+    sidebar.style.width = `${newWidth}px`;
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (isDragging) {
+      isDragging = false;
+      resizer.classList.remove('resizing');
+      autoFitPreview();
+    }
+  });
+}
+
+// --- Mother Showcase Blueprint Clone-on-Edit & Reset Demo ---
+let isCustomWorkspace = false;
+
+function updateBlueprintStatusUi() {
+  if (dom.badgeBlueprint) dom.badgeBlueprint.style.display = isCustomWorkspace ? 'none' : 'inline-flex';
+  if (dom.btnCloneBlueprint) dom.btnCloneBlueprint.style.display = isCustomWorkspace ? 'none' : 'inline-flex';
+  if (dom.btnResetBlueprint) dom.btnResetBlueprint.style.display = isCustomWorkspace ? 'inline-flex' : 'none';
+}
+
+async function cloneBlueprintIntoWorkspace() {
+  isCustomWorkspace = true;
+  activeProfile = JSON.parse(JSON.stringify(activeProfile));
+  activeProfile.meta = activeProfile.meta || {};
+  activeProfile.meta.source = 'custom-user-workspace';
+  await savePrivateVault({ profile: activeProfile, isCustom: true });
+  updateBlueprintStatusUi();
+  if (visualEditor) visualEditor.setProfile(activeProfile);
+  if (editorLivePreview) editorLivePreview.setProfile(activeProfile);
+  updatePreview();
+  if (dom.syncLabel) dom.syncLabel.textContent = 'Custom Private Workspace';
+}
+
+async function resetToOriginalDemo() {
+  if (!confirm('Reset workspace back to pristine Mother Showcase demo blueprint? Any unsaved edits will be replaced.')) {
+    return;
+  }
+  isCustomWorkspace = false;
+  activeProfile = getMotherShowcaseFallback();
+  await savePrivateVault({ profile: activeProfile, isCustom: false });
+  updateBlueprintStatusUi();
+  if (visualEditor) visualEditor.setProfile(activeProfile);
+  if (editorLivePreview) editorLivePreview.setProfile(activeProfile);
+  updatePreview();
+  if (dom.syncLabel) dom.syncLabel.textContent = 'Mother Showcase Synced';
+}
+
+function initBlueprintControls() {
+  if (dom.btnCloneBlueprint) dom.btnCloneBlueprint.addEventListener('click', cloneBlueprintIntoWorkspace);
+  if (dom.btnResetBlueprint) dom.btnResetBlueprint.addEventListener('click', resetToOriginalDemo);
+  updateBlueprintStatusUi();
 }
 
 function exportCvDocx() {
@@ -1455,6 +1665,15 @@ function initEventListeners() {
     updatePreview();
   });
 
+  if (dom.btnTogglePhoto) {
+    dom.btnTogglePhoto.classList.toggle('active', showCvPhoto);
+    dom.btnTogglePhoto.addEventListener('click', () => {
+      showCvPhoto = !showCvPhoto;
+      dom.btnTogglePhoto.classList.toggle('active', showCvPhoto);
+      updatePreview();
+    });
+  }
+
   dom.btnToggleXray.addEventListener('click', openAtsXRayModal);
   dom.btnCloseXray.addEventListener('click', closeAtsXRayModal);
   dom.xrayModal.addEventListener('click', (e) => {
@@ -1605,6 +1824,15 @@ function initEventListeners() {
     alert(`Note idea "${note.title}" sent to SOP & Letters target story/notes!`);
   });
 
+  // Canvas Viewport Pills
+  const canvasViewportPills = document.querySelectorAll('.canvas-viewport-pills .viewport-btn');
+  canvasViewportPills.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const v = btn.getAttribute('data-viewport');
+      if (v) setViewport(v);
+    });
+  });
+
   // Mobile sub-navigation toggle
   if (dom.btnSubnavControls && dom.btnSubnavEditor) {
     dom.btnSubnavControls.addEventListener('click', () => {
@@ -1628,6 +1856,11 @@ async function init() {
   renderCatalog();
   updatePreview();
   initEventListeners();
+  initThemeMode();
+  initExportMenu();
+  initZoomControls();
+  initPanelResizer();
+  initBlueprintControls();
 
   try {
     const liveProfile = await fetchLiveMotherShowcase(3000);
