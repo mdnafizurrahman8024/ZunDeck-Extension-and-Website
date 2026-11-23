@@ -87,6 +87,9 @@ export class VisualEditorController {
           <button type="button" class="ve-tab-btn ${this.activeTab === 'documents' ? 'active' : ''}" data-ve-tab="documents">
             <i class="fa-solid fa-folder-open"></i> <span>Documents &amp; Slides</span>
           </button>
+          <button type="button" class="ve-tab-btn ${this.activeTab === 'sections' ? 'active' : ''}" data-ve-tab="sections">
+            <i class="fa-solid fa-layer-group"></i> <span>Sections &amp; Order</span>
+          </button>
           <button type="button" class="ve-tab-btn ${this.activeTab === 'contact' ? 'active' : ''}" data-ve-tab="contact">
             <i class="fa-solid fa-map-location-dot"></i> <span>Map &amp; Contact</span>
           </button>
@@ -123,6 +126,8 @@ export class VisualEditorController {
         return this.renderMediaPane();
       case 'documents':
         return this.renderDocumentsPane();
+      case 'sections':
+        return this.renderSectionsManagerPane();
       case 'contact':
         return renderLocationContactEditorHtml(this.profile);
       case 'customizer':
@@ -143,43 +148,43 @@ export class VisualEditorController {
         <div class="form-grid-2">
           <div class="form-group">
             <label class="form-label" for="ve-fullname">Full Name</label>
-            <input type="text" id="ve-fullname" class="form-input" value="${escapeHtml(id.fullName || '')}">
+            <input type="text" id="ve-fullname" class="form-input" value="${escapeHtml(id.fullName || '')}" placeholder="e.g. Dr. Alex Mercer, PhD">
           </div>
           <div class="form-group">
             <label class="form-label" for="ve-shortname">Short / Display Name</label>
-            <input type="text" id="ve-shortname" class="form-input" value="${escapeHtml(id.shortName || '')}">
+            <input type="text" id="ve-shortname" class="form-input" value="${escapeHtml(id.shortName || '')}" placeholder="e.g. Alex">
           </div>
         </div>
         <div class="form-grid-2">
           <div class="form-group">
             <label class="form-label" for="ve-rolebadge">Role Badge / Degree</label>
-            <input type="text" id="ve-rolebadge" class="form-input" value="${escapeHtml(id.roleBadge || '')}">
+            <input type="text" id="ve-rolebadge" class="form-input" value="${escapeHtml(id.roleBadge || '')}" placeholder="e.g. Doctor of Veterinary Medicine (DVM)">
           </div>
           <div class="form-group">
             <label class="form-label" for="ve-availability">Availability Status</label>
-            <input type="text" id="ve-availability" class="form-input" value="${escapeHtml(id.availabilityStatus || '')}">
+            <input type="text" id="ve-availability" class="form-input" value="${escapeHtml(id.availabilityStatus || '')}" placeholder="e.g. Open for Research Collaborations &amp; Graduate Opportunities">
           </div>
         </div>
         <div class="form-group">
           <label class="form-label" for="ve-tagline">Professional Tagline / Headline</label>
-          <input type="text" id="ve-tagline" class="form-input" value="${escapeHtml(id.tagline || '')}">
+          <input type="text" id="ve-tagline" class="form-input" value="${escapeHtml(id.tagline || '')}" placeholder="e.g. DVM Researcher • One Health &amp; Genomic Surveillance • Computational Biologist">
         </div>
         <div class="form-group">
           <label class="form-label" for="ve-quote">Philosophy Quote</label>
-          <input type="text" id="ve-quote" class="form-input" value="${escapeHtml(id.quote || '')}">
+          <input type="text" id="ve-quote" class="form-input" value="${escapeHtml(id.quote || '')}" placeholder="e.g. Knowledge. Investigation. Practice. Impact.">
         </div>
         <div class="form-group">
           <label class="form-label" for="ve-bio">Biography Paragraphs (Separate paragraphs with blank lines)</label>
-          <textarea id="ve-bio" class="form-textarea" rows="4">${escapeHtml((id.bioParagraphs || []).join('\n\n'))}</textarea>
+          <textarea id="ve-bio" class="form-textarea" rows="4" placeholder="Write a concise overview of your academic background, research focus, and career milestones...">${escapeHtml((id.bioParagraphs || []).join('\n\n'))}</textarea>
         </div>
         <div class="form-grid-2">
           <div class="form-group">
             <label class="form-label" for="ve-avatar">Avatar URL or File Name</label>
-            <input type="text" id="ve-avatar" class="form-input" value="${escapeHtml(id.avatar || '')}">
+            <input type="text" id="ve-avatar" class="form-input" value="${escapeHtml(id.avatar || '')}" placeholder="e.g. assets/ZUN.png or https://...">
           </div>
           <div class="form-group">
             <label class="form-label" for="ve-banner">Banner Image URL or File Name</label>
-            <input type="text" id="ve-banner" class="form-input" value="${escapeHtml(id.banner || '')}">
+            <input type="text" id="ve-banner" class="form-input" value="${escapeHtml(id.banner || '')}" placeholder="e.g. assets/Banner.png or https://...">
           </div>
         </div>
       </div>
@@ -416,11 +421,23 @@ export class VisualEditorController {
         <div class="form-grid-2" style="margin-bottom: 20px;">
           <div class="form-group">
             <label class="form-label" for="ve-avatar-media">Profile Avatar (URL or File)</label>
-            <input type="text" id="ve-avatar-media" class="form-input" value="${escapeHtml(id.avatar || '')}">
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="ve-avatar-media" class="form-input" value="${escapeHtml(id.avatar || '')}" placeholder="Paste URL or upload image">
+              <label class="btn-sm btn-subtle" style="display:inline-flex; align-items:center; cursor:pointer; white-space:nowrap;">
+                <i class="fa-solid fa-upload"></i> Upload
+                <input type="file" id="ve-avatar-file" accept="image/*" style="display:none;">
+              </label>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label" for="ve-banner-media">Hero Banner (URL or File)</label>
-            <input type="text" id="ve-banner-media" class="form-input" value="${escapeHtml(id.banner || '')}">
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="ve-banner-media" class="form-input" value="${escapeHtml(id.banner || '')}" placeholder="Paste URL or upload banner">
+              <label class="btn-sm btn-subtle" style="display:inline-flex; align-items:center; cursor:pointer; white-space:nowrap;">
+                <i class="fa-solid fa-upload"></i> Upload
+                <input type="file" id="ve-banner-file" accept="image/*" style="display:none;">
+              </label>
+            </div>
           </div>
         </div>
         <div id="ve-gallery-manager-mount">
@@ -447,6 +464,86 @@ export class VisualEditorController {
             description: 'Direct PDFs or Google Drive links with smart embed conversions.',
             sectionTag: 'General'
           })}
+        </div>
+      </div>
+    `;
+  }
+
+  renderSectionsManagerPane() {
+    const cfg = this.profile.displayConfig || {};
+    const visibility = cfg.sectionVisibility || {};
+    const defaultOrder = ['about', 'education', 'updates', 'research', 'projects', 'skills', 'publications', 'certifications', 'leadership', 'gallery', 'references', 'contact'];
+    const currentOrder = Array.isArray(cfg.sectionOrder) && cfg.sectionOrder.length > 0 ? cfg.sectionOrder : defaultOrder;
+
+    const SECTION_LABELS = {
+      about: { label: 'About & Biography', icon: 'fa-solid fa-user', desc: 'Personal bio, institution and summary' },
+      education: { label: 'Education Timeline', icon: 'fa-solid fa-graduation-cap', desc: 'Degrees, institutions, and clinical milestones' },
+      updates: { label: 'Recent Updates (Auto-moving Ticker)', icon: 'fa-solid fa-bullhorn', desc: 'Dynamic continuous scroll feed' },
+      research: { label: 'Scientific Research', icon: 'fa-solid fa-flask-vial', desc: 'Protocols, clinical studies, and surveillance' },
+      projects: { label: 'Projects & Platforms', icon: 'fa-solid fa-laptop-code', desc: 'Software systems, web platforms, and mobile apps' },
+      skills: { label: 'Competencies & Skills', icon: 'fa-solid fa-layer-group', desc: 'Domain and technical capabilities' },
+      publications: { label: 'Publications & DOI', icon: 'fa-solid fa-book-journal-whills', desc: 'Peer-reviewed papers with Crossref/ORCID' },
+      certifications: { label: 'Certificates & WHO Credentials', icon: 'fa-solid fa-award', desc: 'Verified courses, training, and diagnostics' },
+      leadership: { label: 'Leadership & Volunteering', icon: 'fa-solid fa-hand-holding-heart', desc: 'Executive roles, rescue, and social initiatives' },
+      gallery: { label: 'Photo Gallery & Field Slideshow', icon: 'fa-solid fa-photo-film', desc: 'Panoramic marquee flow and categorized photos' },
+      references: { label: 'Academic References', icon: 'fa-solid fa-user-check', desc: 'Professors, mentors, and lab directors' },
+      contact: { label: 'Location Map & Contact', icon: 'fa-solid fa-map-location-dot', desc: 'Interactive satellite map and direct reachout' }
+    };
+
+    const activeSections = currentOrder.filter((s) => SECTION_LABELS[s]);
+
+    const listHtml = activeSections.map((secKey, idx) => {
+      const meta = SECTION_LABELS[secKey] || { label: secKey, icon: 'fa-solid fa-layer-group', desc: '' };
+      const isVisible = visibility[secKey] !== false;
+
+      return `
+        <div class="ve-item-card section-manage-card ${isVisible ? '' : 'section-hidden'}" data-section-key="${secKey}" data-index="${idx}">
+          <div class="ve-item-header">
+            <div class="item-title-wrap">
+              <i class="${meta.icon} section-icon-tag" style="color: var(--primary);"></i>
+              <div>
+                <strong class="item-title">${escapeHtml(meta.label)}</strong>
+                <p class="section-desc-sub">${escapeHtml(meta.desc)}</p>
+              </div>
+            </div>
+            <div class="item-actions">
+              <button type="button" class="btn-micro ${isVisible ? 'btn-subtle' : 'btn-outline'}" data-action="toggle-section-visibility" data-section="${secKey}" title="${isVisible ? 'Hide this section' : 'Show this section'}">
+                <i class="fa-solid ${isVisible ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${isVisible ? 'Visible' : 'Hidden'}</span>
+              </button>
+              <button type="button" class="btn-icon-subtle" data-action="move-section-up" data-index="${idx}" title="Move Up" ${idx === 0 ? 'disabled' : ''}>
+                <i class="fa-solid fa-arrow-up"></i>
+              </button>
+              <button type="button" class="btn-icon-subtle" data-action="move-section-down" data-index="${idx}" title="Move Down" ${idx === activeSections.length - 1 ? 'disabled' : ''}>
+                <i class="fa-solid fa-arrow-down"></i>
+              </button>
+              <button type="button" class="btn-icon-danger" data-action="delete-section" data-section="${secKey}" title="Permanently Delete Section">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('\n');
+
+    return `
+      <div class="ve-section-pane">
+        <div class="pane-header-with-actions">
+          <div>
+            <h3>Sections &amp; Layout Manager</h3>
+            <p>Add, reorder, hide, or permanently delete any section card to match your exact background.</p>
+          </div>
+          <div class="add-section-dropdown-wrap">
+            <select id="select-add-section" class="form-select" style="max-width: 240px;">
+              <option value="">+ Add Section...</option>
+              ${Object.entries(SECTION_LABELS).map(([k, v]) => `
+                <option value="${k}">${escapeHtml(v.label)}</option>
+              `).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="ve-items-list" id="sections-list-container">
+          ${listHtml}
         </div>
       </div>
     `;
@@ -496,8 +593,9 @@ export class VisualEditorController {
           <div class="form-group">
             <label class="form-label">Animated Gradient Border Accent</label>
             <div class="segmented-control" id="control-gradient-borders">
-              <button type="button" class="seg-btn ${gradientBorders === 'hero' ? 'active' : ''}" data-val="hero">Hero Banner</button>
-              <button type="button" class="seg-btn ${gradientBorders === 'closing' ? 'active' : ''}" data-val="closing">Closing Card</button>
+              <button type="button" class="seg-btn ${gradientBorders === 'both' || gradientBorders === 'all' ? 'active' : ''}" data-val="both">Both Hero &amp; Closing</button>
+              <button type="button" class="seg-btn ${gradientBorders === 'hero' ? 'active' : ''}" data-val="hero">Hero Only</button>
+              <button type="button" class="seg-btn ${gradientBorders === 'closing' ? 'active' : ''}" data-val="closing">Closing Only</button>
               <button type="button" class="seg-btn ${gradientBorders === 'off' ? 'active' : ''}" data-val="off">Off</button>
             </div>
           </div>
@@ -524,10 +622,10 @@ export class VisualEditorController {
           <div class="effects-motion-drawer" style="grid-column: 1 / -1; background: var(--bg-surface-elevated, #f8fafc); border: 1px solid var(--border-subtle, #e2e8f0); border-radius: 10px; padding: 14px; margin-top: 8px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
               <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 7px; margin: 0;">
-                <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i>
+                <i class="fa-solid fa-sliders" style="color: var(--primary);"></i>
                 Visual Effects &amp; Motion Controls
               </h4>
-              <span class="pill-badge pill-info" style="font-size: 0.68rem;">Mother Showcase Sync</span>
+              <span class="pill-badge pill-info" style="font-size: 0.68rem;">Live Showcase Sync</span>
             </div>
             <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
               Control animated shifting perimeter gradient borders, glowing blur halo, vertical Updates ticker timing, and horizontal Photo Gallery marquee flow.
@@ -1010,6 +1108,106 @@ export class VisualEditorController {
         this.profile.identity.banner = e.target.value.trim();
         this.notifyChange();
       });
+
+      const handleFileUpload = (fileInputEl, onLoaded) => {
+        fileInputEl?.addEventListener('change', (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (loadEvt) => {
+            onLoaded(loadEvt.target.result);
+            this.notifyChange();
+            this.render();
+          };
+          reader.readAsDataURL(file);
+        });
+      };
+
+      handleFileUpload(this.container.querySelector('#ve-avatar-file'), (dataUrl) => {
+        this.profile.identity = this.profile.identity || {};
+        this.profile.identity.avatar = dataUrl;
+      });
+
+      handleFileUpload(this.container.querySelector('#ve-banner-file'), (dataUrl) => {
+        this.profile.identity = this.profile.identity || {};
+        this.profile.identity.banner = dataUrl;
+      });
+    }
+
+    // Sections & Layout Order Tab
+    if (this.activeTab === 'sections') {
+      const cfg = this.profile.displayConfig = this.profile.displayConfig || {};
+      const defaultOrder = ['about', 'education', 'updates', 'research', 'projects', 'skills', 'publications', 'certifications', 'leadership', 'gallery', 'references', 'contact'];
+      if (!Array.isArray(cfg.sectionOrder) || cfg.sectionOrder.length === 0) {
+        cfg.sectionOrder = [...defaultOrder];
+      }
+      cfg.sectionVisibility = cfg.sectionVisibility || {};
+
+      // Toggle section visibility
+      this.container.querySelectorAll('[data-action="toggle-section-visibility"]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const sec = e.currentTarget.getAttribute('data-section');
+          const isCurrentlyVisible = cfg.sectionVisibility[sec] !== false;
+          cfg.sectionVisibility[sec] = !isCurrentlyVisible;
+          this.notifyChange();
+          this.render();
+        });
+      });
+
+      // Move section up
+      this.container.querySelectorAll('[data-action="move-section-up"]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const idx = parseInt(e.currentTarget.getAttribute('data-index'), 10);
+          if (idx > 0 && idx < cfg.sectionOrder.length) {
+            const temp = cfg.sectionOrder[idx];
+            cfg.sectionOrder[idx] = cfg.sectionOrder[idx - 1];
+            cfg.sectionOrder[idx - 1] = temp;
+            this.notifyChange();
+            this.render();
+          }
+        });
+      });
+
+      // Move section down
+      this.container.querySelectorAll('[data-action="move-section-down"]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const idx = parseInt(e.currentTarget.getAttribute('data-index'), 10);
+          if (idx >= 0 && idx < cfg.sectionOrder.length - 1) {
+            const temp = cfg.sectionOrder[idx];
+            cfg.sectionOrder[idx] = cfg.sectionOrder[idx + 1];
+            cfg.sectionOrder[idx + 1] = temp;
+            this.notifyChange();
+            this.render();
+          }
+        });
+      });
+
+      // Delete section (removes from order & sets visibility false)
+      this.container.querySelectorAll('[data-action="delete-section"]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const sec = e.currentTarget.getAttribute('data-section');
+          cfg.sectionOrder = cfg.sectionOrder.filter((s) => s !== sec);
+          cfg.sectionVisibility[sec] = false;
+          this.notifyChange();
+          this.render();
+        });
+      });
+
+      // Add section from dropdown
+      const selAdd = this.container.querySelector('#select-add-section');
+      if (selAdd) {
+        selAdd.addEventListener('change', (e) => {
+          const sec = e.target.value;
+          if (sec) {
+            if (!cfg.sectionOrder.includes(sec)) {
+              cfg.sectionOrder.push(sec);
+            }
+            cfg.sectionVisibility[sec] = true;
+            this.notifyChange();
+            this.render();
+          }
+        });
+      }
     }
 
     // Documents & Slides Tab

@@ -54,6 +54,12 @@ export function renderPortfolioHtml(profile, options = {}) {
   const visibility = displayConfig.sectionVisibility || {};
   const seeAllLimit = displayConfig.seeAllLimit || { research: 3, projects: 3, publications: 4, certifications: 6 };
 
+  const isDemoMode = Boolean(options.isDemoMode ?? (profile.meta?.isDemoMode || !profile.meta?.isCustomWorkspace));
+  const gradientBorders = displayConfig.gradientBorders || 'both';
+  const effects = displayConfig.effects || {};
+  const hasHeroBorder = (gradientBorders === 'hero' || gradientBorders === 'both') && effects.heroBorder !== false;
+  const hasClosingBorder = (gradientBorders === 'closing' || gradientBorders === 'both') && effects.closingBorder !== false;
+
   const isVisible = (secKey) => visibility[secKey] !== false;
 
   const seo = generateSeoTags(profile, options.canonicalUrl);
@@ -411,6 +417,7 @@ export function renderPortfolioHtml(profile, options = {}) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="${escapeHtml(options.baseHref || './')}">
   ${seo.headMarkup}
 
   <!-- Font and Icons -->
@@ -2030,9 +2037,57 @@ export function renderPortfolioHtml(profile, options = {}) {
       color: var(--primary);
       width: 20px;
     }
+    .avatar-initials-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-subtle);
+      color: var(--primary);
+      font-size: 2.2rem;
+    }
+
+    ${isDemoMode ? `
+    /* Strict View-Only Anti-Copy Protection in Demo Mode */
+    body.demo-view-only, body.demo-view-only * {
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+      -webkit-user-drag: none !important;
+    }
+    .demo-view-only img, .demo-view-only a, .demo-view-only button {
+      -webkit-user-drag: none !important;
+    }
+    .demo-anti-copy-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(15, 23, 42, 0.95);
+      color: #f8fafc;
+      padding: 10px 22px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border: 1px solid rgba(13, 148, 136, 0.4);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(13, 148, 136, 0.25);
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+      z-index: 99999;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .demo-anti-copy-toast.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+    ` : ''}
   </style>
 </head>
-<body>
+<body class="${isDemoMode ? 'demo-view-only' : ''}">
 
   <!-- Top Sticky Navigation Bar -->
   <header class="navbar" id="top-navbar">
@@ -2123,9 +2178,9 @@ export function renderPortfolioHtml(profile, options = {}) {
       <div class="scrollable-feed">
 
         <!-- 1. Top Cover Banner (Animated Perimeter Gradient) -->
-        ${layout.heroBanner && identity.banner ? `
-          <div class="hero-banner-card card-perimeter-gradient" id="home">
-            <img src="${sanitizeUrl(identity.banner)}" alt="Cover Banner" class="hero-banner-img" onerror="this.onerror=null; this.src='assets/Banner.png';">
+        ${layout.heroBanner && (identity.banner || isVisible('banner')) ? `
+          <div class="hero-banner-card ${hasHeroBorder ? 'card-perimeter-gradient' : ''}" id="home">
+            <img src="${sanitizeUrl(identity.banner || 'assets/Banner.png')}" alt="Cover Banner" class="hero-banner-img" onerror="this.onerror=null; this.src='assets/Banner.png';">
           </div>
         ` : ''}
 
@@ -2310,7 +2365,7 @@ export function renderPortfolioHtml(profile, options = {}) {
 
         <!-- 13. Closing Appreciation Card (Animated Perimeter Gradient) -->
         ${layout.closingCard ? `
-        <div class="closing-card card-perimeter-gradient">
+        <div class="closing-card ${hasClosingBorder ? 'card-perimeter-gradient' : ''}">
           <h3 class="closing-card-title">Thank You for Visiting</h3>
           <p class="closing-card-sub">Open to collaborative research in One Health, computational biology, and innovative healthtech.</p>
           <div style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono);">
@@ -2420,6 +2475,61 @@ export function renderPortfolioHtml(profile, options = {}) {
           });
         });
       }
+
+      // 7. Interactive View-Only Live Demo Mode & Anti-Copy Protection
+      ${isDemoMode ? `
+      function showDemoToast(msg) {
+        var toast = document.getElementById('demo-anti-copy-toast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'demo-anti-copy-toast';
+          toast.className = 'demo-anti-copy-toast';
+          document.body.appendChild(toast);
+        }
+        toast.textContent = msg;
+        toast.classList.add('visible');
+        clearTimeout(window.__demoToastTimer);
+        window.__demoToastTimer = setTimeout(function() {
+          toast.classList.remove('visible');
+        }, 2800);
+      }
+
+      // Block right-click context menu
+      document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        showDemoToast("Demo Preview Only — Click 'Use & Edit This Design' to build your own portfolio & CV");
+        return false;
+      });
+
+      // Block dragging of images, text, and elements
+      document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+        return false;
+      });
+
+      // Block copy / save / print keyboard shortcuts
+      document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && ['c', 's', 'u', 'p', 'C', 'S', 'U', 'P'].indexOf(e.key) !== -1) {
+          e.preventDefault();
+          showDemoToast("Demo Preview Only — Click 'Use & Edit This Design' to build your own portfolio & CV");
+          return false;
+        }
+      });
+
+      // Intercept direct CV download links
+      document.addEventListener('click', function(e) {
+        var cvBtn = e.target.closest('a[download], a[href*=".pdf"], .floating-cv-pill, .btn-download-cv');
+        if (cvBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          showDemoToast("Demo Preview Only — Click 'Use & Edit This Design' to build your own portfolio & CV");
+          try {
+            window.parent.postMessage({ type: 'DEMO_ACTION_BLOCKED', action: 'download_cv' }, '*');
+          } catch(_) {}
+          return false;
+        }
+      }, true);
+      ` : ''}
     })();
   </script>
 </body>

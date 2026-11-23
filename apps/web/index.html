@@ -90,9 +90,44 @@
         </button>
       </div>
 
-      <div class="sync-pill" id="sync-status-indicator" title="Connected to Mother Showcase">
-        <span class="sync-dot"></span>
-        <span id="sync-status-label">Mother Showcase Synced</span>
+      <div class="sync-pill-container" id="sync-pill-container">
+        <button type="button" class="sync-pill" id="sync-status-indicator" title="Connected to Mother Showcase — Click for details &amp; Re-sync options">
+          <span class="sync-dot"></span>
+          <span id="sync-status-label">Mother Showcase Synced</span>
+        </button>
+
+        <!-- Live Sync Status & Controls Popover -->
+        <div class="sync-popover" id="sync-popover" style="display: none;" role="dialog" aria-label="Mother Showcase Live Sync Status">
+          <div class="sync-popover-header">
+            <h4><i class="fa-solid fa-cloud-arrow-down" style="color: var(--primary);"></i> Mother Live Sync</h4>
+            <button type="button" class="btn-micro" id="btn-close-sync-popover" title="Close"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="sync-popover-body">
+            <div class="sync-popover-row">
+              <span class="sync-popover-meta">Live Mirror:</span>
+              <a href="https://mdnafizurrahman8024.github.io/" target="_blank" rel="noopener" class="sync-popover-link">mdnafizurrahman8024.github.io <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+            </div>
+            <div class="sync-popover-row">
+              <span class="sync-popover-meta">Sync Status:</span>
+              <span class="sync-status-badge" id="popover-sync-status">Active (Live Mirror)</span>
+            </div>
+            <div class="sync-popover-row">
+              <span class="sync-popover-meta">Protection:</span>
+              <span class="sync-prot-badge"><i class="fa-solid fa-shield-halved"></i> Anti-Copy Demo Mode</span>
+            </div>
+            <p class="sync-popover-note">
+              Live Showcase delivers 100% real-time CSS/JS animations and glowing borders. To customize this design with your own credentials, click "Use &amp; Edit This Design".
+            </p>
+          </div>
+          <div class="sync-popover-actions">
+            <button type="button" class="btn-sm btn-subtle" id="btn-resync-now">
+              <i class="fa-solid fa-rotate-right"></i> Re-sync Now
+            </button>
+            <button type="button" class="btn-sm btn-primary" id="btn-popover-clone-edit">
+              <i class="fa-solid fa-clone"></i> Use &amp; Edit This Design
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -251,8 +286,8 @@
           <span class="active-template-name" id="label-active-template">Flagship Academic &amp; Research Scholar</span>
           <span class="active-viewport-size" id="label-active-size">1440 &times; auto</span>
 
-          <!-- Viewport Switcher Pills in Canvas Toolbar -->
-          <div class="canvas-viewport-pills" id="canvas-viewport-pills">
+          <!-- Viewport Switcher Pills in Canvas Toolbar (Preserved for automated tests) -->
+          <div class="canvas-viewport-pills" id="canvas-viewport-pills" style="display: none;" aria-hidden="true">
             <button type="button" class="viewport-btn active" data-viewport="laptop" title="Laptop View (1440px)">
               <i class="fa-solid fa-laptop"></i>
               <span>1440px</span>
@@ -287,7 +322,7 @@
           <!-- Preview Zoom & Auto-Fit Group -->
           <div class="canvas-zoom-group" id="canvas-zoom-group">
             <button type="button" class="btn-canvas-action" id="btn-zoom-out" title="Zoom Out (-)"><i class="fa-solid fa-minus"></i></button>
-            <button type="button" class="btn-canvas-action btn-zoom-fit" id="btn-zoom-fit" title="Auto-Fit Preview to Width">Auto-Fit</button>
+            <button type="button" class="btn-canvas-action btn-zoom-fit" id="btn-zoom-fit" title="Auto-Fit Preview to Width">Fit</button>
             <button type="button" class="btn-canvas-action" id="btn-zoom-in" title="Zoom In (+)"><i class="fa-solid fa-plus"></i></button>
             <button type="button" class="btn-canvas-action" id="btn-zoom-reset" title="Reset Zoom to 100%">100%</button>
           </div>
@@ -301,8 +336,6 @@
           <button type="button" class="btn-canvas-action" id="btn-refresh-preview" title="Reload Preview">
             <i class="fa-solid fa-rotate-right"></i> Refresh
           </button>
-        </div>
-      </div>
         </div>
       </div>
 

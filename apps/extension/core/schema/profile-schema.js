@@ -196,7 +196,7 @@ export function validateProfile(profile) {
   if (!profile.identity || typeof profile.identity !== 'object') {
     errors.push('identity is required');
   } else {
-    if (!profile.identity.fullName || typeof profile.identity.fullName !== 'string') {
+    if (profile.identity.fullName === undefined || profile.identity.fullName === null || typeof profile.identity.fullName !== 'string') {
       errors.push('identity.fullName is required');
     }
   }
@@ -213,6 +213,154 @@ export function validateProfile(profile) {
   return {
     valid: errors.length === 0,
     errors
+  };
+}
+
+/**
+ * Creates a blank starter profile that clones 100% of the visual design,
+ * layout architecture, animated gradient borders, and effects tokens from
+ * the source blueprint while stripping 100% of personal data.
+ */
+export function cloneDesignWithBlankData(sourceProfile) {
+  const base = sourceProfile || createDefaultProfile();
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    meta: {
+      title: 'My Professional Portfolio',
+      description: 'Personal portfolio and CV',
+      lastModified: new Date().toISOString(),
+      source: 'custom-user-workspace',
+      isClone: true
+    },
+    identity: {
+      fullName: '',
+      shortName: '',
+      salutation: 'Hello, I am',
+      roleBadge: '',
+      institution: '',
+      dept: '',
+      statusPills: [],
+      tagline: '',
+      bioParagraphs: [],
+      avatar: '',
+      introAvatar: '',
+      navAvatar: '',
+      banner: '',
+      quote: '',
+      availabilityStatus: '',
+      location: {
+        city: '',
+        country: '',
+        lat: null,
+        lng: null,
+        rawAddress: ''
+      },
+      email: '',
+      emailUniversity: '',
+      phone: '',
+      whatsapp: ''
+    },
+    links: {
+      scholar: '',
+      orcid: '',
+      researchgate: '',
+      osf: '',
+      pubmed: '',
+      scopus: '',
+      github: '',
+      linkedin: '',
+      googleSites: '',
+      personalWebsite: '',
+      gmail: '',
+      whatsapp: '',
+      facebook: '',
+      instagram: '',
+      twitterX: '',
+      kaggle: '',
+      custom: []
+    },
+    metrics: [],
+    education: [],
+    updates: [],
+    research: [],
+    projects: [],
+    publications: [],
+    skills: {
+      clinical: {
+        title: 'Core Domain Skills',
+        icon: 'fa-layer-group',
+        accent: 'blue',
+        skills: []
+      },
+      computational: {
+        title: 'Tools & Technologies',
+        icon: 'fa-laptop-code',
+        accent: 'teal',
+        skills: []
+      }
+    },
+    certifications: [],
+    leadership: [],
+    volunteering: [],
+    awards: [],
+    hobbies: [],
+    references: [],
+    gallery: [],
+    documents: [],
+    evidenceMedia: [],
+    // Preserve 100% of visual design, animations & effect parameters
+    displayConfig: {
+      ...(base.displayConfig || {}),
+      portfolioTemplateId: base.displayConfig?.portfolioTemplateId || 'acad-flagship',
+      themeTokens: {
+        theme: 'dark',
+        primaryColor: '#0d9488',
+        accentColor: '#0ea5e9',
+        ...(base.displayConfig?.themeTokens || {})
+      },
+      cardGridColumns: base.displayConfig?.cardGridColumns || '2x',
+      gradientBorders: base.displayConfig?.gradientBorders || 'both',
+      effects: {
+        glow: 'vibrant',
+        heroBorder: true,
+        closingBorder: true,
+        hoverAnimations: true,
+        ...(base.displayConfig?.effects || {})
+      },
+      motion: {
+        ticker: '22s',
+        marquee: '110s',
+        ...(base.displayConfig?.motion || {})
+      },
+      sectionVisibility: {
+        about: true,
+        education: true,
+        updates: true,
+        research: true,
+        projects: true,
+        skills: true,
+        publications: true,
+        certifications: true,
+        leadership: true,
+        gallery: true,
+        references: true,
+        contact: true,
+        ...(base.displayConfig?.sectionVisibility || {})
+      },
+      sectionOrder: Array.isArray(base.displayConfig?.sectionOrder) && base.displayConfig.sectionOrder.length > 0
+        ? [...base.displayConfig.sectionOrder]
+        : ['about', 'education', 'updates', 'research', 'projects', 'skills', 'publications', 'certifications', 'leadership', 'gallery', 'references', 'contact'],
+      seeAllLimit: {
+        research: 3,
+        projects: 3,
+        publications: 4,
+        certifications: 6,
+        gallery: 8,
+        updates: 4,
+        ...(base.displayConfig?.seeAllLimit || {})
+      }
+    },
+    cvProfiles: []
   };
 }
 

@@ -1,5 +1,6 @@
 import { PORTFOLIO_CATALOG, getTemplateById } from '../../core/templates/portfolio-catalog.js';
 import { CV_CATALOG, getCvTemplateById } from '../../core/templates/cv-catalog.js';
+import { cloneDesignWithBlankData } from '../../core/schema/profile-schema.js';
 import { fetchLiveMotherShowcase, getMotherShowcaseFallback } from '../../core/data/mother-showcase.js';
 import { renderPortfolioHtml } from '../../core/engines/portfolio-engine.js';
 import { renderCvHtml } from '../../core/engines/cv-engine.js';
@@ -502,7 +503,11 @@ function switchStudioMode(mode) {
     dom.btnPullFromMaster.style.display = 'none';
 
     dom.labelActiveTemplate.textContent = 'No-Code Visual Editor & Real-Time Live Preview';
-    initVisualEditor();
+    if (!isCustomWorkspace) {
+      cloneBlueprintIntoWorkspace();
+    } else {
+      initVisualEditor();
+    }
   } else if (mode === 'capture') {
     dom.catalogSidebar.style.display = 'none';
     dom.workbenchCanvas.style.display = 'none';
@@ -1409,6 +1414,7 @@ function initPanelResizer() {
     resizer.classList.add('resizing');
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
+    if (dom.previewIframe) dom.previewIframe.style.pointerEvents = 'none';
   };
 
   const onMouseMove = (e) => {
@@ -1428,6 +1434,7 @@ function initPanelResizer() {
       resizer.classList.remove('resizing');
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
+      if (dom.previewIframe) dom.previewIframe.style.pointerEvents = 'auto';
       autoFitPreview();
     }
   };
@@ -1439,6 +1446,7 @@ function initPanelResizer() {
   resizer.addEventListener('touchstart', () => {
     isDragging = true;
     resizer.classList.add('resizing');
+    if (dom.previewIframe) dom.previewIframe.style.pointerEvents = 'none';
   }, { passive: true });
   document.addEventListener('touchmove', (e) => {
     if (!isDragging || !e.touches[0]) return;
@@ -1452,6 +1460,7 @@ function initPanelResizer() {
     if (isDragging) {
       isDragging = false;
       resizer.classList.remove('resizing');
+      if (dom.previewIframe) dom.previewIframe.style.pointerEvents = 'auto';
       autoFitPreview();
     }
   });
@@ -1468,15 +1477,24 @@ function updateBlueprintStatusUi() {
 
 async function cloneBlueprintIntoWorkspace() {
   isCustomWorkspace = true;
-  activeProfile = JSON.parse(JSON.stringify(activeProfile));
+  // Deep clone preserving 100% design, layout architecture, animations, and gradient borders while stripping personal details into a clean starter canvas
+  activeProfile = cloneDesignWithBlankData(activeProfile);
   activeProfile.meta = activeProfile.meta || {};
   activeProfile.meta.source = 'custom-user-workspace';
+  activeProfile.meta.isCustomWorkspace = true;
+  activeProfile.meta.isDemoMode = false;
   await savePrivateVault({ profile: activeProfile, isCustom: true });
   updateBlueprintStatusUi();
   if (visualEditor) visualEditor.setProfile(activeProfile);
   if (editorLivePreview) editorLivePreview.setProfile(activeProfile);
+
+  // Switch to Visual Editor so user immediately sees their blank starter canvas ready to fill
+  switchStudioMode('editor');
+
   updatePreview();
   if (dom.syncLabel) dom.syncLabel.textContent = 'Custom Private Workspace';
+  const popoverSyncStatus = document.getElementById('popover-sync-status');
+  if (popoverSyncStatus) popoverSyncStatus.textContent = 'Custom Workspace Active';
 }
 
 async function resetToOriginalDemo() {
@@ -1491,11 +1509,84 @@ async function resetToOriginalDemo() {
   if (editorLivePreview) editorLivePreview.setProfile(activeProfile);
   updatePreview();
   if (dom.syncLabel) dom.syncLabel.textContent = 'Mother Showcase Synced';
+  const popoverSyncStatus = document.getElementById('popover-sync-status');
+  if (popoverSyncStatus) popoverSyncStatus.textContent = 'Active (Live Mirror)';
 }
 
 function initBlueprintControls() {
   if (dom.btnCloneBlueprint) dom.btnCloneBlueprint.addEventListener('click', cloneBlueprintIntoWorkspace);
   if (dom.btnResetBlueprint) dom.btnResetBlueprint.addEventListener('click', resetToOriginalDemo);
+
+  const syncIndicator = document.getElementById('sync-status-indicator');
+  const syncPopover = document.getElementById('sync-popover');
+  const btnCloseSyncPopover = document.getElementById('btn-close-sync-popover');
+  const btnResyncNow = document.getElementById('btn-resync-now');
+  const btnPopoverCloneEdit = document.getElementById('btn-popover-clone-edit');
+
+  if (syncIndicator && syncPopover) {
+    syncIndicator.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = syncPopover.style.display !== 'none';
+      syncPopover.style.display = isVisible ? 'none' : 'flex';
+    });
+    document.addEventListener('click', (e) => {
+      if (!syncPopover.contains(e.target) && !syncIndicator.contains(e.target)) {
+        syncPopover.style.display = 'none';
+      }
+    });
+  }
+
+  if (btnCloseSyncPopover && syncPopover) {
+    btnCloseSyncPopover.addEventListener('click', () => {
+      syncPopover.style.display = 'none';
+    });
+  }
+
+  if (btnResyncNow) {
+    btnResyncNow.addEventListener('click', async () => {
+      btnResyncNow.disabled = true;
+      btnResyncNow.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+      try {
+        const liveProfile = await fetchLiveMotherShowcase(5000);
+        if (liveProfile) {
+          activeProfile = liveProfile;
+          isCustomWorkspace = false;
+          updateBlueprintStatusUi();
+          updatePreview();
+          if (dom.syncLabel) dom.syncLabel.textContent = 'Mother Live Sync Active';
+          const popoverSyncStatus = document.getElementById('popover-sync-status');
+          if (popoverSyncStatus) popoverSyncStatus.textContent = 'Active (Live Mirror)';
+        }
+      } catch (err) {
+        if (dom.syncLabel) dom.syncLabel.textContent = 'Offline Fallback Snapshot';
+      } finally {
+        btnResyncNow.disabled = false;
+        btnResyncNow.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Re-sync Now';
+      }
+    });
+  }
+
+  if (btnPopoverCloneEdit) {
+    btnPopoverCloneEdit.addEventListener('click', () => {
+      if (syncPopover) syncPopover.style.display = 'none';
+      cloneBlueprintIntoWorkspace();
+    });
+  }
+
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'DEMO_ACTION_BLOCKED') {
+      if (dom.btnCloneBlueprint) {
+        dom.btnCloneBlueprint.style.transition = 'transform 0.15s ease, box-shadow 0.15s ease';
+        dom.btnCloneBlueprint.style.transform = 'scale(1.08)';
+        dom.btnCloneBlueprint.style.boxShadow = '0 0 15px rgba(13, 148, 136, 0.6)';
+        setTimeout(() => {
+          dom.btnCloneBlueprint.style.transform = '';
+          dom.btnCloneBlueprint.style.boxShadow = '';
+        }, 1200);
+      }
+    }
+  });
+
   updateBlueprintStatusUi();
 }
 

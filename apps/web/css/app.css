@@ -663,14 +663,8 @@ button, input, select {
   overflow: auto;
   display: flex;
   justify-content: center;
-  padding: 20px;
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(0, 0, 0, 0.05),
-    rgba(0, 0, 0, 0.05) 10px,
-    transparent 10px,
-    transparent 20px
-  );
+  padding: 0;
+  background: var(--bg-surface);
 }
 
 /* Draggable Resizable Splitter Divider */
@@ -687,6 +681,118 @@ button, input, select {
 .panel-resizer:hover, .panel-resizer.resizing {
   background: var(--primary);
   box-shadow: 0 0 8px rgba(13, 148, 136, 0.4);
+}
+
+/* Live Sync Status Popover */
+.sync-pill-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.sync-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1000;
+  width: 320px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sync-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+}
+.sync-popover-header h4 {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-main);
+}
+.sync-popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.76rem;
+}
+.sync-popover-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sync-popover-meta {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.sync-popover-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.74rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.sync-popover-link:hover {
+  text-decoration: underline;
+}
+.sync-status-badge {
+  color: var(--color-success, #10b981);
+  font-weight: 600;
+}
+.sync-prot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: rgba(13, 148, 136, 0.1);
+  color: var(--primary);
+  border-radius: 4px;
+  font-weight: 600;
+}
+.sync-popover-note {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.sync-popover-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 8px;
+}
+
+/* Sections Manager Cards */
+.section-manage-card {
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+.section-manage-card.section-hidden {
+  opacity: 0.55;
+  background: var(--bg-surface-elevated);
+}
+.section-icon-tag {
+  font-size: 1.1rem;
+  width: 24px;
+  text-align: center;
+}
+.section-desc-sub {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
 }
 
 /* Canvas Viewport Pills in Canvas Toolbar */
@@ -777,7 +883,9 @@ button, input, select {
 
 .preview-device-wrapper.viewport-laptop {
   width: 100%;
-  max-width: 1440px;
+  max-width: 100%;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .preview-device-wrapper.viewport-tablet {
