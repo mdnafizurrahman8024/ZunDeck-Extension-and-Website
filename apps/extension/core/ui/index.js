@@ -28,3 +28,5 @@ export * from './live-preview.js';
 export * from './visual-editor.js';
 export * from './letter-editor.js';
 export * from './notes-scratchpad.js';
+export * from './media-manager.js';
+export * from './docs-manager.js';

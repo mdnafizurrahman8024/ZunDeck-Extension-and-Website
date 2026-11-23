@@ -7,6 +7,8 @@ import { BADGE_PRESETS, renderBadgePickerHtml, renderBadgePill } from './badge-p
 import { LINK_PLATFORMS, renderLinksEditorHtml, normalizeLinks } from './links-manager.js';
 import { renderLocationContactEditorHtml, updateProfileLocation, updateProfileContactConfig } from './location-contact-editor.js';
 import { fetchPublicationByDoi, fetchWorksByOrcid } from '../parsers/doi-orcid-fetcher.js';
+import { renderMediaManagerHtml, MediaManagerController } from './media-manager.js';
+import { renderDocsManagerHtml, DocsManagerController } from './docs-manager.js';
 
 export class VisualEditorController {
   constructor(options = {}) {
@@ -79,6 +81,12 @@ export class VisualEditorController {
           <button type="button" class="ve-tab-btn ${this.activeTab === 'certifications' ? 'active' : ''}" data-ve-tab="certifications">
             <i class="fa-solid fa-award"></i> <span>Certificates</span>
           </button>
+          <button type="button" class="ve-tab-btn ${this.activeTab === 'media' ? 'active' : ''}" data-ve-tab="media">
+            <i class="fa-solid fa-photo-film"></i> <span>Media &amp; Gallery</span>
+          </button>
+          <button type="button" class="ve-tab-btn ${this.activeTab === 'documents' ? 'active' : ''}" data-ve-tab="documents">
+            <i class="fa-solid fa-folder-open"></i> <span>Documents &amp; Slides</span>
+          </button>
           <button type="button" class="ve-tab-btn ${this.activeTab === 'contact' ? 'active' : ''}" data-ve-tab="contact">
             <i class="fa-solid fa-map-location-dot"></i> <span>Map &amp; Contact</span>
           </button>
@@ -111,6 +119,10 @@ export class VisualEditorController {
         return this.renderEducationPane();
       case 'certifications':
         return this.renderCertificationsPane();
+      case 'media':
+        return this.renderMediaPane();
+      case 'documents':
+        return this.renderDocumentsPane();
       case 'contact':
         return renderLocationContactEditorHtml(this.profile);
       case 'customizer':
@@ -388,6 +400,53 @@ export class VisualEditorController {
         </div>
         <div class="ve-items-list" id="certifications-list-container">
           ${listHtml || '<p class="empty-hint">No certifications added yet.</p>'}
+        </div>
+      </div>
+    `;
+  }
+
+  renderMediaPane() {
+    const id = this.profile.identity || {};
+    return `
+      <div class="ve-section-pane">
+        <div class="pane-header">
+          <h3>Media, Avatars &amp; Photo Gallery</h3>
+          <p>Single &amp; multi-file drag-and-drop uploader with consent-based 24-bit optimization and byte-perfect Undo Original.</p>
+        </div>
+        <div class="form-grid-2" style="margin-bottom: 20px;">
+          <div class="form-group">
+            <label class="form-label" for="ve-avatar-media">Profile Avatar (URL or File)</label>
+            <input type="text" id="ve-avatar-media" class="form-input" value="${escapeHtml(id.avatar || '')}">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ve-banner-media">Hero Banner (URL or File)</label>
+            <input type="text" id="ve-banner-media" class="form-input" value="${escapeHtml(id.banner || '')}">
+          </div>
+        </div>
+        <div id="ve-gallery-manager-mount">
+          ${renderMediaManagerHtml(this.profile.gallery || [], {
+            title: 'Portfolio Photo Gallery',
+            description: 'Drag & drop photos from Windows Explorer. Reorder with handles or arrows.',
+            context: 'gallery'
+          })}
+        </div>
+      </div>
+    `;
+  }
+
+  renderDocumentsPane() {
+    return `
+      <div class="ve-section-pane">
+        <div class="pane-header">
+          <h3>Titled Documents, Briefs &amp; Presentations</h3>
+          <p>Attach Google Drive slides, presentations, Word docs, and direct PDFs with inline previews.</p>
+        </div>
+        <div id="ve-docs-manager-mount">
+          ${renderDocsManagerHtml(this.profile.documents || [], {
+            title: 'Master Portfolio Documents & Presentations',
+            description: 'Direct PDFs or Google Drive links with smart embed conversions.',
+            sectionTag: 'General'
+          })}
         </div>
       </div>
     `;
@@ -846,6 +905,52 @@ export class VisualEditorController {
         this.profile.displayConfig.contactConfig = this.profile.displayConfig.contactConfig || {};
         this.profile.displayConfig.contactConfig.accessKey = v;
       });
+    }
+
+    // Media & Gallery Tab
+    if (this.activeTab === 'media') {
+      const mount = this.container.querySelector('#ve-gallery-manager-mount');
+      if (mount) {
+        new MediaManagerController({
+          container: mount,
+          mediaList: this.profile.gallery || [],
+          title: 'Portfolio Photo Gallery',
+          context: 'gallery',
+          onChange: (updatedList) => {
+            this.profile.gallery = updatedList;
+            this.notifyChange();
+          }
+        }).bindEvents();
+      }
+      const avatarInput = this.container.querySelector('#ve-avatar-media');
+      const bannerInput = this.container.querySelector('#ve-banner-media');
+      avatarInput?.addEventListener('input', (e) => {
+        this.profile.identity = this.profile.identity || {};
+        this.profile.identity.avatar = e.target.value.trim();
+        this.notifyChange();
+      });
+      bannerInput?.addEventListener('input', (e) => {
+        this.profile.identity = this.profile.identity || {};
+        this.profile.identity.banner = e.target.value.trim();
+        this.notifyChange();
+      });
+    }
+
+    // Documents & Slides Tab
+    if (this.activeTab === 'documents') {
+      const mount = this.container.querySelector('#ve-docs-manager-mount');
+      if (mount) {
+        new DocsManagerController({
+          container: mount,
+          docsList: this.profile.documents || [],
+          title: 'Master Portfolio Documents & Presentations',
+          sectionTag: 'General',
+          onChange: (updatedList) => {
+            this.profile.documents = updatedList;
+            this.notifyChange();
+          }
+        }).bindEvents();
+      }
     }
   }
 }

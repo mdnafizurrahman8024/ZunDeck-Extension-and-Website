@@ -24,3 +24,4 @@ export function parseBibtexToPublication(rawBibtex) {
 }
 
 export * from './doi-orcid-fetcher.js';
+export * from './drive-embed.js';

@@ -662,3 +662,42 @@ body {
   border-radius: 6px;
   margin-bottom: 10px;
 }
+
+/* Part 6 Sidepanel Media & Docs styles */
+.sp-visual-editor-wrap .media-dropzone,
+.sp-visual-editor-wrap .pdf-dropzone {
+  padding: 14px 10px;
+}
+
+.sp-visual-editor-wrap .dropzone-icon,
+.sp-visual-editor-wrap .pdf-drop-icon {
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+}
+
+.sp-visual-editor-wrap .dropzone-text,
+.sp-visual-editor-wrap .pdf-drop-text {
+  font-size: 0.76rem;
+}
+
+.sp-visual-editor-wrap .media-grid-container {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.sp-visual-editor-wrap .media-preview-box {
+  height: 80px;
+}
+
+.sp-visual-editor-wrap .doc-item-card {
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+.sp-visual-editor-wrap .doc-card-title {
+  font-size: 0.78rem;
+}
+
+.sp-visual-editor-wrap .doc-type-icon-col {
+  font-size: 1.1rem;
+}

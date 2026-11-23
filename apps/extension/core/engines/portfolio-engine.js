@@ -49,6 +49,7 @@ export function renderPortfolioHtml(profile, options = {}) {
   const hobbies = Array.isArray(profile.hobbies) ? profile.hobbies : [];
   const references = Array.isArray(profile.references) ? profile.references : [];
   const gallery = Array.isArray(profile.gallery) ? profile.gallery : [];
+  const documents = Array.isArray(profile.documents) ? profile.documents : [];
   const displayConfig = profile.displayConfig || {};
   const visibility = displayConfig.sectionVisibility || {};
   const seeAllLimit = displayConfig.seeAllLimit || { research: 3, projects: 3, publications: 4, certifications: 6 };
@@ -136,9 +137,27 @@ export function renderPortfolioHtml(profile, options = {}) {
         <div class="evidence-findings-box">
           <div class="evidence-header"><i class="fa-solid fa-microscope"></i> Evidence &amp; Findings (${res.images.length} verified artifacts)</div>
           <div class="evidence-thumbnails-grid">
-            ${res.images.slice(0, 4).map((img) => `
-              <a href="${sanitizeUrl(img)}" target="_blank" rel="noopener noreferrer" class="evidence-thumb-link">
-                <img src="${sanitizeUrl(img)}" alt="Evidence" loading="lazy" class="evidence-thumb-img" onerror="this.style.display='none'">
+            ${res.images.slice(0, 4).map((img) => {
+              const imgUrl = typeof img === 'object' && img !== null ? (img.url || '') : img;
+              const imgAlt = typeof img === 'object' && img !== null ? (img.caption || img.alt || 'Evidence') : 'Evidence';
+              return `
+                <a href="${sanitizeUrl(imgUrl)}" target="_blank" rel="noopener noreferrer" class="evidence-thumb-link">
+                  <img src="${sanitizeUrl(imgUrl)}" alt="${escapeHtml(imgAlt)}" loading="lazy" class="evidence-thumb-img" onerror="this.style.display='none'">
+                </a>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      ` : ''}
+      ${res.documents && res.documents.length ? `
+        <div class="card-attached-docs">
+          <div class="attached-docs-label"><i class="fa-solid fa-paperclip"></i> Attached Briefs &amp; Slides:</div>
+          <div class="attached-docs-list">
+            ${res.documents.map((d) => `
+              <a href="${sanitizeUrl(d.url || '')}" target="_blank" rel="noopener noreferrer" class="doc-pill-link">
+                <i class="fa-solid fa-file-lines"></i>
+                <span>${escapeHtml(d.title || 'Document')}</span>
+                <span class="doc-pill-tag">${escapeHtml(d.docType || 'Drive')}</span>
               </a>
             `).join('')}
           </div>
@@ -175,9 +194,27 @@ export function renderPortfolioHtml(profile, options = {}) {
         <div class="evidence-findings-box">
           <div class="evidence-header"><i class="fa-solid fa-file-lines"></i> Docs &amp; Briefs (${proj.images.length} screenshots)</div>
           <div class="evidence-thumbnails-grid">
-            ${proj.images.slice(0, 4).map((img) => `
-              <a href="${sanitizeUrl(img)}" target="_blank" rel="noopener noreferrer" class="evidence-thumb-link">
-                <img src="${sanitizeUrl(img)}" alt="Platform preview" loading="lazy" class="evidence-thumb-img" onerror="this.style.display='none'">
+            ${proj.images.slice(0, 4).map((img) => {
+              const imgUrl = typeof img === 'object' && img !== null ? (img.url || '') : img;
+              const imgAlt = typeof img === 'object' && img !== null ? (img.caption || img.alt || 'Platform preview') : 'Platform preview';
+              return `
+                <a href="${sanitizeUrl(imgUrl)}" target="_blank" rel="noopener noreferrer" class="evidence-thumb-link">
+                  <img src="${sanitizeUrl(imgUrl)}" alt="${escapeHtml(imgAlt)}" loading="lazy" class="evidence-thumb-img" onerror="this.style.display='none'">
+                </a>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      ` : ''}
+      ${proj.documents && proj.documents.length ? `
+        <div class="card-attached-docs">
+          <div class="attached-docs-label"><i class="fa-solid fa-paperclip"></i> Attached Briefs &amp; Slides:</div>
+          <div class="attached-docs-list">
+            ${proj.documents.map((d) => `
+              <a href="${sanitizeUrl(d.url || '')}" target="_blank" rel="noopener noreferrer" class="doc-pill-link">
+                <i class="fa-solid fa-file-lines"></i>
+                <span>${escapeHtml(d.title || 'Document')}</span>
+                <span class="doc-pill-tag">${escapeHtml(d.docType || 'Drive')}</span>
               </a>
             `).join('')}
           </div>
@@ -292,6 +329,53 @@ export function renderPortfolioHtml(profile, options = {}) {
       <span class="hobby-text">${escapeHtml(h.title)}</span>
     </div>
   `).join('\n');
+
+  // Documents & Slides Grid
+  const documentsHtml = documents.map((doc) => {
+    const isDoc = typeof doc === 'object' && doc !== null;
+    const title = isDoc ? (doc.title || 'Document') : 'Document';
+    const docType = isDoc ? (doc.docType || 'Google Drive') : 'Document';
+    const date = isDoc ? (doc.date || '') : '';
+    const url = isDoc ? (doc.url || '') : doc;
+    const isPptx = docType.includes('Presentation') || docType.includes('Slide');
+    const isWord = docType.includes('Word');
+    const isPdf = docType.includes('PDF');
+    const icon = isPptx ? 'fa-solid fa-file-powerpoint' : (isWord ? 'fa-solid fa-file-word' : (isPdf ? 'fa-solid fa-file-pdf' : 'fa-brands fa-google-drive'));
+    const color = isPptx ? '#ea580c' : (isWord ? '#2563eb' : (isPdf ? '#dc2626' : '#059669'));
+
+    return `
+      <div class="doc-portfolio-card">
+        <div class="doc-card-icon" style="color: ${color};"><i class="${icon}"></i></div>
+        <div class="doc-card-info">
+          <div class="doc-card-meta">
+            <span class="doc-badge" style="color: ${color}; border-color: ${color}40; background: ${color}12;">${escapeHtml(docType)}</span>
+            ${date ? `<span class="doc-date">${escapeHtml(date)}</span>` : ''}
+          </div>
+          <h4 class="doc-card-title">${escapeHtml(title)}</h4>
+          ${url ? `
+            <a href="${sanitizeUrl(url)}" target="_blank" rel="noopener noreferrer" class="link-arrow">
+              Open Resource <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('\n');
+
+  // Photo Gallery Grid
+  const galleryHtml = gallery.map((item, idx) => {
+    const isObj = typeof item === 'object' && item !== null;
+    const url = isObj ? (item.url || '') : item;
+    const caption = isObj ? (item.caption || item.alt || `Photo ${idx + 1}`) : `Photo ${idx + 1}`;
+    return `
+      <div class="gallery-card-item">
+        <a href="${sanitizeUrl(url)}" target="_blank" rel="noopener noreferrer" class="gallery-thumb-link">
+          <img src="${sanitizeUrl(url)}" alt="${escapeHtml(caption)}" loading="lazy" class="gallery-thumb-img" onerror="this.style.opacity='0.4'">
+        </a>
+        ${caption ? `<div class="gallery-caption">${escapeHtml(caption)}</div>` : ''}
+      </div>
+    `;
+  }).join('\n');
 
   const isSplitLayout = layout.type === 'split-sticky-sidebar' || layout.type === 'custom';
 
@@ -1361,6 +1445,138 @@ export function renderPortfolioHtml(profile, options = {}) {
       margin-top: 3px;
     }
 
+    /* Documents & Presentations */
+    .docs-portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+      margin-top: 10px;
+    }
+    .doc-portfolio-card {
+      display: flex;
+      gap: 14px;
+      padding: 16px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .doc-portfolio-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+    }
+    .doc-card-icon {
+      font-size: 1.6rem;
+      padding-top: 2px;
+    }
+    .doc-card-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .doc-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .doc-badge {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      border: 1px solid currentColor;
+    }
+    .doc-date {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+    .doc-card-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      line-height: 1.35;
+    }
+
+    /* Photo Gallery */
+    .gallery-portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .gallery-card-item {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      background: var(--bg-subtle);
+    }
+    .gallery-thumb-link {
+      display: block;
+      height: 160px;
+      overflow: hidden;
+    }
+    .gallery-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.2s ease;
+    }
+    .gallery-thumb-img:hover {
+      transform: scale(1.04);
+    }
+    .gallery-caption {
+      padding: 8px 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-color);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Attached Briefs & Slides on Research / Projects */
+    .card-attached-docs {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border-color);
+    }
+    .attached-docs-label {
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .attached-docs-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .doc-pill-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      font-size: 0.75rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      transition: border-color 0.15s ease;
+    }
+    .doc-pill-link:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .doc-pill-tag {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      background: var(--bg-base);
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+
     /* Closing Appreciation Card */
     .closing-card {
       text-align: center;
@@ -1700,6 +1916,26 @@ export function renderPortfolioHtml(profile, options = {}) {
           ${renderSectionHeader('Academic References', 'Departmental mentors, principal investigators, and collaborators', 'fa-solid fa-user-tie')}
           <div class="ref-grid">
             ${referencesHtml}
+          </div>
+        </section>
+        ` : ''}
+
+        <!-- 11b. Titled Documents, Briefs & Slides -->
+        ${isVisible('documents') && documents.length ? `
+        <section class="feed-card" id="documents">
+          ${renderSectionHeader('Titled Documents, Briefs & Slides', 'Curated presentations, pitch decks, whitepapers & formal reports', 'fa-solid fa-folder-open', 'var(--accent)')}
+          <div class="docs-portfolio-grid">
+            ${documentsHtml}
+          </div>
+        </section>
+        ` : ''}
+
+        <!-- 11c. Photo Gallery & Field Documentation -->
+        ${isVisible('gallery') && gallery.length ? `
+        <section class="feed-card" id="gallery">
+          ${renderSectionHeader('Photo Gallery & Field Documentation', 'Verified field visits, wildlife rescues, and laboratory bench documentation', 'fa-regular fa-images')}
+          <div class="gallery-portfolio-grid">
+            ${galleryHtml}
           </div>
         </section>
         ` : ''}

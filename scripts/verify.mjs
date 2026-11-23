@@ -145,4 +145,20 @@ if (BADGE_PRESETS.length < 8 || LINK_PLATFORMS.length < 16 || !VIEWPORT_PRESETS.
 }
 console.log('✓ No-Code Visual Editor, Live Preview, Badges & DOI/ORCID Engine: PASS');
 
+// 11. Check Part 6 Media & Documents Manager, Drive Embed Converter & Image Optimizer
+const { parseDriveUrl, getDriveEmbedUrl } = await import('../core/parsers/drive-embed.js');
+const { OPTIMIZATION_PRESETS, isHeavyImage } = await import('../core/media/image-optimizer.js');
+const { STORE_NAMES } = await import('../core/storage/indexeddb-store.js');
+
+const sampleDriveEmbed = getDriveEmbedUrl('https://drive.google.com/file/d/test12345/view?usp=sharing');
+if (sampleDriveEmbed !== 'https://drive.google.com/file/d/test12345/preview') {
+  console.error(`✕ Drive embed conversion failed: expected /preview but got ${sampleDriveEmbed}`);
+  process.exit(1);
+}
+if (!OPTIMIZATION_PRESETS['high-dpi'] || STORE_NAMES.ORIGINALS !== 'zundeck_media_originals' || !isHeavyImage(500 * 1024)) {
+  console.error('✕ Image optimizer or originals store definitions invalid!');
+  process.exit(1);
+}
+console.log('✓ Media & Documents Manager, Drive Embed & Consent Optimizer: PASS');
+
 console.log('--- Verification Complete: ALL CHECKS PASSED ---');
