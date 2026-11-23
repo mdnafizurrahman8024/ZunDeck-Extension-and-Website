@@ -4107,13 +4107,8 @@ button, input, select {
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface-elevated);
   gap: 10px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-}
-.vibe-top-bar::-webkit-scrollbar {
-  display: none;
+  flex-wrap: wrap;
+  overflow: visible;
 }
 
 .vibe-title-group {
@@ -4191,22 +4186,25 @@ button, input, select {
 
 .vibe-header-tools {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   flex-shrink: 0;
   white-space: nowrap;
 }
 
 .vibe-header-tools .btn-tool {
-  white-space: nowrap;
-  flex-shrink: 0;
-  min-height: 30px;
-  padding: 5px 10px;
-  font-size: 0.74rem;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  white-space: nowrap;
+  width: auto;
+  min-width: max-content;
+  flex-shrink: 0;
+  min-height: 30px;
+  padding: 5px 11px;
+  font-size: 0.74rem;
+  font-weight: 500;
   border-radius: 6px;
 }
 
@@ -4857,11 +4855,18 @@ button, input, select {
 
 .vibe-settings-actions .btn-tool,
 .vibe-settings-actions .btn-primary {
-  min-height: 36px;
-  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   white-space: nowrap;
+  width: auto;
+  min-width: max-content;
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 8px 14px;
   font-size: 0.8rem;
   font-weight: 500;
+  border-radius: 6px;
 }
 
 .ai-test-feedback {

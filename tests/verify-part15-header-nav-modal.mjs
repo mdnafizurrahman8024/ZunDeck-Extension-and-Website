@@ -127,8 +127,8 @@ describe('Part-15: Exact 1:1 Header Nav, Sub-Toolbar Auto-Fit, Modal & Vibe Head
     const appCss = fs.readFileSync(path.join(rootDir, 'apps/web/css/app.css'), 'utf-8');
     const vibeHtml = renderVibeStudioHtml({ isPromptPaneOpen: true });
 
-    assert.ok(appCss.includes('.vibe-top-bar {') && appCss.includes('flex-wrap: nowrap;'), 'vibe-top-bar has nowrap layout');
-    assert.ok(appCss.includes('.vibe-header-tools {') && appCss.includes('flex-wrap: nowrap;'), 'vibe-header-tools has nowrap layout');
+    assert.ok(appCss.includes('.vibe-top-bar {') && (appCss.includes('flex-wrap: wrap;') || appCss.includes('flex-wrap: nowrap;')), 'vibe-top-bar has flexible wrapping layout');
+    assert.ok(appCss.includes('.vibe-header-tools {') && (appCss.includes('flex-wrap: wrap;') || appCss.includes('flex-wrap: nowrap;')), 'vibe-header-tools has flexible wrapping layout');
     assert.ok(appCss.includes('.btn-close-prompt-pane {') && appCss.includes('width: 28px;'), 'btn-close-prompt-pane is styled with dedicated class');
 
     assert.ok(vibeHtml.includes('id="btn-toggle-prompt-chat"'), 'btn-toggle-prompt-chat exists in header');

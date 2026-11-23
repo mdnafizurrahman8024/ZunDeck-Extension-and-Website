@@ -314,7 +314,7 @@ export function renderVibeStudioHtml(state = {}) {
 
             <div class="form-group" id="group-custom-model-id">
               <label class="form-label" for="input-custom-model-id">Custom Model ID (Optional Override)</label>
-              <input type="text" id="input-custom-model-id" class="form-input" placeholder="e.g. gemini-4-hydrogen or gpt-6.2-sol">
+              <input type="text" id="input-custom-model-id" class="form-input" placeholder="e.g. google/gemini-2.5-pro or anthropic/claude-sonnet-4">
               <span class="form-hint">Override preset list with any exact model identifier.</span>
             </div>
 
@@ -565,8 +565,17 @@ export class VibeStudioController {
 
     // Auto-sync on API Key blur or input change
     const inpAiKey = this.container.querySelector('#input-ai-key');
+    let keyInputDebounce = null;
     inpAiKey?.addEventListener('input', () => {
       this.updatePaidModelBanner();
+      const key = (inpAiKey.value || '').trim();
+      const currentProvider = selectProvider?.value;
+      if (key.length > 5 && currentProvider !== AI_PROVIDERS.CUSTOM) {
+        clearTimeout(keyInputDebounce);
+        keyInputDebounce = setTimeout(() => {
+          this.runFetchLiveModels(true);
+        }, 500);
+      }
     });
     inpAiKey?.addEventListener('blur', async () => {
       const key = (inpAiKey.value || '').trim();
@@ -603,19 +612,23 @@ export class VibeStudioController {
     try {
       const result = await processVibeAgentMessage(userText, this.activeProfile);
       this.activeProfile = result.updatedProfile;
-      this.latestDiff = {
-        summary: result.diffSummary,
-        checkpointId: result.checkpointId
-      };
+      if (result.hasChanges && result.diffSummary) {
+        this.latestDiff = {
+          summary: result.diffSummary,
+          checkpointId: result.checkpointId
+        };
+      }
 
       this.messages.push({
         role: 'agent',
         text: result.explanation,
-        diffSummary: result.diffSummary,
+        diffSummary: result.hasChanges ? result.diffSummary : null,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
 
-      this.onProfileUpdated(this.activeProfile);
+      if (result.hasChanges) {
+        this.onProfileUpdated(this.activeProfile);
+      }
     } catch (err) {
       this.messages.push({
         role: 'agent',
@@ -827,6 +840,11 @@ Output ONLY the structured prompt with zero filler preamble.`;
     if (inpCustomModelId) inpCustomModelId.value = creds.customModelId || '';
 
     await this.handleProviderChange(creds.provider, creds.model);
+
+    // Auto-fetch all live models immediately for OpenRouter or whenever a user key is configured
+    if (creds.provider === AI_PROVIDERS.OPENROUTER || (creds.apiKey && creds.apiKey.trim().length > 5)) {
+      this.runFetchLiveModels(true);
+    }
   }
 
   async handleProviderChange(provider, selectedModel = null) {
@@ -865,6 +883,13 @@ Output ONLY the structured prompt with zero filler preamble.`;
       }
       this.filterModelsByFreeOnly(this.freeOnly);
       this.updatePaidModelBanner();
+    }
+
+    // Auto-fetch all live models immediately for OpenRouter (public catalog) or if key is provided
+    const inpKey = this.container.querySelector('#input-ai-key');
+    const currentKey = (inpKey?.value || '').trim();
+    if (provider === AI_PROVIDERS.OPENROUTER || currentKey.length > 5) {
+      this.runFetchLiveModels(true);
     }
   }
 
