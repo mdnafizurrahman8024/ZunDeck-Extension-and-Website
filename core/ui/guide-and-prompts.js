@@ -1,19 +1,34 @@
 import { escapeHtml } from '../security/sanitizer.js';
+import {
+  PROMPT_LIBRARY,
+  PROMPT_CATEGORIES,
+  getPromptsByCategory,
+  searchPrompts,
+  generateStructuredPrompt
+} from '../ai/prompt-library.js';
+
+export {
+  PROMPT_LIBRARY,
+  PROMPT_CATEGORIES,
+  getPromptsByCategory,
+  searchPrompts,
+  generateStructuredPrompt
+};
 
 export const USER_GUIDES = [
   {
     id: 'guide-gemini-api',
     number: '01',
-    title: 'Setting up Free Gemini API Key',
+    title: 'Setting up Free Gemini API Key & Multi-Provider BYOK AI',
     badge: 'AI Setup',
     icon: 'fa-solid fa-key',
-    summary: 'Get 100% free multimodal Google Gemini API access in under 60 seconds with zero credit card required.',
+    summary: 'Connect your own private API key for Google Gemini (100% free), Anthropic Claude, OpenAI, DeepSeek, Groq, or OpenRouter in seconds.',
     steps: [
-      'Visit Google AI Studio at <strong>aistudio.google.com</strong> and sign in with your Google Account.',
-      'Click <strong>"Get API Key"</strong> in the top-left sidebar and select <strong>"Create API key in new project"</strong>.',
-      'Copy the generated key (starts with <code>AIzaSy...</code>).',
-      'Open ZunDeck → <strong>Vibe Coding Settings</strong>, paste your key, and click <strong>"Test Connection"</strong>.',
-      'Your key is saved strictly in your local encrypted browser vault and is never sent to third-party proxies.'
+      'Choose your preferred AI provider in ZunDeck <strong>BYOK AI Settings</strong> (Google Gemini, Anthropic Claude, OpenAI, DeepSeek, Groq, OpenRouter, xAI, Mistral, or Custom/Ollama).',
+      'For free instant access: Visit <strong>aistudio.google.com</strong>, click <em>"Get API Key"</em>, and copy your Google Gemini key.',
+      'Paste your API key into the ZunDeck Private Vault dialog.',
+      'Click <strong>"Fetch Live Models"</strong> to query current models, or choose from high-performance presets (Gemini 2.5 Pro/Flash, Claude 3.7 Sonnet, GPT-4o, DeepSeek-V3/R1).',
+      'Click <strong>"Test Connection"</strong> to verify live latency and token generation, then save to your encrypted local vault.'
     ]
   },
   {
@@ -91,178 +106,16 @@ export const USER_GUIDES = [
   {
     id: 'guide-vibe-prompts',
     number: '07',
-    title: 'Writing Effective Vibe Coding Prompts',
+    title: 'Writing Effective Structured Vibe Coding Prompts',
     badge: 'Vibe Coding',
     icon: 'fa-solid fa-terminal',
-    summary: 'Harness natural language instructions in English or Bengali to tweak your visual layout safely.',
+    summary: 'Harness 5-point structured prompts in English or Bengali to tweak visual layout, motion physics, and ATS content safely.',
     steps: [
-      'Be specific about the section and aesthetic: e.g., <em>"Change accent color to Emerald and make cards 2 columns"</em>.',
-      'Ask for content refinements based on real facts: e.g., <em>"Make my research summary more concise for graduate reviewers"</em>.',
-      'Use Bengali freely: e.g., <em>"থিমের ব্যাকগ্রাউন্ড ডার্ক করো এবং ফন্ট ইন্টার করো"</em>.',
-      'Every change automatically generates an <strong>Undo Checkpoint</strong> so you can revert anytime with 1 click.'
+      'Use the 5-point structure: <strong>Role</strong>, <strong>Objective</strong>, <strong>Commands</strong>, <strong>Design Specs</strong>, and <strong>Security Rules</strong>.',
+      'Try the built-in <strong>"Prompt with AI"</strong> assistant inside Vibe Studio to interactively turn simple requests into production prompts.',
+      'Every change automatically generates an <strong>Undo Checkpoint</strong> snapshot so you can test bold layouts with 1-click rollback.',
+      'Use Bengali or English freely: ZunDeck understands localized commands and applies safe JSON tool calls.'
     ]
-  }
-];
-
-export const PROMPT_LIBRARY = [
-  // 1. Design & Theme Vibe
-  {
-    category: 'design',
-    categoryLabel: 'Design & Theme Vibe',
-    title: 'Emerald Academic Aesthetic',
-    prompt: 'Change accent color to Emerald (#10b981), switch theme to dark, and set card layout to 2 columns.'
-  },
-  {
-    category: 'design',
-    categoryLabel: 'Design & Theme Vibe',
-    title: 'Teal Minimalist Layout',
-    prompt: 'Switch portfolio template to Clean Minimalist with deep teal accent (#0d9488) and slate dark background.'
-  },
-  {
-    category: 'design',
-    categoryLabel: 'Design & Theme Vibe',
-    title: 'Corporate Executive Polish',
-    prompt: 'Switch portfolio template to Corporate Executive with navy blue accent (#2563eb) and 3-column card grid.'
-  },
-  {
-    category: 'design',
-    categoryLabel: 'Design & Theme Vibe',
-    title: 'Bengali Dark Theme Tweak',
-    prompt: 'থিম ডার্ক মোডে পরিবর্তন করো এবং বাটনগুলোর অ্যাকসেন্ট কালার নীলে (#3b82f6) রূপান্তর করো।'
-  },
-  {
-    category: 'design',
-    categoryLabel: 'Design & Theme Vibe',
-    title: 'Clean Monospace Code Accent',
-    prompt: 'Set typography pairing to JetBrains Mono with warm amber highlights (#f59e0b) for a hacker portfolio vibe.'
-  },
-
-  // 2. Academic & Research Polish
-  {
-    category: 'academic',
-    categoryLabel: 'Academic & Research Polish',
-    title: 'Highlight First-Author Publications',
-    prompt: 'Review my publications and ensure first-author journal papers are prominently ordered at the top of the section.'
-  },
-  {
-    category: 'academic',
-    categoryLabel: 'Academic & Research Polish',
-    title: 'Refine Research Appointments',
-    prompt: 'Refine my research experience bullet points to emphasize molecular virology, pathogen surveillance, and data pipelines.'
-  },
-  {
-    category: 'academic',
-    categoryLabel: 'Academic & Research Polish',
-    title: 'Add Computational Skills',
-    prompt: 'Add technical skills: Nextflow, BLAST+, Biopython, GeoPandas, Nextstrain, and Linux Bash Scripting.'
-  },
-  {
-    category: 'academic',
-    categoryLabel: 'Academic & Research Polish',
-    title: 'Academic Bio Refinement',
-    prompt: 'Rewrite my bio summary into 2 impactful paragraphs highlighting veterinary epidemiology and computational biology.'
-  },
-  {
-    category: 'academic',
-    categoryLabel: 'Academic & Research Polish',
-    title: 'Add Research Grant Item',
-    prompt: 'Add an award item: Dean\'s Research Fellowship Grant for Rabies Molecular Surveillance ($2,500 USD).'
-  },
-
-  // 3. Corporate ATS Impact
-  {
-    category: 'corporate',
-    categoryLabel: 'Corporate ATS Impact',
-    title: 'Action-Verb Bullet Refinement',
-    prompt: 'Transform my project bullets using the Google XYZ formula: Accomplished [X], as measured by [Y], by doing [Z].'
-  },
-  {
-    category: 'corporate',
-    categoryLabel: 'Corporate ATS Impact',
-    title: 'Tailor for Bioinformatics Analyst',
-    prompt: 'Create a tailored CV profile named "Bioinformatics Analyst" emphasizing Python, NGS sequencing, and statistical modeling.'
-  },
-  {
-    category: 'corporate',
-    categoryLabel: 'Corporate ATS Impact',
-    title: 'Compact 1-Page ATS CV',
-    prompt: 'Switch active CV template to cv-tech-minimalist and limit visible publications to top 3 for a crisp 1-page resume.'
-  },
-  {
-    category: 'corporate',
-    categoryLabel: 'Corporate ATS Impact',
-    title: 'Emphasize Leadership & Outputs',
-    prompt: 'Update my role badge to "Lead Clinical Researcher & Full-Stack Developer" and refine project descriptions for tech recruiters.'
-  },
-  {
-    category: 'corporate',
-    categoryLabel: 'Corporate ATS Impact',
-    title: 'Highlight Soft & Domain Skills',
-    prompt: 'Add domain skills: One Health Cross-Sectoral Communication, Scientific Grant Writing, and Stakeholder Reporting.'
-  },
-
-  // 4. SOP & Cold Email
-  {
-    category: 'letters',
-    categoryLabel: 'SOP & Cold Email',
-    title: 'PhD SOP Methodology Scaffold',
-    prompt: 'Draft an SOP body paragraph bridging my undergraduate veterinary clinical training with future PhD research in viral genomics.'
-  },
-  {
-    category: 'letters',
-    categoryLabel: 'SOP & Cold Email',
-    title: 'Prospective PI Cold Email',
-    prompt: 'Draft a concise 200-word cold email to a prospective laboratory PI expressing specific interest in their upcoming zoonotic outbreak project.'
-  },
-  {
-    category: 'letters',
-    categoryLabel: 'SOP & Cold Email',
-    title: 'Motivation Letter for Scholarship',
-    prompt: 'Draft a targeted motivation letter for the Erasmus Mundus Master Scholarship highlighting my One Health research contributions in Bangladesh.'
-  },
-  {
-    category: 'letters',
-    categoryLabel: 'SOP & Cold Email',
-    title: 'Cover Letter for Research Associate',
-    prompt: 'Draft a professional cover letter for a Research Associate opening, citing my published papers in Veterinary Microbiology.'
-  },
-  {
-    category: 'letters',
-    categoryLabel: 'SOP & Cold Email',
-    title: 'Post-Interview Follow-Up Note',
-    prompt: 'Draft a polite, professional 100-word follow-up email thanking the interview committee and reiterating my lab sequencing experience.'
-  },
-
-  // 5. Custom Layout Tweaks
-  {
-    category: 'layout',
-    categoryLabel: 'Custom Layout Tweaks',
-    title: 'Set Initial Items to 5 (See All)',
-    prompt: 'Configure seeAllLimit to 5 items so research appointments and publications display a clean See All expander button.'
-  },
-  {
-    category: 'layout',
-    categoryLabel: 'Custom Layout Tweaks',
-    title: 'Inject Scoped Custom CSS',
-    prompt: 'Add scoped custom CSS to give cards a subtle border-left accent line matching the primary color.'
-  },
-  {
-    category: 'layout',
-    categoryLabel: 'Custom Layout Tweaks',
-    title: 'Toggle Section Visibility',
-    prompt: 'In my active CV profile, hide the volunteer section and keep education, research, publications, and certifications visible.'
-  },
-  {
-    category: 'layout',
-    categoryLabel: 'Custom Layout Tweaks',
-    title: 'Compact Mobile Viewport Tweak',
-    prompt: 'Optimize card grid padding to 12px and ensure hero avatar is center-aligned on mobile devices.'
-  },
-  {
-    category: 'layout',
-    categoryLabel: 'Custom Layout Tweaks',
-    title: 'Switch to Europass Academic View',
-    prompt: 'Switch active CV template to cv-acad-europass and ensure language proficiencies and research activities are prioritized.'
   }
 ];
 
@@ -273,7 +126,7 @@ export function renderGuideAndPromptsHtml(activeTab = 'prompts') {
       <div class="gp-nav-bar" role="tablist">
         <button type="button" class="gp-nav-tab ${activeTab === 'prompts' ? 'active' : ''}" data-gp-tab="prompts">
           <i class="fa-solid fa-terminal"></i>
-          <span>Vibe Prompt Library (${PROMPT_LIBRARY.length})</span>
+          <span>Vibe Prompt Library (${PROMPT_LIBRARY.length} Structured Pro Prompts)</span>
         </button>
         <button type="button" class="gp-nav-tab ${activeTab === 'manual' ? 'active' : ''}" data-gp-tab="manual">
           <i class="fa-solid fa-book-open"></i>
@@ -286,15 +139,14 @@ export function renderGuideAndPromptsHtml(activeTab = 'prompts') {
         <div class="gp-filter-bar">
           <div class="gp-search-wrap">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="input-search-prompts" class="gp-search-input" placeholder="Search 25+ curated prompts...">
+            <input type="text" id="input-search-prompts" class="gp-search-input" placeholder="Search 30+ structured pro prompts (AMR, Bento, ATS CV, SOP, Widgets)...">
           </div>
           <div class="gp-category-chips" id="gp-prompt-categories">
-            <button type="button" class="gp-chip active" data-cat="all">All Prompts</button>
-            <button type="button" class="gp-chip" data-cat="design">Design &amp; Theme</button>
-            <button type="button" class="gp-chip" data-cat="academic">Academic &amp; Research</button>
-            <button type="button" class="gp-chip" data-cat="corporate">Corporate ATS</button>
-            <button type="button" class="gp-chip" data-cat="letters">SOP &amp; Letters</button>
-            <button type="button" class="gp-chip" data-cat="layout">Layout Tweaks</button>
+            ${PROMPT_CATEGORIES.map((cat, i) => `
+              <button type="button" class="gp-chip ${i === 0 ? 'active' : ''}" data-cat="${cat.id}">
+                ${escapeHtml(cat.label)}
+              </button>
+            `).join('')}
           </div>
         </div>
 
@@ -327,12 +179,20 @@ export function renderPromptsListHtml(prompts = []) {
     <div class="gp-prompt-card" data-idx="${idx}" data-category="${item.category}">
       <div class="gp-card-header">
         <span class="gp-category-tag">${escapeHtml(item.categoryLabel)}</span>
-        <button type="button" class="btn-use-prompt" data-use-prompt="${idx}" title="Click to insert into Vibe Agent chat">
-          <i class="fa-solid fa-arrow-turn-down"></i> Use Prompt
-        </button>
+        <div class="gp-card-actions">
+          <button type="button" class="btn-copy-prompt" data-copy-prompt="${idx}" title="Copy full structured prompt to clipboard">
+            <i class="fa-solid fa-copy"></i> Copy
+          </button>
+          <button type="button" class="btn-use-prompt" data-use-prompt="${idx}" title="Send directly to Vibe Agent">
+            <i class="fa-solid fa-arrow-turn-down"></i> Use Prompt
+          </button>
+        </div>
       </div>
       <h4 class="gp-prompt-title">${escapeHtml(item.title)}</h4>
-      <p class="gp-prompt-text">"${escapeHtml(item.prompt)}"</p>
+      <p class="gp-prompt-sub">${escapeHtml(item.summary || '')}</p>
+      <div class="gp-prompt-preview">
+        <pre class="gp-code-block">${escapeHtml(item.prompt)}</pre>
+      </div>
     </div>
   `).join('');
 }
@@ -404,14 +264,37 @@ export class GuideAndPromptsController {
       this.filterPrompts();
     });
 
-    // Use prompt buttons
-    this.container.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-use-prompt]');
-      if (btn) {
-        const idx = parseInt(btn.getAttribute('data-use-prompt'), 10);
+    // Delegated click handler
+    this.container.addEventListener('click', async (e) => {
+      // Use prompt in vibe
+      const btnUse = e.target.closest('[data-use-prompt]');
+      if (btnUse) {
+        const idx = parseInt(btnUse.getAttribute('data-use-prompt'), 10);
         const item = PROMPT_LIBRARY[idx];
         if (item) {
           this.onSelectPrompt(item.prompt);
+        }
+        return;
+      }
+
+      // Copy prompt to clipboard
+      const btnCopy = e.target.closest('[data-copy-prompt]');
+      if (btnCopy) {
+        const idx = parseInt(btnCopy.getAttribute('data-copy-prompt'), 10);
+        const item = PROMPT_LIBRARY[idx];
+        if (item && item.prompt) {
+          try {
+            await navigator.clipboard.writeText(item.prompt);
+            const origHtml = btnCopy.innerHTML;
+            btnCopy.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+            btnCopy.classList.add('copied');
+            setTimeout(() => {
+              btnCopy.innerHTML = origHtml;
+              btnCopy.classList.remove('copied');
+            }, 1800);
+          } catch {
+            // Fallback for older browsers
+          }
         }
       }
     });
@@ -425,6 +308,7 @@ export class GuideAndPromptsController {
       const matchesCat = this.activeCategory === 'all' || p.category === this.activeCategory;
       const matchesQuery = !this.searchQuery ||
         p.title.toLowerCase().includes(this.searchQuery) ||
+        p.summary.toLowerCase().includes(this.searchQuery) ||
         p.prompt.toLowerCase().includes(this.searchQuery) ||
         p.categoryLabel.toLowerCase().includes(this.searchQuery);
       return matchesCat && matchesQuery;

@@ -6,42 +6,58 @@ import { callAiText, parseJsonFromAiResponse, isAiConfigured } from './byok-clie
 export const VIBE_TOOLS = [
   {
     name: 'patch_profile_data',
-    description: 'Apply schema-validated content edits to identity, education, research, publications, projects, certifications, or skills.',
+    description: 'Apply schema-validated content edits to identity, education, research, publications, projects, certifications, skills, location coordinates, or custom sections.',
     parameters: {
       type: 'object',
       properties: {
-        identity: { type: 'object', description: 'Updated identity fields (fullName, roleBadge, tagline, bioParagraphs, etc.)' },
+        identity: { type: 'object', description: 'Updated identity fields (fullName, roleBadge, tagline, bioParagraphs, location, contacts)' },
         addPublications: { type: 'array', description: 'New publications to append' },
+        removePublicationIds: { type: 'array', items: { type: 'string' }, description: 'IDs of publications to delete' },
         addEducation: { type: 'array', description: 'New education items to append' },
         addResearch: { type: 'array', description: 'New research appointments to append' },
         addProjects: { type: 'array', description: 'New project cards to append' },
         addCertifications: { type: 'array', description: 'New certifications to append' },
         addSkills: { type: 'array', items: { type: 'string' }, description: 'Skills to add' },
-        reorderSection: { type: 'string', description: 'Section to reorder' },
+        addCustomSections: { type: 'array', description: 'Custom sections to append (title, layout, items)' },
+        mapCoordinates: {
+          type: 'object',
+          properties: {
+            latitude: { type: 'number' },
+            longitude: { type: 'number' },
+            locationName: { type: 'string' }
+          }
+        },
+        reorderSection: { type: 'string', description: 'Section name to reorder (e.g. publications, research, projects)' },
         orderIds: { type: 'array', items: { type: 'string' }, description: 'New ID sequence' }
       }
     }
   },
   {
     name: 'update_theme_and_layout',
-    description: 'Update safe CSS theme tokens, colors, fonts, template switching, seeAllLimit, card grid columns, or scoped safe custom CSS.',
+    description: 'Update safe CSS theme tokens, colors, fonts, templates, columns, lighting glow, perimeter gradient, ticker/marquee motion, or scoped safe custom CSS.',
     parameters: {
       type: 'object',
       properties: {
         portfolioTemplateId: { type: 'string', description: 'Target template ID (e.g. acad-flagship, tech-minimalist, corp-executive)' },
-        cvTemplateId: { type: 'string', description: 'Target CV template ID (e.g. cv-acad-flagship, cv-corp-clean)' },
+        cvTemplateId: { type: 'string', description: 'Target CV template ID (e.g. cv-acad-flagship, cv-acad-europass, cv-tech-minimalist)' },
         theme: { type: 'string', enum: ['dark', 'light', 'slate', 'solarized', 'contrast'] },
-        accentColor: { type: 'string', description: 'Hex or CSS color string (e.g. #0d9488, #3b82f6, #10b981)' },
+        accentColor: { type: 'string', description: 'Hex or CSS color string (e.g. #0d9488, #10b981, #3b82f6, #f59e0b)' },
         fontFamily: { type: 'string', description: 'Font pairing (Inter, Plus Jakarta Sans, Merriweather, JetBrains Mono)' },
         gridColumns: { type: 'number', description: 'Card grid columns (1, 2, 3, or 4)' },
-        seeAllLimit: { type: 'number', description: 'Initial items visible before See All (e.g. 3, 5, 10)' },
+        seeAllLimit: { type: 'number', description: 'Initial items visible before See All (e.g. 3, 5, 8)' },
+        glowLevel: { type: 'string', enum: ['radiant', 'subtle', 'none'], description: 'Card lighting ambient glow' },
+        perimeterGradient: { type: 'string', enum: ['active', 'subtle', 'off'], description: 'Perimeter shifting gradient border' },
+        tickerSpeed: { type: 'string', enum: ['slow', 'normal', 'fast', 'paused'], description: 'Auto-scrolling news ticker animation' },
+        gallerySpeed: { type: 'string', enum: ['slow', 'normal', 'fast', 'paused'], description: 'Photo marquee speed' },
+        showMap: { type: 'boolean', description: 'Whether to display the interactive fieldwork map' },
+        showFloatingCvPill: { type: 'boolean', description: 'Whether to display floating CV PDF download pill' },
         scopedCss: { type: 'string', description: 'Safe CSS rules without @import or javascript:' }
       }
     }
   },
   {
     name: 'tailor_cv_profile',
-    description: 'Create or update a targeted CV profile with specific section visibility toggles.',
+    description: 'Create or update a targeted CV profile with specific section visibility toggles and role focus.',
     parameters: {
       type: 'object',
       properties: {
@@ -125,7 +141,12 @@ export function applyVibeTool(activeProfile, toolName, args = {}) {
     appendItems('projects', args.addProjects);
     appendItems('certifications', args.addCertifications);
 
-    // 3. Add skills
+    // 3. Remove publications if specified
+    if (Array.isArray(args.removePublicationIds) && Array.isArray(cloned.publications)) {
+      cloned.publications = cloned.publications.filter((p) => !args.removePublicationIds.includes(p.id));
+    }
+
+    // 4. Add skills
     if (Array.isArray(args.addSkills) && args.addSkills.length) {
       cloned.skills = cloned.skills || {};
       cloned.skills.technical = cloned.skills.technical || { title: 'Technical Skills', skills: [] };
@@ -137,7 +158,28 @@ export function applyVibeTool(activeProfile, toolName, args = {}) {
       });
     }
 
-    // 4. Reorder items
+    // 5. Add Custom Sections
+    if (Array.isArray(args.addCustomSections) && args.addCustomSections.length) {
+      cloned.customSections = Array.isArray(cloned.customSections) ? cloned.customSections : [];
+      args.addCustomSections.forEach((sec, idx) => {
+        const sanitized = sanitizeValue(sec);
+        if (typeof sanitized === 'object') {
+          sanitized.id = sanitized.id || `custom-sec-${Date.now()}-${idx}`;
+          cloned.customSections.push(sanitized);
+        }
+      });
+    }
+
+    // 6. Map coordinates
+    if (args.mapCoordinates && typeof args.mapCoordinates === 'object') {
+      cloned.locationMap = cloned.locationMap || {};
+      if (typeof args.mapCoordinates.latitude === 'number') cloned.locationMap.latitude = args.mapCoordinates.latitude;
+      if (typeof args.mapCoordinates.longitude === 'number') cloned.locationMap.longitude = args.mapCoordinates.longitude;
+      if (args.mapCoordinates.locationName) cloned.locationMap.locationName = sanitizeValue(args.mapCoordinates.locationName);
+      cloned.locationMap.enabled = true;
+    }
+
+    // 7. Reorder items
     if (args.reorderSection && Array.isArray(args.orderIds) && Array.isArray(cloned[args.reorderSection])) {
       const section = cloned[args.reorderSection];
       const reordered = [];
@@ -145,7 +187,6 @@ export function applyVibeTool(activeProfile, toolName, args = {}) {
         const found = section.find((x) => x.id === id);
         if (found) reordered.push(found);
       });
-      // Append leftovers
       section.forEach((x) => {
         if (!reordered.includes(x)) reordered.push(x);
       });
@@ -168,6 +209,18 @@ export function applyVibeTool(activeProfile, toolName, args = {}) {
     }
     if (args.seeAllLimit && Number.isInteger(args.seeAllLimit)) {
       cloned.displayConfig.seeAllLimit = Math.max(1, Math.min(20, args.seeAllLimit));
+    }
+    if (args.glowLevel) cloned.displayConfig.glowLevel = sanitizeValue(args.glowLevel);
+    if (args.perimeterGradient) cloned.displayConfig.perimeterGradient = sanitizeValue(args.perimeterGradient);
+    if (args.tickerSpeed) cloned.displayConfig.tickerSpeed = sanitizeValue(args.tickerSpeed);
+    if (args.gallerySpeed) cloned.displayConfig.gallerySpeed = sanitizeValue(args.gallerySpeed);
+    if (typeof args.showMap === 'boolean') cloned.displayConfig.showMap = args.showMap;
+    if (typeof args.showFloatingCvPill === 'boolean') cloned.displayConfig.showFloatingCvPill = args.showFloatingCvPill;
+    if (args.mapCoordinates && typeof args.mapCoordinates === 'object') {
+      cloned.locationMap = cloned.locationMap || {};
+      if (typeof args.mapCoordinates.latitude === 'number') cloned.locationMap.latitude = args.mapCoordinates.latitude;
+      if (typeof args.mapCoordinates.longitude === 'number') cloned.locationMap.longitude = args.mapCoordinates.longitude;
+      if (args.mapCoordinates.locationName) cloned.locationMap.locationName = sanitizeValue(args.mapCoordinates.locationName);
     }
     if (args.scopedCss) {
       cloned.displayConfig.customCss = sanitizeCss(args.scopedCss);
@@ -221,8 +274,8 @@ export function applyVibeTool(activeProfile, toolName, args = {}) {
 export function parseOfflineVibeIntent(userPrompt = '', activeProfile = {}) {
   const prompt = userPrompt.trim().toLowerCase();
 
-  // 1. Check for profile data mutations (skills, publications, etc.)
-  const addSkillMatch = prompt.match(/(?:add skill|skill add|skills add|দক্ষতা যোগ করো|স্কিল যোগ করো)\s*[:]?\s*(.+)/i);
+  // 1. Check for profile data mutations (skills, publications, etc.) using userPrompt to preserve casing
+  const addSkillMatch = userPrompt.match(/(?:add skill|skill add|skills add|দক্ষতা যোগ করো|স্কিল যোগ করো)\s*[:]?\s*(.+)/i);
   if (addSkillMatch) {
     const rawSkills = addSkillMatch[1].split(/[,•|]/).map((s) => s.trim()).filter(Boolean);
     return {
@@ -234,77 +287,140 @@ export function parseOfflineVibeIntent(userPrompt = '', activeProfile = {}) {
 
   // 2. Check for CV tailoring intent
   if (prompt.includes('tailor cv') || prompt.includes('tailor resume') || prompt.includes('সিভি কাস্টমাইজ') || prompt.includes('tailored cv')) {
+    const isBioinfo = prompt.includes('bioinformatics') || prompt.includes('computational');
     return {
-      explanation: 'Created tailored CV profile for targeted opportunity.',
+      explanation: `Created tailored CV profile for ${isBioinfo ? 'Bioinformatics Analyst' : 'Target Opportunity'}.`,
       tool: 'tailor_cv_profile',
       arguments: {
-        profileName: 'Targeted Candidate CV',
-        targetRole: 'Target Opportunity Candidate',
+        profileName: isBioinfo ? 'Bioinformatics Analyst' : 'Targeted Candidate CV',
+        targetRole: isBioinfo ? 'Bioinformatics Analyst' : 'Target Opportunity Candidate',
         includedSections: ['education', 'research', 'publications', 'skills']
       }
     };
   }
 
   // 3. Check for Letter / SOP intent
-  if (prompt.includes('draft sop') || prompt.includes('write sop') || prompt.includes('cover letter') || prompt.includes('লেটার ড্রাফট')) {
+  if (prompt.includes('draft sop') || prompt.includes('write sop') || prompt.includes('cover letter') || prompt.includes('লেটার ড্রাফট') || prompt.includes('cold email')) {
     const isCover = prompt.includes('cover letter') || prompt.includes('কভার লেটার');
+    const isEmail = prompt.includes('cold email') || prompt.includes('ইমেইল');
+    const isMotivation = prompt.includes('motivation') || prompt.includes('মোটিভেশন');
+    const mode = isEmail ? 'email' : (isCover ? 'cover' : (isMotivation ? 'motivation' : 'sop'));
+
     return {
-      explanation: `Prepared targeted ${isCover ? 'Cover Letter' : 'Statement of Purpose'} draft.`,
+      explanation: `Prepared targeted ${mode.toUpperCase()} draft.`,
       tool: 'draft_or_refine_letter',
       arguments: {
-        mode: isCover ? 'cover_letter' : 'sop',
+        mode,
         targetInstitution: 'Target Institution'
       }
     };
   }
 
-  // 4. Styling & Layout attributes accumulator (theme, accentColor, template, columns)
+  // 4. Styling & Layout attributes accumulator
   const args = {};
   const explanationParts = [];
 
   // Theme detection
   if (prompt.includes('dark') || prompt.includes('ডার্ক') || prompt.includes('dark mode')) {
     args.theme = 'dark';
-    explanationParts.push('Dark mode');
+    explanationParts.push('Dark theme');
   } else if (prompt.includes('light') || prompt.includes('লাইট') || prompt.includes('light mode')) {
     args.theme = 'light';
-    explanationParts.push('Light mode');
+    explanationParts.push('Light theme');
+  } else if (prompt.includes('slate') || prompt.includes('স্লেট')) {
+    args.theme = 'slate';
+    explanationParts.push('Slate theme');
+  } else if (prompt.includes('solarized')) {
+    args.theme = 'solarized';
+    explanationParts.push('Solarized theme');
+  } else if (prompt.includes('contrast')) {
+    args.theme = 'contrast';
+    explanationParts.push('High Contrast theme');
   }
 
   // Accent color detection
-  if (prompt.includes('emerald') || prompt.includes('green') || prompt.includes('সবুজ')) {
+  if (prompt.includes('emerald') || prompt.includes('সবুজ') || prompt.includes('#10b981')) {
     args.accentColor = '#10b981';
-    explanationParts.push('Emerald accent');
-  } else if (prompt.includes('teal') || prompt.includes('cyan') || prompt.includes('blue') || prompt.includes('নীল')) {
+    explanationParts.push('Emerald accent (#10b981)');
+  } else if (prompt.includes('teal') || prompt.includes('টিয়াল') || prompt.includes('#0d9488')) {
     args.accentColor = '#0d9488';
-    explanationParts.push('Teal accent');
-  } else if (prompt.includes('amber') || prompt.includes('orange') || prompt.includes('কমলা')) {
+    explanationParts.push('Teal accent (#0d9488)');
+  } else if (prompt.includes('amber') || prompt.includes('orange') || prompt.includes('কমলা') || prompt.includes('#f59e0b')) {
     args.accentColor = '#f59e0b';
-    explanationParts.push('Amber accent');
+    explanationParts.push('Amber accent (#f59e0b)');
+  } else if (prompt.includes('blue') || prompt.includes('নীল') || prompt.includes('#3b82f6') || prompt.includes('#2563eb')) {
+    args.accentColor = '#3b82f6';
+    explanationParts.push('Vibrant Blue accent (#3b82f6)');
+  } else if (prompt.includes('cyan') || prompt.includes('#06b6d4')) {
+    args.accentColor = '#06b6d4';
+    explanationParts.push('Cyan accent (#06b6d4)');
   }
 
   // Template switching
   if (prompt.includes('flagship') || prompt.includes('academic flagship')) {
     args.portfolioTemplateId = 'acad-flagship';
     explanationParts.push('Academic Flagship template');
-  } else if (prompt.includes('minimalist') || prompt.includes('minimal')) {
+  } else if (prompt.includes('minimalist') || prompt.includes('minimal') || prompt.includes('swiss')) {
     args.portfolioTemplateId = 'tech-minimalist';
     explanationParts.push('Clean Minimalist template');
-  } else if (prompt.includes('executive') || prompt.includes('corporate')) {
+  } else if (prompt.includes('executive') || prompt.includes('corporate') || prompt.includes('bento')) {
     args.portfolioTemplateId = 'corp-executive';
-    explanationParts.push('Executive Corporate template');
+    explanationParts.push('Corporate Executive template');
+  }
+
+  // Typography
+  if (prompt.includes('jetbrains mono') || prompt.includes('monospace') || prompt.includes('terminal')) {
+    args.fontFamily = 'JetBrains Mono';
+    explanationParts.push('JetBrains Mono typography');
+  } else if (prompt.includes('inter')) {
+    args.fontFamily = 'Inter';
+    explanationParts.push('Inter typography');
+  } else if (prompt.includes('plus jakarta sans') || prompt.includes('jakarta')) {
+    args.fontFamily = 'Plus Jakarta Sans';
+    explanationParts.push('Plus Jakarta Sans typography');
+  }
+
+  // Visual effects: Radiant Glow & Perimeter Gradient
+  if (prompt.includes('radiant glow') || prompt.includes('glow') || prompt.includes('lighting')) {
+    args.glowLevel = 'radiant';
+    args.perimeterGradient = 'active';
+    explanationParts.push('Radiant glow & perimeter gradient');
+  }
+
+  // Updates Ticker & Marquee
+  if (prompt.includes('ticker') || prompt.includes('news ticker')) {
+    args.tickerSpeed = 'normal';
+    explanationParts.push('Auto-scrolling updates ticker');
+  }
+  if (prompt.includes('gallery marquee') || prompt.includes('marquee')) {
+    args.gallerySpeed = 'normal';
+    explanationParts.push('Gallery marquee loop');
+  }
+
+  // Interactive Map & Floating CV Pill
+  if (prompt.includes('map') || prompt.includes('coordinates') || prompt.includes('gps')) {
+    args.showMap = true;
+    args.mapCoordinates = { latitude: 24.374043, longitude: 88.644182, locationName: 'Rajshahi, Bangladesh' };
+    explanationParts.push('Interactive field coordinates map');
+  }
+  if (prompt.includes('floating pill') || prompt.includes('floating cv') || prompt.includes('pdf pill')) {
+    args.showFloatingCvPill = true;
+    explanationParts.push('Floating quick-action CV pill');
   }
 
   // Grid columns
-  if (prompt.includes('1 column') || prompt.includes('single column')) {
+  if (prompt.includes('1 column') || prompt.includes('single column') || prompt.includes('১ কলাম')) {
     args.gridColumns = 1;
     explanationParts.push('1-column layout');
-  } else if (prompt.includes('2 column') || prompt.includes('2 columns')) {
+  } else if (prompt.includes('2 column') || prompt.includes('2 columns') || prompt.includes('২ কলাম')) {
     args.gridColumns = 2;
     explanationParts.push('2-column layout');
-  } else if (prompt.includes('3 column') || prompt.includes('3 columns')) {
+  } else if (prompt.includes('3 column') || prompt.includes('3 columns') || prompt.includes('৩ কলাম')) {
     args.gridColumns = 3;
     explanationParts.push('3-column layout');
+  } else if (prompt.includes('4 column') || prompt.includes('4 columns') || prompt.includes('৪ কলাম')) {
+    args.gridColumns = 4;
+    explanationParts.push('4-column layout');
   }
 
   if (Object.keys(args).length > 0) {
@@ -352,7 +468,7 @@ Choose the appropriate tool and return JSON only:`;
       });
 
       aiResponseJson = parseJsonFromAiResponse(rawAiText);
-    } catch (err) {
+    } catch {
       // Graceful fallback to offline intent parser if API call fails
       aiResponseJson = null;
     }
@@ -365,7 +481,7 @@ Choose the appropriate tool and return JSON only:`;
 
   const { tool, arguments: args, explanation } = aiResponseJson;
 
-  // 1. Calculate Diff & Snapshot Before Mutating
+  // 1. Apply Tool & Mutate Cloned Profile
   const updatedProfile = applyVibeTool(activeProfile, tool, args || {});
   const diffSummary = calculateDiffSummary(activeProfile, updatedProfile);
 

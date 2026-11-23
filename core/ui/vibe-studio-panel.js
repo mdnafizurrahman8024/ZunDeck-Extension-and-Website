@@ -7,9 +7,18 @@ import {
   getAiCredentials,
   saveAiCredentials,
   testAiConnection,
+  fetchLiveModels,
   isAiConfigured,
-  GEMINI_MODELS
+  AI_PROVIDERS,
+  PROVIDER_METADATA,
+  PRESET_MODELS,
+  GEMINI_MODELS,
+  callAiText
 } from '../ai/byok-client.js';
+import {
+  PROMPT_LIBRARY,
+  generateStructuredPrompt
+} from '../ai/prompt-library.js';
 import {
   getCheckpoints,
   restoreCheckpoint,
@@ -23,6 +32,8 @@ export function renderVibeStudioHtml(state = {}) {
   const isOnline = Boolean(state.isConfigured);
   const messages = Array.isArray(state.messages) ? state.messages : [];
   const latestDiff = state.latestDiff || null;
+  const isPromptPaneOpen = Boolean(state.isPromptPaneOpen);
+  const promptEngMessages = Array.isArray(state.promptEngMessages) ? state.promptEngMessages : [];
 
   return `
     <div class="vibe-studio-root">
@@ -30,18 +41,22 @@ export function renderVibeStudioHtml(state = {}) {
       <header class="vibe-top-bar">
         <div class="vibe-title-group">
           <span class="vibe-badge"><i class="fa-solid fa-terminal"></i> Vibe Coding Agent</span>
-          <span class="vibe-status-pill ${isOnline ? 'online' : 'offline'}" id="vibe-status-indicator" title="${isOnline ? 'Connected to BYOK Gemini/OpenAI' : 'Offline Mode (Deterministic Rules)'}">
+          <span class="vibe-status-pill ${isOnline ? 'online' : 'offline'}" id="vibe-status-indicator" title="${isOnline ? 'Connected to BYOK AI Provider' : 'Offline Heuristics (Deterministic Rules)'}">
             <span class="vibe-dot"></span>
             <span>${isOnline ? 'AI Connected' : 'Offline Heuristics'}</span>
           </span>
         </div>
 
         <div class="vibe-header-tools">
+          <button type="button" class="btn-tool ${isPromptPaneOpen ? 'active' : ''}" id="btn-toggle-prompt-chat" title="Interactive AI Prompt Engineering Side Panel">
+            <i class="fa-solid fa-comments"></i>
+            <span>Prompt with AI</span>
+          </button>
           <button type="button" class="btn-tool" id="btn-open-timeline" title="Browse Checkpoint Undo / Redo Timeline (30 Snapshots)">
             <i class="fa-solid fa-clock-rotate-left"></i>
             <span>Timeline</span>
           </button>
-          <button type="button" class="btn-tool" id="btn-open-ai-settings" title="BYOK Gemini &amp; OpenAI API Settings">
+          <button type="button" class="btn-tool" id="btn-open-ai-settings" title="BYOK AI Settings (Gemini, Claude, OpenAI, DeepSeek, Groq)">
             <i class="fa-solid fa-gear"></i>
             <span>BYOK Key</span>
           </button>
@@ -64,59 +79,143 @@ export function renderVibeStudioHtml(state = {}) {
         </div>
       ` : ''}
 
-      <!-- Chat History Stage -->
-      <div class="vibe-chat-history" id="vibe-chat-messages">
-        ${messages.length === 0 ? `
-          <div class="vibe-welcome-box">
-            <div class="vibe-avatar-circle">
-              <i class="fa-solid fa-brain"></i>
-            </div>
-            <h4 class="vibe-welcome-title">Welcome to Safe Vibe Coding</h4>
-            <p class="vibe-welcome-sub">Describe any visual theme, academic polish, or layout edit in English or Bengali. Every edit creates an automatic undo checkpoint.</p>
-            <div class="vibe-quick-suggestions">
-              <button type="button" class="quick-vibe-chip" data-vibe-cmd="Change theme to dark with emerald accent (#10b981) and 2 columns">
-                Emerald Dark Theme (2 Cols)
-              </button>
-              <button type="button" class="quick-vibe-chip" data-vibe-cmd="Switch portfolio template to Clean Minimalist">
-                Clean Minimalist Template
-              </button>
-              <button type="button" class="quick-vibe-chip" data-vibe-cmd="থিম ডার্ক মোডে পরিবর্তন করো এবং বাটন নীল করো">
-                থিম ডার্ক ও নীল (বাংলা)
-              </button>
-              <button type="button" class="quick-vibe-chip" data-vibe-cmd="Add technical skills: Nextflow, BLAST+, Biopython, GeoPandas">
-                Add NGS &amp; Bioinformatics Skills
-              </button>
-            </div>
-          </div>
-        ` : ''}
-
-        ${messages.map((msg) => `
-          <div class="vibe-message-row ${msg.role === 'user' ? 'user-msg' : 'agent-msg'}">
-            <div class="vibe-msg-bubble">
-              <div class="vibe-msg-header">
-                <span class="vibe-msg-author">${msg.role === 'user' ? 'You' : 'ZunDeck Agent'}</span>
-                <span class="vibe-msg-time">${msg.time || ''}</span>
-              </div>
-              <p class="vibe-msg-text">${escapeHtml(msg.text)}</p>
-              ${msg.diffSummary ? `
-                <div class="vibe-msg-diff-pill">
-                  <i class="fa-solid fa-check"></i> ${escapeHtml(msg.diffSummary)}
+      <!-- Main Workspace Split Container -->
+      <div class="vibe-workspace-split ${isPromptPaneOpen ? 'prompt-pane-open' : ''}" id="vibe-split-container">
+        
+        <!-- Primary Vibe Execution Panel -->
+        <div class="vibe-main-stage">
+          <!-- Chat History Stage -->
+          <div class="vibe-chat-history" id="vibe-chat-messages">
+            ${messages.length === 0 ? `
+              <div class="vibe-welcome-box">
+                <div class="vibe-avatar-circle">
+                  <i class="fa-solid fa-brain"></i>
                 </div>
-              ` : ''}
-            </div>
-          </div>
-        `).join('')}
-      </div>
+                <h4 class="vibe-welcome-title">Welcome to Safe Vibe Coding Studio</h4>
+                <p class="vibe-welcome-sub">Describe any visual theme, academic polish, or layout edit in English or Bengali. Every edit creates an automatic undo checkpoint.</p>
+                <div class="vibe-quick-suggestions">
+                  <button type="button" class="quick-vibe-chip" data-vibe-cmd="Change theme to dark with emerald accent (#10b981) and 2 columns">
+                    Emerald Dark Theme (2 Cols)
+                  </button>
+                  <button type="button" class="quick-vibe-chip" data-vibe-cmd="Switch portfolio template to Clean Minimalist">
+                    Clean Minimalist Template
+                  </button>
+                  <button type="button" class="quick-vibe-chip" data-vibe-cmd="থিম ডার্ক মোডে পরিবর্তন করো এবং বাটন নীল করো">
+                    থিম ডার্ক ও নীল (বাংলা)
+                  </button>
+                  <button type="button" class="quick-vibe-chip" data-vibe-cmd="Enable perimeter gradient border and radiant 20px teal glow">
+                    Radiant Glow &amp; Shifting Border
+                  </button>
+                </div>
+              </div>
+            ` : ''}
 
-      <!-- Vibe Chat Input Stage -->
-      <footer class="vibe-input-stage">
-        <form id="form-vibe-chat" class="vibe-input-form">
-          <input type="text" id="input-vibe-prompt" class="vibe-text-input" placeholder="Ask in English or Bengali (e.g. 'Make theme emerald dark and add Python')..." autocomplete="off">
-          <button type="submit" class="btn-primary" id="btn-send-vibe">
-            <i class="fa-solid fa-paper-plane"></i>
-          </button>
-        </form>
-      </footer>
+            ${messages.map((msg) => `
+              <div class="vibe-message-row ${msg.role === 'user' ? 'user-msg' : 'agent-msg'}">
+                <div class="vibe-msg-bubble">
+                  <div class="vibe-msg-header">
+                    <span class="vibe-msg-author">${msg.role === 'user' ? 'You' : 'ZunDeck Agent'}</span>
+                    <span class="vibe-msg-time">${msg.time || ''}</span>
+                  </div>
+                  <p class="vibe-msg-text">${escapeHtml(msg.text)}</p>
+                  ${msg.diffSummary ? `
+                    <div class="vibe-msg-diff-pill">
+                      <i class="fa-solid fa-check"></i> ${escapeHtml(msg.diffSummary)}
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Vibe Chat Input Stage -->
+          <footer class="vibe-input-stage">
+            <form id="form-vibe-chat" class="vibe-input-form">
+              <input type="text" id="input-vibe-prompt" class="vibe-text-input" placeholder="Ask in English or Bengali (e.g. 'Make theme emerald dark and add Python')..." autocomplete="off">
+              <button type="submit" class="btn-primary" id="btn-send-vibe" title="Send to Vibe Agent">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </form>
+          </footer>
+        </div>
+
+        <!-- Collapsible Side-by-Side Prompt Engineering Chat Panel -->
+        <div class="vibe-prompt-engineering-pane ${isPromptPaneOpen ? 'open' : ''}" id="vibe-prompt-engineering-pane" style="${isPromptPaneOpen ? '' : 'display: none;'}">
+          <div class="prompt-pane-header">
+            <div class="prompt-pane-title-wrap">
+              <i class="fa-solid fa-comments prompt-pane-icon"></i>
+              <div>
+                <h4 class="prompt-pane-title">Prompt Engineering Chat</h4>
+                <p class="prompt-pane-sub">English • বাংলা • Banglish &rarr; 5-Point Pro Prompt</p>
+              </div>
+            </div>
+            <button type="button" class="btn-micro" id="btn-close-prompt-pane" title="Close Prompt Studio">&times;</button>
+          </div>
+
+          <div class="prompt-pane-body" id="prompt-pane-messages">
+            ${promptEngMessages.length === 0 ? `
+              <div class="prompt-pane-welcome">
+                <p class="prompt-pane-hint">Tell me what you want to change in any language (English, বাংলা, or Banglish). I will synthesize a structured 5-point prompt containing Role, Objective, Commands, Design Specs, and Security Rules.</p>
+                <div class="prompt-quick-chips">
+                  <button type="button" class="quick-eng-chip" data-eng-idea="আমার পোর্টফোলিওকে ডার্ক ও নীল করো">
+                    ডার্ক ও নীল থিম (বাংলা)
+                  </button>
+                  <button type="button" class="quick-eng-chip" data-eng-idea="Make an authoritative AMR pathogen surveillance portfolio with maps and ticker">
+                    AMR Pathogen Showcase
+                  </button>
+                  <button type="button" class="quick-eng-chip" data-eng-idea="Optimize my CV for a Bioinformatics Analyst position">
+                    Bioinformatics ATS CV
+                  </button>
+                  <button type="button" class="quick-eng-chip" data-eng-idea="Draft a PhD SOP for molecular epidemiology">
+                    PhD SOP Draft
+                  </button>
+                </div>
+              </div>
+            ` : ''}
+
+            ${promptEngMessages.map((m) => `
+              <div class="eng-msg-row ${m.role}">
+                <div class="eng-msg-bubble">
+                  <div class="eng-msg-header">
+                    <span class="eng-msg-author">${m.role === 'user' ? 'You' : 'Prompt Engineer'}</span>
+                    <span class="eng-msg-time">${m.time || ''}</span>
+                  </div>
+                  <p class="eng-msg-text">${escapeHtml(m.text)}</p>
+                  ${m.structuredPrompt ? `
+                    <div class="eng-structured-card">
+                      <div class="eng-card-top">
+                        <span class="eng-card-badge"><i class="fa-solid fa-file-code"></i> Structured Pro Prompt</span>
+                        <div class="eng-card-actions">
+                          <button type="button" class="btn-micro btn-outline btn-eng-copy" data-copy-text="${escapeHtml(m.structuredPrompt)}" title="Copy to clipboard">
+                            <i class="fa-solid fa-copy"></i> Copy
+                          </button>
+                          <button type="button" class="btn-micro btn-outline btn-eng-edit" data-edit-text="${escapeHtml(m.structuredPrompt)}" title="Populate vibe input for editing">
+                            <i class="fa-solid fa-pen"></i> Edit
+                          </button>
+                          <button type="button" class="btn-micro btn-primary btn-eng-send" data-send-text="${escapeHtml(m.structuredPrompt)}" title="Execute immediately with Vibe Agent">
+                            <i class="fa-solid fa-play"></i> Send to Agent
+                          </button>
+                        </div>
+                      </div>
+                      <pre class="eng-prompt-code">${escapeHtml(m.structuredPrompt)}</pre>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <footer class="prompt-pane-footer">
+            <form id="form-prompt-eng" class="prompt-eng-form">
+              <input type="text" id="input-prompt-eng" class="vibe-text-input" placeholder="Type request in বাংলা, Banglish, or English..." autocomplete="off">
+              <button type="submit" class="btn-primary" id="btn-send-eng" title="Generate Pro Prompt">
+                <i class="fa-solid fa-sparkles"></i>
+              </button>
+            </form>
+          </footer>
+        </div>
+
+      </div>
 
       <!-- Checkpoint Timeline Modal Drawer -->
       <div class="vibe-drawer-overlay" id="vibe-timeline-drawer" style="display: none;">
@@ -140,8 +239,9 @@ export function renderVibeStudioHtml(state = {}) {
         <div class="vibe-modal-box">
           <div class="vibe-drawer-header">
             <div>
-              <h3 class="vibe-drawer-title">BYOK AI Settings (100% Private Vault)</h3>
-              <p class="vibe-drawer-sub">Keys are stored strictly in local browser storage and never logged.</p>
+              <span class="vibe-badge"><i class="fa-solid fa-shield-halved"></i> 100% Local Private Vault</span>
+              <h3 class="vibe-drawer-title">BYOK AI Settings (All Major Providers)</h3>
+              <p class="vibe-drawer-sub">Your API keys are stored strictly in local browser vault storage and never logged or proxied.</p>
             </div>
             <button type="button" class="btn-micro" id="btn-close-ai-settings">&times;</button>
           </div>
@@ -150,31 +250,51 @@ export function renderVibeStudioHtml(state = {}) {
               <label class="form-label" for="select-ai-provider">AI Provider</label>
               <select id="select-ai-provider" class="form-select">
                 <option value="gemini">Google Gemini API (Default — Multimodal Text, Vision &amp; PDFs)</option>
-                <option value="openai_compatible">OpenAI Compatible (Ollama, LM Studio, OpenAI)</option>
+                <option value="anthropic">Anthropic Claude (Claude 3.7 Sonnet, Claude 3.5)</option>
+                <option value="openai">OpenAI (GPT-4.5, GPT-4o, o3, o4-mini)</option>
+                <option value="deepseek">DeepSeek (DeepSeek-V3, DeepSeek-R1 Reasoning)</option>
+                <option value="groq">Groq (Ultra-Fast Llama 3.3 &amp; Mixtral)</option>
+                <option value="openrouter">OpenRouter (Access 200+ Models with 1 Key)</option>
+                <option value="xai">xAI (Grok-2 &amp; Grok Beta)</option>
+                <option value="mistral">Mistral AI (Mistral Large &amp; Codestral)</option>
+                <option value="custom">Custom Endpoint (Ollama, LM Studio, LocalAI)</option>
+                <option value="openai_compatible">OpenAI-Compatible Endpoint</option>
               </select>
             </div>
 
-            <div class="form-group" id="group-gemini-key">
-              <label class="form-label" for="input-gemini-key">Google Gemini API Key</label>
-              <input type="password" id="input-gemini-key" class="form-input" placeholder="AIzaSy...">
-              <span class="form-hint">Free key from <strong>aistudio.google.com</strong> (zero credit card needed).</span>
+            <div class="form-group" id="group-ai-key">
+              <label class="form-label" for="input-ai-key">
+                <span>API Key</span>
+                <span class="key-visibility-toggle" id="btn-toggle-key-visibility" title="Show/Hide Key">
+                  <i class="fa-solid fa-eye" id="icon-key-visibility"></i>
+                </span>
+              </label>
+              <input type="password" id="input-ai-key" class="form-input" placeholder="Paste your API key here...">
+              <span class="form-hint" id="hint-ai-provider">Free key from <strong>aistudio.google.com</strong> (zero credit card needed).</span>
             </div>
 
-            <div class="form-group" id="group-gemini-model">
-              <label class="form-label" for="select-gemini-model">Gemini Model</label>
-              <select id="select-gemini-model" class="form-select">
-                ${GEMINI_MODELS.map((m) => `<option value="${m.id}">${escapeHtml(m.name)}</option>`).join('')}
+            <div class="form-group" id="group-custom-endpoint" style="display: none;">
+              <label class="form-label" for="input-custom-endpoint">Custom Base URL</label>
+              <input type="text" id="input-custom-endpoint" class="form-input" placeholder="http://localhost:11434/v1">
+              <span class="form-hint">Endpoint URL supporting the <code>/chat/completions</code> REST schema.</span>
+            </div>
+
+            <div class="form-group" id="group-ai-model">
+              <div class="model-select-header">
+                <label class="form-label" for="select-ai-model">Select Model</label>
+                <button type="button" class="btn-micro btn-outline" id="btn-fetch-live-models" title="Fetch current live model catalog from provider">
+                  <i class="fa-solid fa-arrows-rotate"></i> Fetch Live Models
+                </button>
+              </div>
+              <select id="select-ai-model" class="form-select">
+                <!-- Dynamically populated -->
               </select>
             </div>
 
-            <div class="form-group" id="group-openai-endpoint" style="display: none;">
-              <label class="form-label" for="input-openai-endpoint">Custom Base URL</label>
-              <input type="text" id="input-openai-endpoint" class="form-input" placeholder="http://localhost:11434/v1">
-            </div>
-
-            <div class="form-group" id="group-openai-key" style="display: none;">
-              <label class="form-label" for="input-openai-key">API Key</label>
-              <input type="password" id="input-openai-key" class="form-input" placeholder="sk-...">
+            <div class="form-group" id="group-custom-model-id">
+              <label class="form-label" for="input-custom-model-id">Custom Model ID (Optional Override)</label>
+              <input type="text" id="input-custom-model-id" class="form-input" placeholder="e.g. gemini-2.5-pro or claude-3-7-sonnet-20250219">
+              <span class="form-hint">Override preset list with any exact model identifier.</span>
             </div>
 
             <div id="ai-test-status" class="ai-test-feedback" style="display: none;"></div>
@@ -200,9 +320,12 @@ export class VibeStudioController {
     this.activeProfile = options.profile || {};
     this.isExtension = Boolean(options.isExtension);
     this.messages = [];
+    this.promptEngMessages = [];
     this.latestDiff = null;
     this.isConfigured = false;
     this.isProcessing = false;
+    this.isPromptPaneOpen = false;
+    this.isKeyVisible = false;
 
     this.onProfileUpdated = typeof options.onProfileUpdated === 'function' ? options.onProfileUpdated : () => {};
   }
@@ -223,7 +346,9 @@ export class VibeStudioController {
       isExtension: this.isExtension,
       isConfigured: this.isConfigured,
       messages: this.messages,
-      latestDiff: this.latestDiff
+      latestDiff: this.latestDiff,
+      isPromptPaneOpen: this.isPromptPaneOpen,
+      promptEngMessages: this.promptEngMessages
     });
 
     this.bindEvents();
@@ -232,7 +357,7 @@ export class VibeStudioController {
   bindEvents() {
     if (!this.container) return;
 
-    // Send Form
+    // Send Main Vibe Form
     const form = this.container.querySelector('#form-vibe-chat');
     const input = this.container.querySelector('#input-vibe-prompt');
 
@@ -268,6 +393,84 @@ export class VibeStudioController {
       }
     });
 
+    // Toggle Prompt Engineering Pane
+    const btnTogglePrompt = this.container.querySelector('#btn-toggle-prompt-chat');
+    btnTogglePrompt?.addEventListener('click', () => {
+      this.isPromptPaneOpen = !this.isPromptPaneOpen;
+      this.render();
+    });
+
+    const btnClosePrompt = this.container.querySelector('#btn-close-prompt-pane');
+    btnClosePrompt?.addEventListener('click', () => {
+      this.isPromptPaneOpen = false;
+      this.render();
+    });
+
+    // Prompt Engineering Form
+    const formPromptEng = this.container.querySelector('#form-prompt-eng');
+    const inputPromptEng = this.container.querySelector('#input-prompt-eng');
+
+    formPromptEng?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userText = inputPromptEng?.value?.trim();
+      if (!userText) return;
+
+      inputPromptEng.value = '';
+      await this.handlePromptEngMessage(userText);
+    });
+
+    // Quick chips in Prompt Engineering Pane
+    this.container.querySelectorAll('.quick-eng-chip').forEach((chip) => {
+      chip.addEventListener('click', async () => {
+        const idea = chip.getAttribute('data-eng-idea');
+        if (idea) {
+          await this.handlePromptEngMessage(idea);
+        }
+      });
+    });
+
+    // Prompt Engineering Card Actions (Delegated)
+    this.container.addEventListener('click', async (e) => {
+      // Send to Vibe Agent
+      const btnSend = e.target.closest('.btn-eng-send');
+      if (btnSend) {
+        const promptText = btnSend.getAttribute('data-send-text');
+        if (promptText) {
+          await this.handleUserMessage(promptText);
+        }
+        return;
+      }
+
+      // Edit Before Running
+      const btnEdit = e.target.closest('.btn-eng-edit');
+      if (btnEdit) {
+        const promptText = btnEdit.getAttribute('data-edit-text');
+        if (promptText && input) {
+          input.value = promptText;
+          input.focus();
+        }
+        return;
+      }
+
+      // Copy Prompt
+      const btnCopy = e.target.closest('.btn-eng-copy');
+      if (btnCopy) {
+        const textToCopy = btnCopy.getAttribute('data-copy-text');
+        if (textToCopy) {
+          try {
+            await navigator.clipboard.writeText(textToCopy);
+            const orig = btnCopy.innerHTML;
+            btnCopy.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+            setTimeout(() => {
+              btnCopy.innerHTML = orig;
+            }, 1800);
+          } catch {
+            // fallback
+          }
+        }
+      }
+    });
+
     // Open/Close Timeline
     const btnTimeline = this.container.querySelector('#btn-open-timeline');
     const timelineDrawer = this.container.querySelector('#vibe-timeline-drawer');
@@ -282,7 +485,7 @@ export class VibeStudioController {
       if (timelineDrawer) timelineDrawer.style.display = 'none';
     });
 
-    // Open/Close Settings
+    // Open/Close BYOK Settings
     const btnSettings = this.container.querySelector('#btn-open-ai-settings');
     const settingsModal = this.container.querySelector('#vibe-settings-modal');
     const btnCloseSettings = this.container.querySelector('#btn-close-ai-settings');
@@ -296,18 +499,26 @@ export class VibeStudioController {
       if (settingsModal) settingsModal.style.display = 'none';
     });
 
-    // Provider select switch
+    // Key visibility eye toggle
+    const btnEye = this.container.querySelector('#btn-toggle-key-visibility');
+    const inpKey = this.container.querySelector('#input-ai-key');
+    const iconEye = this.container.querySelector('#icon-key-visibility');
+    btnEye?.addEventListener('click', () => {
+      this.isKeyVisible = !this.isKeyVisible;
+      if (inpKey) inpKey.type = this.isKeyVisible ? 'text' : 'password';
+      if (iconEye) iconEye.className = this.isKeyVisible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+
+    // Provider select change handler
     const selectProvider = this.container.querySelector('#select-ai-provider');
-    selectProvider?.addEventListener('change', (e) => {
-      const isOAI = e.target.value === 'openai_compatible';
-      const gGem = this.container.querySelector('#group-gemini-key');
-      const gMod = this.container.querySelector('#group-gemini-model');
-      const gEnd = this.container.querySelector('#group-openai-endpoint');
-      const gKey = this.container.querySelector('#group-openai-key');
-      if (gGem) gGem.style.display = isOAI ? 'none' : 'block';
-      if (gMod) gMod.style.display = isOAI ? 'none' : 'block';
-      if (gEnd) gEnd.style.display = isOAI ? 'block' : 'none';
-      if (gKey) gKey.style.display = isOAI ? 'block' : 'none';
+    selectProvider?.addEventListener('change', async (e) => {
+      await this.handleProviderChange(e.target.value);
+    });
+
+    // Fetch Live Models Button
+    const btnFetchModels = this.container.querySelector('#btn-fetch-live-models');
+    btnFetchModels?.addEventListener('click', async () => {
+      await this.runFetchLiveModels();
     });
 
     // Test connection button
@@ -360,10 +571,152 @@ export class VibeStudioController {
     } finally {
       this.isProcessing = false;
       this.render();
-      // Scroll to bottom
       const msgStage = this.container.querySelector('#vibe-chat-messages');
       if (msgStage) msgStage.scrollTop = msgStage.scrollHeight;
     }
+  }
+
+  async handlePromptEngMessage(userText) {
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    this.promptEngMessages.push({
+      role: 'user',
+      text: userText,
+      time: nowTime
+    });
+    this.render();
+
+    const clean = userText.toLowerCase();
+    let structuredPrompt = '';
+
+    // If AI is configured, query the model to synthesize the prompt
+    if (this.isConfigured) {
+      try {
+        const sysPrompt = `You are a precision prompt engineer for ZunDeck Vibe Studio.
+The user wants to customize their portfolio, ATS CV, or SOP.
+Synthesize their natural language request (in English, Bengali, or Banglish) into a structured 5-point Pro Prompt:
+[ROLE]
+...
+[OBJECTIVE]
+...
+[COMMANDS]
+1. ...
+2. ...
+[DESIGN SPECS]
+...
+[SECURITY & PRIVACY]
+- ...
+Output ONLY the structured prompt with zero filler preamble.`;
+
+        structuredPrompt = await callAiText(userText, {
+          systemInstruction: sysPrompt,
+          temperature: 0.3
+        });
+      } catch {
+        structuredPrompt = '';
+      }
+    }
+
+    // Fallback: intelligent heuristic synthesis
+    if (!structuredPrompt) {
+      if (clean.includes('amr') || clean.includes('pathogen') || clean.includes('surveillance') || clean.includes('one health')) {
+        structuredPrompt = generateStructuredPrompt({
+          role: 'Lead Academic Portfolio Architect & One Health Specialist',
+          objective: 'Reconfigure profile into an authoritative AMR surveillance showcase with teal accents and dual-column grid.',
+          commands: [
+            'Switch portfolio template to acad-flagship.',
+            'Set theme to dark with deep teal accent (#0d9488) and slate backdrop.',
+            'Organize cards into a balanced 2-column layout with 5-item initial view.',
+            'Position verified first-author journal papers at the top of the research list.',
+            'Highlight molecular epidemiology, pathogen genomics, and veterinary surveillance.'
+          ],
+          designSpecs: {
+            theme: 'dark',
+            accentColor: '#0d9488',
+            fontFamily: 'Plus Jakarta Sans',
+            gridColumns: 2,
+            effects: 'Perimeter gradient border with radiant 20px teal glow.'
+          },
+          securityRules: 'Zero fabricated citations or synthetic DOIs. Preserve all verified links.'
+        });
+      } else if (clean.includes('ডার্ক') || clean.includes('নীল') || clean.includes('বাংলা') || clean.includes('bangla')) {
+        structuredPrompt = generateStructuredPrompt({
+          role: 'Bengali UI Localization & Frontend Stylist',
+          objective: 'বাংলা কম্যান্ডের মাধ্যমে পোর্টফোলিওর থিম, ব্যাকগ্রাউন্ড ও বাটন কালার নিখুঁতভাবে পরিবর্তন করা।',
+          commands: [
+            'থিম ডার্ক মোডে পরিবর্তন করো।',
+            'বাটন এবং অ্যাকসেন্ট কালার ভাইব্রেন্ট ব্লু (#3b82f6) করো।',
+            'কার্ডগুলোকে ২-কলাম গ্রিডে সাজাও।',
+            'ফন্ট Plus Jakarta Sans এ সেট করো।'
+          ],
+          designSpecs: {
+            theme: 'dark',
+            accentColor: '#3b82f6',
+            fontFamily: 'Plus Jakarta Sans',
+            gridColumns: 2
+          },
+          securityRules: 'কোনো কাল্পনিক তথ্য বা মিথ্যা অর্জন যোগ করবে না।'
+        });
+      } else if (clean.includes('bioinformatics') || clean.includes('ats') || clean.includes('cv') || clean.includes('resume')) {
+        structuredPrompt = generateStructuredPrompt({
+          role: 'Principal Technical Recruiter & ATS Architect',
+          objective: 'Optimize CV profile for Bioinformatics Analyst roles with quantified metrics and high ATS compliance.',
+          commands: [
+            'Create tailored CV profile "Bioinformatics Analyst".',
+            'Prioritize skills: Python, Nextflow, BLAST+, Linux, Pandas, Biopython.',
+            'Restructure experience bullets using the Google XYZ formula.',
+            'Switch CV template to cv-tech-minimalist for clean parsing.'
+          ],
+          designSpecs: {
+            theme: 'dark',
+            fontFamily: 'Inter',
+            gridColumns: 1
+          },
+          securityRules: 'Keep metrics grounded in real project scopes without fabricating numbers.'
+        });
+      } else if (clean.includes('sop') || clean.includes('phd') || clean.includes('letter') || clean.includes('email')) {
+        structuredPrompt = generateStructuredPrompt({
+          role: 'Graduate Admissions Chair & Scholarly Editor',
+          objective: 'Draft a competitive, scholarly document grounded strictly in verified profile facts.',
+          commands: [
+            'Draft targeted SOP / Letter connecting veterinary clinical pathology to molecular genomics.',
+            'Structure into 4 cohesive sections: Motivation, Academic Foundation, Methodological Mastery, Future Trajectory.',
+            'Maintain formal scholarly tone without generic filler phrases.'
+          ],
+          designSpecs: {
+            fontFamily: 'Plus Jakarta Sans'
+          },
+          securityRules: 'Cite ONLY verified publications and genuine experiences from profile.'
+        });
+      } else {
+        structuredPrompt = generateStructuredPrompt({
+          role: 'Lead Portfolio Architect & UI Designer',
+          objective: `Apply requested customization: "${userText}".`,
+          commands: [
+            'Apply requested theme tokens and color accents.',
+            'Adjust card layout and spacing for optimal responsiveness.',
+            'Preserve all authentic credentials and evidence links.'
+          ],
+          designSpecs: {
+            theme: 'dark',
+            accentColor: '#0d9488',
+            fontFamily: 'Plus Jakarta Sans',
+            gridColumns: 2
+          },
+          securityRules: 'Zero fabricated credentials. Preserve all verified profile records.'
+        });
+      }
+    }
+
+    this.promptEngMessages.push({
+      role: 'agent',
+      text: 'I have engineered a structured 5-point prompt for your request. You can send it directly to the Vibe Agent, copy it, or edit before running:',
+      structuredPrompt,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+
+    this.render();
+    const paneBody = this.container.querySelector('#prompt-pane-messages');
+    if (paneBody) paneBody.scrollTop = paneBody.scrollHeight;
   }
 
   async populateTimeline() {
@@ -410,26 +763,92 @@ export class VibeStudioController {
   async populateSettingsForm() {
     const creds = await getAiCredentials();
     const selectProv = this.container.querySelector('#select-ai-provider');
-    const inpGemKey = this.container.querySelector('#input-gemini-key');
-    const selGemMod = this.container.querySelector('#select-gemini-model');
-    const inpOaiEnd = this.container.querySelector('#input-openai-endpoint');
-    const inpOaiKey = this.container.querySelector('#input-openai-key');
+    const inpKey = this.container.querySelector('#input-ai-key');
+    const inpEndpoint = this.container.querySelector('#input-custom-endpoint');
+    const inpCustomModelId = this.container.querySelector('#input-custom-model-id');
 
     if (selectProv) selectProv.value = creds.provider;
-    if (inpGemKey) inpGemKey.value = creds.apiKey && creds.provider === 'gemini' ? creds.apiKey : '';
-    if (selGemMod) selGemMod.value = creds.model;
-    if (inpOaiEnd) inpOaiEnd.value = creds.customEndpoint;
-    if (inpOaiKey) inpOaiKey.value = creds.apiKey && creds.provider === 'openai_compatible' ? creds.apiKey : '';
+    if (inpKey) inpKey.value = creds.apiKey || '';
+    if (inpEndpoint) inpEndpoint.value = creds.customEndpoint || '';
+    if (inpCustomModelId) inpCustomModelId.value = creds.customModelId || '';
 
-    selectProv?.dispatchEvent(new Event('change'));
+    await this.handleProviderChange(creds.provider, creds.model);
+  }
+
+  async handleProviderChange(provider, selectedModel = null) {
+    const meta = PROVIDER_METADATA[provider] || PROVIDER_METADATA[AI_PROVIDERS.GEMINI];
+    const groupEndpoint = this.container.querySelector('#group-custom-endpoint');
+    const hint = this.container.querySelector('#hint-ai-provider');
+    const inpEndpoint = this.container.querySelector('#input-custom-endpoint');
+    const selectModel = this.container.querySelector('#select-ai-model');
+
+    const isCustom = provider === AI_PROVIDERS.CUSTOM || provider === AI_PROVIDERS.OPENAI_COMPATIBLE;
+    if (groupEndpoint) groupEndpoint.style.display = isCustom ? 'block' : 'none';
+    if (inpEndpoint && !inpEndpoint.value) inpEndpoint.value = meta.defaultEndpoint;
+    if (hint) hint.innerHTML = meta.keyHelpText;
+
+    // Populate model options from presets
+    const models = PRESET_MODELS[provider] || [];
+    if (selectModel) {
+      selectModel.innerHTML = models.map((m) => `
+        <option value="${m.id}" ${selectedModel === m.id ? 'selected' : ''}>${escapeHtml(m.name)}</option>
+      `).join('');
+      if (selectedModel && !models.some((m) => m.id === selectedModel)) {
+        selectModel.innerHTML += `<option value="${selectedModel}" selected>${escapeHtml(selectedModel)} (Active)</option>`;
+      }
+    }
+  }
+
+  async runFetchLiveModels() {
+    const btn = this.container.querySelector('#btn-fetch-live-models');
+    const selectProv = this.container.querySelector('#select-ai-provider');
+    const inpKey = this.container.querySelector('#input-ai-key');
+    const inpEndpoint = this.container.querySelector('#input-custom-endpoint');
+    const selectModel = this.container.querySelector('#select-ai-model');
+    const feedback = this.container.querySelector('#ai-test-status');
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
+    }
+
+    const provider = selectProv?.value || AI_PROVIDERS.GEMINI;
+    const apiKey = (inpKey?.value || '').trim();
+    const customEndpoint = (inpEndpoint?.value || '').trim();
+
+    const res = await fetchLiveModels({ provider, apiKey, customEndpoint });
+
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Fetch Live Models';
+    }
+
+    if (res.success && Array.isArray(res.models) && res.models.length) {
+      if (selectModel) {
+        selectModel.innerHTML = res.models.map((m) => `
+          <option value="${m.id}">${escapeHtml(m.name)}</option>
+        `).join('');
+      }
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.className = 'ai-test-feedback success';
+        feedback.innerHTML = `<i class="fa-solid fa-circle-check"></i> Found ${res.models.length} live models for ${PROVIDER_METADATA[provider]?.name || provider}.`;
+      }
+    } else {
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.className = 'ai-test-feedback error';
+        feedback.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(res.message || 'Could not fetch live models. Presets remain available.')}`;
+      }
+    }
   }
 
   async runConnectionTest() {
     const selectProv = this.container.querySelector('#select-ai-provider');
-    const inpGemKey = this.container.querySelector('#input-gemini-key');
-    const selGemMod = this.container.querySelector('#select-gemini-model');
-    const inpOaiEnd = this.container.querySelector('#input-openai-endpoint');
-    const inpOaiKey = this.container.querySelector('#input-openai-key');
+    const inpKey = this.container.querySelector('#input-ai-key');
+    const selectModel = this.container.querySelector('#select-ai-model');
+    const inpCustomModelId = this.container.querySelector('#input-custom-model-id');
+    const inpEndpoint = this.container.querySelector('#input-custom-endpoint');
     const feedback = this.container.querySelector('#ai-test-status');
 
     if (!feedback) return;
@@ -437,14 +856,16 @@ export class VibeStudioController {
     feedback.className = 'ai-test-feedback testing';
     feedback.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing connection...';
 
-    const provider = selectProv?.value || 'gemini';
-    const apiKey = provider === 'gemini' ? (inpGemKey?.value || '') : (inpOaiKey?.value || '');
+    const provider = selectProv?.value || AI_PROVIDERS.GEMINI;
+    const apiKey = (inpKey?.value || '').trim();
+    const model = (inpCustomModelId?.value || '').trim() || selectModel?.value;
+    const customEndpoint = (inpEndpoint?.value || '').trim();
 
     const res = await testAiConnection({
       provider,
       apiKey,
-      model: selGemMod?.value || 'gemini-2.0-flash',
-      customEndpoint: inpOaiEnd?.value || 'https://api.openai.com/v1'
+      model,
+      customEndpoint
     });
 
     if (res.success) {
@@ -458,19 +879,23 @@ export class VibeStudioController {
 
   async saveSettingsFromForm() {
     const selectProv = this.container.querySelector('#select-ai-provider');
-    const inpGemKey = this.container.querySelector('#input-gemini-key');
-    const selGemMod = this.container.querySelector('#select-gemini-model');
-    const inpOaiEnd = this.container.querySelector('#input-openai-endpoint');
-    const inpOaiKey = this.container.querySelector('#input-openai-key');
+    const inpKey = this.container.querySelector('#input-ai-key');
+    const selectModel = this.container.querySelector('#select-ai-model');
+    const inpCustomModelId = this.container.querySelector('#input-custom-model-id');
+    const inpEndpoint = this.container.querySelector('#input-custom-endpoint');
 
-    const provider = selectProv?.value || 'gemini';
-    const apiKey = provider === 'gemini' ? (inpGemKey?.value || '') : (inpOaiKey?.value || '');
+    const provider = selectProv?.value || AI_PROVIDERS.GEMINI;
+    const apiKey = (inpKey?.value || '').trim();
+    const model = selectModel?.value;
+    const customModelId = (inpCustomModelId?.value || '').trim();
+    const customEndpoint = (inpEndpoint?.value || '').trim();
 
     await saveAiCredentials({
       provider,
       apiKey,
-      model: selGemMod?.value,
-      customEndpoint: inpOaiEnd?.value
+      model: customModelId || model,
+      customModelId,
+      customEndpoint
     });
 
     this.isConfigured = await isAiConfigured();
