@@ -37,10 +37,28 @@ function safeResolvePath(urlPath) {
   if (decoded === '/' || decoded === '') {
     decoded = '/apps/web/index.html';
   }
-  const resolved = path.normalize(path.join(ROOT_DIR, decoded));
+  let resolved = path.normalize(path.join(ROOT_DIR, decoded));
   if (!resolved.startsWith(ROOT_DIR)) {
     return null;
   }
+
+  // 1. Direct path check
+  if (fs.existsSync(resolved)) {
+    return resolved;
+  }
+
+  // 2. Fallback to apps/web/ (resolves root-relative /css/, /js/, /assets/, /favicon.*)
+  const webPath = path.normalize(path.join(ROOT_DIR, 'apps', 'web', decoded));
+  if (webPath.startsWith(ROOT_DIR) && fs.existsSync(webPath)) {
+    return webPath;
+  }
+
+  // 3. Fallback to core/
+  const corePath = path.normalize(path.join(ROOT_DIR, 'core', decoded));
+  if (corePath.startsWith(ROOT_DIR) && fs.existsSync(corePath)) {
+    return corePath;
+  }
+
   return resolved;
 }
 

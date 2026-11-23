@@ -3,7 +3,8 @@ import { CV_CATALOG, getCvTemplateById } from '../../core/templates/cv-catalog.j
 import { fetchLiveMotherShowcase, getMotherShowcaseFallback } from '../../core/data/mother-showcase.js';
 import { renderPortfolioHtml } from '../../core/engines/portfolio-engine.js';
 import { renderCvHtml } from '../../core/engines/cv-engine.js';
-import { generateDocxBlob } from '../../core/exporters/docx-exporter.js';
+import { generateDocxBlob, buildZip } from '../../core/exporters/docx-exporter.js';
+import { generateStaticPortfolioBundle } from '../../core/deploy/github-deployer.js';
 import { printCv } from '../../core/exporters/pdf-print-exporter.js';
 import { runAtsXRay } from '../../core/engines/ats-xray.js';
 import { getCvProfiles, syncCvToMaster, pullMasterToCv } from '../../core/engines/cv-profile-manager.js';
@@ -75,6 +76,14 @@ const dom = {
   syncLabel: document.getElementById('sync-status-label'),
   searchInput: document.getElementById('catalog-search'),
   categoryTabsContainer: document.getElementById('category-tabs'),
+  selectViewport: document.getElementById('select-preview-viewport'),
+  iconCurrentViewport: document.getElementById('icon-current-viewport'),
+  exportMenuWrap: document.getElementById('export-menu-wrap'),
+  btnExportDropdownToggle: document.getElementById('btn-export-dropdown-toggle'),
+  exportDropdownMenu: document.getElementById('export-dropdown-menu'),
+  exportMenuItems: document.querySelectorAll('.export-menu-item'),
+  themeSegmentedGroup: document.getElementById('theme-segmented-group'),
+  themeSegBtns: document.querySelectorAll('.theme-seg-btn'),
   viewportBtns: document.querySelectorAll('.viewport-btn'),
   btnThemeToggle: document.getElementById('btn-theme-toggle'),
   btnPopout: document.getElementById('btn-popout'),
@@ -270,6 +279,13 @@ function renderCatalog() {
       const id = card.getAttribute('data-id');
       selectTemplate(id);
     });
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const id = card.getAttribute('data-id');
+        selectTemplate(id);
+      }
+    });
   });
 }
 
@@ -277,11 +293,11 @@ function selectTemplate(templateId) {
   if (studioMode === 'portfolio') {
     activePortfolioTemplateId = templateId;
     const tpl = getTemplateById(templateId);
-    dom.labelActiveTemplate.textContent = tpl.name;
+    if (tpl) dom.labelActiveTemplate.textContent = tpl.name;
   } else {
     activeCvTemplateId = templateId;
     const tpl = getCvTemplateById(templateId);
-    dom.labelActiveTemplate.textContent = tpl.name;
+    if (tpl) dom.labelActiveTemplate.textContent = tpl.name;
   }
   renderCatalog();
   updatePreview();
@@ -289,6 +305,20 @@ function selectTemplate(templateId) {
 
 function setViewport(viewport) {
   activeViewport = viewport;
+  if (dom.selectViewport && dom.selectViewport.value !== viewport) {
+    dom.selectViewport.value = viewport;
+  }
+
+  const icons = {
+    laptop: 'fa-solid fa-desktop select-icon',
+    tablet: 'fa-solid fa-tablet-screen-button select-icon',
+    mobile: 'fa-solid fa-mobile-screen select-icon',
+    a4: 'fa-solid fa-file-invoice select-icon'
+  };
+  if (dom.iconCurrentViewport) {
+    dom.iconCurrentViewport.className = icons[viewport] || 'fa-solid fa-desktop select-icon';
+  }
+
   dom.viewportBtns.forEach((btn) => {
     btn.classList.toggle('active', btn.getAttribute('data-viewport') === viewport);
   });
@@ -357,7 +387,8 @@ function switchStudioMode(mode) {
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
-    dom.btnExportHtml.style.display = 'inline-flex';
+    if (dom.btnExportHtml) dom.btnExportHtml.style.display = 'inline-flex';
+    if (dom.exportMenuWrap) dom.exportMenuWrap.style.display = 'inline-block';
     dom.btnSyncToMaster.style.display = 'none';
     dom.btnPullFromMaster.style.display = 'none';
 
@@ -379,7 +410,8 @@ function switchStudioMode(mode) {
 
     dom.cvHeaderTools.style.display = 'flex';
     dom.letterHeaderTools.style.display = 'none';
-    dom.btnExportHtml.style.display = 'none';
+    if (dom.btnExportHtml) dom.btnExportHtml.style.display = 'none';
+    if (dom.exportMenuWrap) dom.exportMenuWrap.style.display = 'inline-block';
     dom.btnSyncToMaster.style.display = 'inline-flex';
     dom.btnPullFromMaster.style.display = 'inline-flex';
 
@@ -402,7 +434,8 @@ function switchStudioMode(mode) {
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'flex';
-    dom.btnExportHtml.style.display = 'none';
+    if (dom.btnExportHtml) dom.btnExportHtml.style.display = 'none';
+    if (dom.exportMenuWrap) dom.exportMenuWrap.style.display = 'none';
     dom.btnSyncToMaster.style.display = 'none';
     dom.btnPullFromMaster.style.display = 'none';
 
@@ -425,7 +458,8 @@ function switchStudioMode(mode) {
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
-    dom.btnExportHtml.style.display = 'none';
+    if (dom.btnExportHtml) dom.btnExportHtml.style.display = 'none';
+    if (dom.exportMenuWrap) dom.exportMenuWrap.style.display = 'none';
     dom.btnSyncToMaster.style.display = 'none';
     dom.btnPullFromMaster.style.display = 'none';
 
@@ -444,7 +478,8 @@ function switchStudioMode(mode) {
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
-    dom.btnExportHtml.style.display = 'none';
+    if (dom.btnExportHtml) dom.btnExportHtml.style.display = 'none';
+    if (dom.exportMenuWrap) dom.exportMenuWrap.style.display = 'inline-block';
     dom.btnSyncToMaster.style.display = 'none';
     dom.btnPullFromMaster.style.display = 'none';
 
@@ -463,7 +498,8 @@ function switchStudioMode(mode) {
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
-    dom.btnExportHtml.style.display = 'none';
+    if (dom.btnExportHtml) dom.btnExportHtml.style.display = 'none';
+    if (dom.exportMenuWrap) dom.exportMenuWrap.style.display = 'none';
     dom.btnSyncToMaster.style.display = 'none';
     dom.btnPullFromMaster.style.display = 'none';
 
@@ -482,7 +518,8 @@ function switchStudioMode(mode) {
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
-    dom.btnExportHtml.style.display = 'none';
+    if (dom.btnExportHtml) dom.btnExportHtml.style.display = 'none';
+    if (dom.exportMenuWrap) dom.exportMenuWrap.style.display = 'none';
     dom.btnSyncToMaster.style.display = 'none';
     dom.btnPullFromMaster.style.display = 'none';
 
@@ -501,7 +538,8 @@ function switchStudioMode(mode) {
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
-    dom.btnExportHtml.style.display = 'none';
+    if (dom.btnExportHtml) dom.btnExportHtml.style.display = 'none';
+    if (dom.exportMenuWrap) dom.exportMenuWrap.style.display = 'none';
     dom.btnSyncToMaster.style.display = 'none';
     dom.btnPullFromMaster.style.display = 'none';
 
@@ -520,7 +558,8 @@ function switchStudioMode(mode) {
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
-    dom.btnExportHtml.style.display = 'none';
+    if (dom.btnExportHtml) dom.btnExportHtml.style.display = 'none';
+    if (dom.exportMenuWrap) dom.exportMenuWrap.style.display = 'none';
     dom.btnSyncToMaster.style.display = 'none';
     dom.btnPullFromMaster.style.display = 'none';
 
@@ -1053,23 +1092,200 @@ function closeLetterVerifyModal() {
 
 function exportCurrentDocument() {
   if (studioMode === 'portfolio') {
-    const markup = renderPortfolioHtml(activeProfile, {
-      templateId: activePortfolioTemplateId,
-      theme: activeTheme
-    });
-    const blob = new Blob([markup], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${activePortfolioTemplateId}-portfolio.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    exportPortfolioHtml();
   } else if (studioMode === 'cv') {
     exportCvDocx();
   } else {
     exportLetterDocxFile();
+  }
+}
+
+function exportPortfolioHtml() {
+  const markup = renderPortfolioHtml(activeProfile, {
+    templateId: activePortfolioTemplateId,
+    theme: activeTheme
+  });
+  const blob = new Blob([markup], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${activePortfolioTemplateId}-portfolio.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportWebsiteZip() {
+  try {
+    const bundle = generateStaticPortfolioBundle(activeProfile, {
+      portfolioTemplateId: activePortfolioTemplateId,
+      cvTemplateId: activeCvTemplateId,
+      owner: activeProfile.identity?.shortName || 'user'
+    });
+    const zipFiles = bundle.map((f) => ({
+      name: f.path,
+      data: f.content
+    }));
+    const zipBuffer = buildZip(zipFiles);
+    const blob = new Blob([zipBuffer], { type: 'application/zip' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(activeProfile.identity?.shortName || 'zundeck')}-website-bundle.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Failed to generate website bundle: ' + err.message);
+  }
+}
+
+function printDocumentPdf(pageSize = 'a4') {
+  if (studioMode === 'letters') {
+    printLetterPdf();
+    return;
+  }
+  const iframe = dom.previewIframe;
+  if (!iframe || !iframe.contentWindow) {
+    window.print();
+    return;
+  }
+  try {
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    const styleId = 'zd-print-page-style';
+    let styleEl = doc.getElementById(styleId);
+    if (!styleEl) {
+      styleEl = doc.createElement('style');
+      styleEl.id = styleId;
+      doc.head.appendChild(styleEl);
+    }
+    styleEl.textContent = `@page { size: ${pageSize === 'a4' ? 'A4 portrait' : 'letter portrait'}; margin: 10mm; }`;
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+  } catch {
+    window.print();
+  }
+}
+
+function exportProfileJson() {
+  const sanitized = JSON.parse(JSON.stringify(activeProfile));
+  if (sanitized.identity?.secretKeys) delete sanitized.identity.secretKeys;
+  const jsonStr = JSON.stringify(sanitized, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${activeProfile.identity?.shortName || 'profile'}-zundeck.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function handleExportAction(action) {
+  switch (action) {
+    case 'portfolio-html':
+      exportPortfolioHtml();
+      break;
+    case 'website-zip':
+      exportWebsiteZip();
+      break;
+    case 'pdf-a4':
+      printDocumentPdf('a4');
+      break;
+    case 'pdf-letter':
+      printDocumentPdf('letter');
+      break;
+    case 'docx':
+      exportCvDocx();
+      break;
+    case 'json':
+      exportProfileJson();
+      break;
+  }
+}
+
+function initExportMenu() {
+  if (!dom.btnExportDropdownToggle || !dom.exportMenuWrap) return;
+
+  dom.btnExportDropdownToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = dom.exportMenuWrap.classList.toggle('open');
+    dom.btnExportDropdownToggle.setAttribute('aria-expanded', String(isOpen));
+  });
+
+  document.addEventListener('click', (e) => {
+    if (dom.exportMenuWrap && !dom.exportMenuWrap.contains(e.target)) {
+      dom.exportMenuWrap.classList.remove('open');
+      dom.btnExportDropdownToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && dom.exportMenuWrap?.classList.contains('open')) {
+      dom.exportMenuWrap.classList.remove('open');
+      dom.btnExportDropdownToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  dom.exportMenuItems.forEach((item) => {
+    item.addEventListener('click', () => {
+      dom.exportMenuWrap.classList.remove('open');
+      dom.btnExportDropdownToggle.setAttribute('aria-expanded', 'false');
+      const action = item.getAttribute('data-export-action');
+      handleExportAction(action);
+    });
+  });
+}
+
+let currentThemePreference = 'dark';
+
+function applyTheme(pref) {
+  currentThemePreference = pref;
+  try {
+    localStorage.setItem('zundeck_theme_pref', pref);
+  } catch {}
+
+  let effectiveTheme = pref;
+  if (pref === 'system') {
+    effectiveTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  activeTheme = effectiveTheme;
+  document.documentElement.setAttribute('data-theme', effectiveTheme);
+
+  dom.themeSegBtns.forEach((btn) => {
+    const isTarget = btn.getAttribute('data-theme-val') === pref;
+    btn.classList.toggle('active', isTarget);
+    btn.setAttribute('aria-checked', String(isTarget));
+  });
+
+  updatePreview();
+}
+
+function initThemeMode() {
+  let saved = 'dark';
+  try {
+    saved = localStorage.getItem('zundeck_theme_pref') || 'dark';
+  } catch {}
+
+  applyTheme(saved);
+
+  dom.themeSegBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const val = btn.getAttribute('data-theme-val');
+      if (val) applyTheme(val);
+    });
+  });
+
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (currentThemePreference === 'system') {
+        applyTheme('system');
+      }
+    });
   }
 }
 
@@ -1146,14 +1362,12 @@ function closeAtsXRayModal() {
 }
 
 function initEventListeners() {
-  dom.tabModePortfolio.addEventListener('click', () => switchStudioMode('portfolio'));
-  dom.tabModeCv.addEventListener('click', () => switchStudioMode('cv'));
-  dom.tabModeLetters.addEventListener('click', () => switchStudioMode('letters'));
-  dom.tabModeNotes.addEventListener('click', () => switchStudioMode('notes'));
-  dom.tabModeEditor?.addEventListener('click', () => switchStudioMode('editor'));
-  dom.tabModeCapture?.addEventListener('click', () => switchStudioMode('capture'));
-  dom.tabModeVibe?.addEventListener('click', () => switchStudioMode('vibe'));
-  dom.tabModeMatcher?.addEventListener('click', () => switchStudioMode('matcher'));
+  document.querySelectorAll('.mode-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const mode = tab.getAttribute('data-mode');
+      if (mode) switchStudioMode(mode);
+    });
+  });
 
   dom.btnOpenGuideModal?.addEventListener('click', initGuideModal);
   dom.btnCloseGuideModal?.addEventListener('click', () => {
@@ -1193,19 +1407,31 @@ function initEventListeners() {
     renderCatalog();
   });
 
+  if (dom.selectViewport) {
+    dom.selectViewport.addEventListener('change', (e) => {
+      setViewport(e.target.value);
+    });
+  }
+
   dom.viewportBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       setViewport(btn.getAttribute('data-viewport'));
     });
   });
 
-  dom.btnThemeToggle.addEventListener('click', () => {
-    activeTheme = activeTheme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', activeTheme);
-    updatePreview();
-  });
+  initExportMenu();
+  initThemeMode();
 
-  dom.btnExportHtml.addEventListener('click', exportCurrentDocument);
+  if (dom.btnThemeToggle) {
+    dom.btnThemeToggle.addEventListener('click', () => {
+      const nextTheme = activeTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(nextTheme);
+    });
+  }
+
+  if (dom.btnExportHtml) {
+    dom.btnExportHtml.addEventListener('click', exportCurrentDocument);
+  }
   dom.btnPopout.addEventListener('click', openPopout);
   dom.btnRefresh.addEventListener('click', updatePreview);
 

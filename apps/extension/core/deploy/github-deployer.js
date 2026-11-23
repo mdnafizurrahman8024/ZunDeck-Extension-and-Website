@@ -181,7 +181,9 @@ Sitemap: ${canonicalOrigin}/sitemap.xml
 
   return files.map((f) => ({
     ...f,
-    size: Buffer.byteLength(f.content, 'utf8')
+    size: typeof Buffer !== 'undefined'
+      ? Buffer.byteLength(f.content, 'utf8')
+      : new TextEncoder().encode(f.content).length
   }));
 }
 
@@ -263,7 +265,9 @@ export function calculateDeployDiff(bundle = [], existingFiles = []) {
 export function buildPortfolioZipBuffer(bundle = []) {
   const zipFiles = bundle.map((f) => ({
     name: f.path,
-    data: Buffer.from(f.content, 'utf8')
+    data: typeof Buffer !== 'undefined'
+      ? Buffer.from(f.content, 'utf8')
+      : new TextEncoder().encode(f.content)
   }));
   return buildZip(zipFiles);
 }

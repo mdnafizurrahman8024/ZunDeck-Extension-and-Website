@@ -15,6 +15,27 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <link rel="stylesheet" href="css/app.css">
+  <script>
+    if (typeof window !== 'undefined' && typeof window.Buffer === 'undefined') {
+      window.Buffer = {
+        isBuffer: function(v) { return v instanceof Uint8Array; },
+        from: function(v) { return typeof v === 'string' ? new TextEncoder().encode(v) : new Uint8Array(v); },
+        byteLength: function(v) { return typeof v === 'string' ? new TextEncoder().encode(v).length : (v?.byteLength || 0); },
+        alloc: function(s) { return new Uint8Array(s); },
+        concat: function(list) {
+          var total = list.reduce(function(a, c) { return a + (c.byteLength || c.length || 0); }, 0);
+          var out = new Uint8Array(total);
+          var off = 0;
+          for (var i = 0; i < list.length; i++) {
+            var b = list[i] instanceof Uint8Array ? list[i] : new Uint8Array(list[i]);
+            out.set(b, off);
+            off += b.length;
+          }
+          return out;
+        }
+      };
+    }
+  </script>
 </head>
 <body>
 
@@ -75,24 +96,15 @@
       </div>
     </div>
 
-    <!-- Viewport Switcher Controls -->
-    <div class="viewport-controls" role="group" aria-label="Responsive Viewport Selector">
-      <button type="button" class="viewport-btn active" data-viewport="laptop" title="Laptop / Wide Desktop (1440px)">
-        <i class="fa-solid fa-laptop"></i>
-        <span>Laptop (1440px)</span>
-      </button>
-      <button type="button" class="viewport-btn" data-viewport="tablet" title="Tablet / Phone Chrome Desktop Mode (980px)">
-        <i class="fa-solid fa-tablet-screen-button"></i>
-        <span>Phone Desktop (980px)</span>
-      </button>
-      <button type="button" class="viewport-btn" data-viewport="mobile" title="Mobile Phone (390px)">
-        <i class="fa-solid fa-mobile-screen"></i>
-        <span>Mobile (390px)</span>
-      </button>
-      <button type="button" class="viewport-btn" data-viewport="a4" title="CV A4 Print Layout (794px)">
-        <i class="fa-solid fa-file-invoice"></i>
-        <span>CV A4 (794px)</span>
-      </button>
+    <!-- Responsive Preview View Selector -->
+    <div class="preview-view-selector-wrap" id="preview-view-wrap">
+      <i class="fa-solid fa-desktop select-icon" id="icon-current-viewport"></i>
+      <select id="select-preview-viewport" class="topbar-select" aria-label="Select Preview Device View">
+        <option value="laptop" data-viewport="laptop" selected>Desktop View</option>
+        <option value="tablet" data-viewport="tablet">Tablet / Phone Desktop</option>
+        <option value="mobile" data-viewport="mobile">Mobile View</option>
+        <option value="a4" data-viewport="a4">Print Sheet (A4)</option>
+      </select>
     </div>
 
     <!-- Actions & Tools -->
@@ -138,19 +150,85 @@
         </button>
       </div>
 
-      <!-- Portfolio specific export (shown in portfolio mode) -->
-      <button type="button" class="btn-primary" id="btn-export-html">
-        <i class="fa-solid fa-download"></i>
-        <span>Export HTML</span>
-      </button>
+      <!-- Unified Download / Export Dropdown Menu -->
+      <div class="export-menu-wrap" id="export-menu-wrap">
+        <button type="button" class="btn-primary btn-export-dropdown" id="btn-export-dropdown-toggle" aria-haspopup="true" aria-expanded="false" title="Download or Export in various formats">
+          <i class="fa-solid fa-download"></i>
+          <span>Download / Export</span>
+          <i class="fa-solid fa-chevron-down caret-icon"></i>
+        </button>
+        <div class="export-dropdown-menu" id="export-dropdown-menu" role="menu">
+          <div class="export-menu-group-label">Portfolio &amp; Website</div>
+          <button type="button" class="export-menu-item" data-export-action="portfolio-html" role="menuitem">
+            <i class="fa-solid fa-file-code"></i>
+            <div class="export-item-text">
+              <span class="export-item-title">Standalone HTML (.html)</span>
+              <span class="export-item-sub">Self-contained, offline-ready single file</span>
+            </div>
+          </button>
+          <button type="button" class="export-menu-item" data-export-action="website-zip" role="menuitem">
+            <i class="fa-solid fa-file-zipper"></i>
+            <div class="export-item-text">
+              <span class="export-item-title">Full Website Bundle (.zip)</span>
+              <span class="export-item-sub">Static site with HTML, CSS, JS, sitemap &amp; data</span>
+            </div>
+          </button>
+          <div class="export-menu-separator"></div>
+          <div class="export-menu-group-label">CV, Resume &amp; Documents</div>
+          <button type="button" class="export-menu-item" data-export-action="pdf-a4" role="menuitem">
+            <i class="fa-solid fa-file-pdf"></i>
+            <div class="export-item-text">
+              <span class="export-item-title">A4 Vector PDF (Print / Save)</span>
+              <span class="export-item-sub">210 &times; 297 mm international standard</span>
+            </div>
+          </button>
+          <button type="button" class="export-menu-item" data-export-action="pdf-letter" role="menuitem">
+            <i class="fa-solid fa-file-pdf"></i>
+            <div class="export-item-text">
+              <span class="export-item-title">US Letter Vector PDF</span>
+              <span class="export-item-sub">8.5 &times; 11 in North American standard</span>
+            </div>
+          </button>
+          <button type="button" class="export-menu-item" data-export-action="docx" role="menuitem">
+            <i class="fa-solid fa-file-word"></i>
+            <div class="export-item-text">
+              <span class="export-item-title">Word Document (.docx)</span>
+              <span class="export-item-sub">Fully editable Microsoft Word OpenXML format</span>
+            </div>
+          </button>
+          <div class="export-menu-separator"></div>
+          <div class="export-menu-group-label">Data &amp; Backup</div>
+          <button type="button" class="export-menu-item" data-export-action="json" role="menuitem">
+            <i class="fa-solid fa-database"></i>
+            <div class="export-item-text">
+              <span class="export-item-title">Profile Data Backup (.json)</span>
+              <span class="export-item-sub">Sanitized ZunProfileV1 JSON snapshot</span>
+            </div>
+          </button>
+        </div>
+      </div>
 
       <button type="button" class="btn-tool" id="btn-open-guide-modal" title="User Manual &amp; 25+ Prompt Library">
         <i class="fa-solid fa-book-open"></i>
         <span>Guide &amp; Prompts</span>
       </button>
-      <button type="button" class="btn-tool" id="btn-theme-toggle" title="Toggle Dark/Light Mode">
-        <i class="fa-solid fa-circle-half-stroke"></i>
-      </button>
+
+      <!-- 3-Way Theme Switcher (Light / Dark / System) -->
+      <div class="theme-mode-segmented" id="theme-segmented-group" role="radiogroup" aria-label="Theme Selection">
+        <button type="button" class="theme-seg-btn" data-theme-val="light" title="Light Theme" role="radio" aria-checked="false">
+          <i class="fa-solid fa-sun"></i>
+          <span>Light</span>
+        </button>
+        <button type="button" class="theme-seg-btn active" data-theme-val="dark" title="Dark Theme" role="radio" aria-checked="true">
+          <i class="fa-solid fa-moon"></i>
+          <span>Dark</span>
+        </button>
+        <button type="button" class="theme-seg-btn" data-theme-val="system" title="System OS Theme" role="radio" aria-checked="false">
+          <i class="fa-solid fa-circle-half-stroke"></i>
+          <span>System</span>
+        </button>
+      </div>
+
       <button type="button" class="btn-tool" id="btn-popout" title="Open Preview in New Tab">
         <i class="fa-solid fa-arrow-up-right-from-square"></i>
       </button>

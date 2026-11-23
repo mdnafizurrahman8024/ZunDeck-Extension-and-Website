@@ -5,6 +5,8 @@ export const DeployManager = {
   getManifest: (profile, htmlMarkup) => ({
     timestamp: new Date().toISOString(),
     profileId: profile.identity?.shortName || 'user',
-    byteLength: Buffer.byteLength(htmlMarkup, 'utf8')
+    byteLength: typeof Buffer !== 'undefined'
+      ? Buffer.byteLength(htmlMarkup, 'utf8')
+      : new TextEncoder().encode(htmlMarkup).length
   })
 };

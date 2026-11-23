@@ -1,4 +1,6 @@
-import zlib from 'node:zlib';
+const nodeZlib = (typeof process !== 'undefined' && process?.getBuiltinModule)
+  ? process.getBuiltinModule('node:zlib')
+  : null;
 
 function createCrcTable() {
   const table = new Uint32Array(256);
@@ -28,59 +30,112 @@ export function buildZip(files) {
   let offset = 0;
 
   for (const file of files) {
-    const rawData = Buffer.isBuffer(file.data) ? file.data : Buffer.from(file.data, 'utf8');
+    let rawData;
+    if (typeof Buffer !== 'undefined' && Buffer.isBuffer(file.data)) {
+      rawData = file.data;
+    } else if (file.data instanceof Uint8Array) {
+      rawData = typeof Buffer !== 'undefined' ? Buffer.from(file.data) : file.data;
+    } else if (typeof file.data === 'string') {
+      rawData = typeof Buffer !== 'undefined' ? Buffer.from(file.data, 'utf8') : new TextEncoder().encode(file.data);
+    } else {
+      rawData = typeof Buffer !== 'undefined' ? Buffer.from(file.data) : new Uint8Array(file.data);
+    }
+
     const crc = calculateCrc32(rawData);
     const uncompressedSize = rawData.length;
 
     let compressedData = rawData;
     let method = 0; // Stored
 
-    try {
-      if (typeof zlib !== 'undefined' && zlib.deflateRawSync) {
-        compressedData = zlib.deflateRawSync(rawData);
+    if (nodeZlib && nodeZlib.deflateRawSync) {
+      try {
+        compressedData = nodeZlib.deflateRawSync(rawData);
         method = 8; // Deflated
-      }
-    } catch {}
+      } catch {}
+    }
 
     const compressedSize = compressedData.length;
-    const nameBuf = Buffer.from(file.name, 'utf8');
+    const nameBytes = typeof Buffer !== 'undefined'
+      ? Buffer.from(file.name, 'utf8')
+      : new TextEncoder().encode(file.name);
 
     // Local file header (30 bytes + name + data)
-    const localHeader = Buffer.alloc(30 + nameBuf.length);
-    localHeader.writeUInt32LE(0x04034b50, 0); // PK\x03\x04
-    localHeader.writeUInt16LE(20, 4);         // version needed: 2.0
-    localHeader.writeUInt16LE(0, 6);          // general purpose bit
-    localHeader.writeUInt16LE(method, 8);     // compression method
-    localHeader.writeUInt16LE(0, 10);         // time
-    localHeader.writeUInt16LE(0, 12);         // date
-    localHeader.writeUInt32LE(crc, 14);       // crc32
-    localHeader.writeUInt32LE(compressedSize, 18);
-    localHeader.writeUInt32LE(uncompressedSize, 22);
-    localHeader.writeUInt16LE(nameBuf.length, 26);
-    localHeader.writeUInt16LE(0, 28);
-    nameBuf.copy(localHeader, 30);
+    let localHeader;
+    if (typeof Buffer !== 'undefined') {
+      localHeader = Buffer.alloc(30 + nameBytes.length);
+      localHeader.writeUInt32LE(0x04034b50, 0);
+      localHeader.writeUInt16LE(20, 4);
+      localHeader.writeUInt16LE(0, 6);
+      localHeader.writeUInt16LE(method, 8);
+      localHeader.writeUInt16LE(0, 10);
+      localHeader.writeUInt16LE(0, 12);
+      localHeader.writeUInt32LE(crc, 14);
+      localHeader.writeUInt32LE(compressedSize, 18);
+      localHeader.writeUInt32LE(uncompressedSize, 22);
+      localHeader.writeUInt16LE(nameBytes.length, 26);
+      localHeader.writeUInt16LE(0, 28);
+      nameBytes.copy(localHeader, 30);
+    } else {
+      localHeader = new Uint8Array(30 + nameBytes.length);
+      const view = new DataView(localHeader.buffer);
+      view.setUint32(0, 0x04034b50, true);
+      view.setUint16(4, 20, true);
+      view.setUint16(6, 0, true);
+      view.setUint16(8, method, true);
+      view.setUint16(10, 0, true);
+      view.setUint16(12, 0, true);
+      view.setUint32(14, crc, true);
+      view.setUint32(18, compressedSize, true);
+      view.setUint32(22, uncompressedSize, true);
+      view.setUint16(26, nameBytes.length, true);
+      view.setUint16(28, 0, true);
+      localHeader.set(nameBytes, 30);
+    }
 
     localHeaders.push(localHeader, compressedData);
 
     // Central directory header (46 bytes + name)
-    const centralHeader = Buffer.alloc(46 + nameBuf.length);
-    centralHeader.writeUInt32LE(0x02014b50, 0); // PK\x01\x02
-    centralHeader.writeUInt16LE(20, 4);          // version made by
-    centralHeader.writeUInt16LE(20, 6);          // version needed
-    centralHeader.writeUInt16LE(0, 8);
-    centralHeader.writeUInt16LE(method, 10);
-    centralHeader.writeUInt16LE(0, 12);
-    centralHeader.writeUInt16LE(0, 14);
-    centralHeader.writeUInt32LE(crc, 16);
-    centralHeader.writeUInt32LE(compressedSize, 20);
-    centralHeader.writeUInt32LE(uncompressedSize, 24);
-    centralHeader.writeUInt16LE(nameBuf.length, 28);
-    centralHeader.writeUInt16LE(0, 30);
-    centralHeader.writeUInt16LE(0, 32);
-    centralHeader.writeUInt16LE(0, 34);
-    centralHeader.writeUInt32LE(0, 36);
-    centralHeader.writeUInt32LE(offset, 42);
-    nameBuf.copy(centralHeader, 46);
+    let centralHeader;
+    if (typeof Buffer !== 'undefined') {
+      centralHeader = Buffer.alloc(46 + nameBytes.length);
+      centralHeader.writeUInt32LE(0x02014b50, 0);
+      centralHeader.writeUInt16LE(20, 4);
+      centralHeader.writeUInt16LE(20, 6);
+      centralHeader.writeUInt16LE(0, 8);
+      centralHeader.writeUInt16LE(method, 10);
+      centralHeader.writeUInt16LE(0, 12);
+      centralHeader.writeUInt16LE(0, 14);
+      centralHeader.writeUInt32LE(crc, 16);
+      centralHeader.writeUInt32LE(compressedSize, 20);
+      centralHeader.writeUInt32LE(uncompressedSize, 24);
+      centralHeader.writeUInt16LE(nameBytes.length, 28);
+      centralHeader.writeUInt16LE(0, 30);
+      centralHeader.writeUInt16LE(0, 32);
+      centralHeader.writeUInt16LE(0, 34);
+      centralHeader.writeUInt32LE(0, 36);
+      centralHeader.writeUInt32LE(offset, 42);
+      nameBytes.copy(centralHeader, 46);
+    } else {
+      centralHeader = new Uint8Array(46 + nameBytes.length);
+      const view = new DataView(centralHeader.buffer);
+      view.setUint32(0, 0x02014b50, true);
+      view.setUint16(4, 20, true);
+      view.setUint16(6, 20, true);
+      view.setUint16(8, 0, true);
+      view.setUint16(10, method, true);
+      view.setUint16(12, 0, true);
+      view.setUint16(14, 0, true);
+      view.setUint32(16, crc, true);
+      view.setUint32(20, compressedSize, true);
+      view.setUint32(24, uncompressedSize, true);
+      view.setUint16(28, nameBytes.length, true);
+      view.setUint16(30, 0, true);
+      view.setUint16(32, 0, true);
+      view.setUint16(34, 0, true);
+      view.setUint32(36, 0, true);
+      view.setUint32(42, offset, true);
+      centralHeader.set(nameBytes, 46);
+    }
 
     centralHeaders.push(centralHeader);
     offset += localHeader.length + compressedData.length;
@@ -89,17 +144,39 @@ export function buildZip(files) {
   const centralDirSize = centralHeaders.reduce((acc, h) => acc + h.length, 0);
 
   // End of central directory record (22 bytes)
-  const eocd = Buffer.alloc(22);
-  eocd.writeUInt32LE(0x06054b50, 0);
-  eocd.writeUInt16LE(0, 4);
-  eocd.writeUInt16LE(0, 6);
-  eocd.writeUInt16LE(files.length, 8);
-  eocd.writeUInt16LE(files.length, 10);
-  eocd.writeUInt32LE(centralDirSize, 12);
-  eocd.writeUInt32LE(offset, 16);
-  eocd.writeUInt16LE(0, 20);
+  if (typeof Buffer !== 'undefined') {
+    const eocd = Buffer.alloc(22);
+    eocd.writeUInt32LE(0x06054b50, 0);
+    eocd.writeUInt16LE(0, 4);
+    eocd.writeUInt16LE(0, 6);
+    eocd.writeUInt16LE(files.length, 8);
+    eocd.writeUInt16LE(files.length, 10);
+    eocd.writeUInt32LE(centralDirSize, 12);
+    eocd.writeUInt32LE(offset, 16);
+    eocd.writeUInt16LE(0, 20);
+    return Buffer.concat([...localHeaders, ...centralHeaders, eocd]);
+  } else {
+    const eocd = new Uint8Array(22);
+    const view = new DataView(eocd.buffer);
+    view.setUint32(0, 0x06054b50, true);
+    view.setUint16(4, 0, true);
+    view.setUint16(6, 0, true);
+    view.setUint16(8, files.length, true);
+    view.setUint16(10, files.length, true);
+    view.setUint32(12, centralDirSize, true);
+    view.setUint32(16, offset, true);
+    view.setUint16(20, 0, true);
 
-  return Buffer.concat([...localHeaders, ...centralHeaders, eocd]);
+    const all = [...localHeaders, ...centralHeaders, eocd];
+    const total = all.reduce((acc, c) => acc + c.length, 0);
+    const out = new Uint8Array(total);
+    let off = 0;
+    for (const c of all) {
+      out.set(c instanceof Uint8Array ? c : new Uint8Array(c), off);
+      off += c.length;
+    }
+    return out;
+  }
 }
 
 export function xmlEscape(str) {
