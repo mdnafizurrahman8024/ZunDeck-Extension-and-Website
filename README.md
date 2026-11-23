@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="apps/web/assets/zundeck-logo.png" alt="ZunDeck Logo" width="130" style="border-radius: 50%;" />
+  <img src="apps/web/assets/zundeck-logo.png" alt="ZunDeck Logo" height="110" />
   <h1>ZunDeck</h1>
   <p><strong>AI Portfolio • ATS CV &amp; Resume • SOP Studio • Scroll Capture • Vibe Coding • 1-Click Free Deploy</strong></p>
 </div>
