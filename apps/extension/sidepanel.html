@@ -118,51 +118,12 @@
 
     <!-- Tab 5: SOP & Matcher -->
     <section class="sp-panel" id="panel-sop">
-      <div class="sp-section-header">
-        <span class="sp-section-title">SOP &amp; Opportunity Matcher</span>
-      </div>
-      <div class="sp-form-group">
-        <label for="sp-sop-mode" class="sp-label">Letter Mode</label>
-        <select id="sp-sop-mode" class="sp-select">
-          <option value="sop">Statement of Purpose (SOP)</option>
-          <option value="motivation">Motivation Letter (Scholarship)</option>
-          <option value="cover-letter">Corporate Cover Letter</option>
-          <option value="cold-email">Cold Email to PI / Professor</option>
-        </select>
-      </div>
-      <div class="sp-form-group">
-        <label for="sp-target-inst" class="sp-label">Target University / Organization</label>
-        <input type="text" id="sp-target-inst" class="sp-input" placeholder="e.g. University of Copenhagen">
-      </div>
-      <div class="sp-form-group">
-        <label for="sp-target-program" class="sp-label">Program / Position</label>
-        <input type="text" id="sp-target-program" class="sp-input" placeholder="e.g. MSc in One Health">
-      </div>
-      <button type="button" class="sp-btn-primary" id="btn-sp-assemble-sop">Smart Assemble Draft</button>
-      <div class="sp-form-group" style="margin-top: 12px;">
-        <label for="sp-sop-preview" class="sp-label">Draft Preview</label>
-        <textarea id="sp-sop-preview" class="sp-textarea" rows="8" readonly></textarea>
-      </div>
+      <div id="sp-matcher-panel-mount"></div>
     </section>
 
     <!-- Tab 6: Vibe AI -->
     <section class="sp-panel" id="panel-vibe">
-      <div class="sp-section-header">
-        <span class="sp-section-title">Vibe AI Coding &amp; Presets</span>
-      </div>
-      <div class="sp-card">
-        <div class="sp-card-title">Design Presets</div>
-        <div class="sp-chip-group">
-          <button type="button" class="sp-chip active" data-vibe="academic">Academic Scholar</button>
-          <button type="button" class="sp-chip" data-vibe="bioinformatics">Bioinformatics Teal</button>
-          <button type="button" class="sp-chip" data-vibe="executive">Executive Minimal</button>
-        </div>
-        <button type="button" class="sp-btn-primary" id="btn-generate-vibe-prompt" style="margin-top: 12px;">Generate Vibe Coding Prompt</button>
-      </div>
-      <div class="sp-form-group" style="margin-top: 12px;">
-        <label for="sp-vibe-output" class="sp-label">Synthesized Prompt</label>
-        <textarea id="sp-vibe-output" class="sp-textarea" rows="5" readonly></textarea>
-      </div>
+      <div id="sp-vibe-panel-mount"></div>
     </section>
 
     <!-- Tab 7: Notes (Private Idea Scratchpad) -->

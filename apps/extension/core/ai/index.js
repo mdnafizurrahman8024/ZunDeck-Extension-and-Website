@@ -8,3 +8,7 @@ export const AiPromptBuilder = {
     user: `Target Program: ${programTitle}\nResearch History: ${JSON.stringify(profile.research)}`
   })
 };
+
+export * from './byok-client.js';
+export * from './vibe-agent.js';
+export * from './opportunity-matcher.js';

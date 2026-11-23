@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
     "start": "node scripts/dev-server.mjs",
-    "test": "node --test tests/*.test.mjs tests/verify-part2.mjs tests/verify-part3.mjs tests/verify-security-part4.mjs tests/verify-editor-part5.mjs tests/verify-media-docs-part6.mjs tests/verify-harvester-part7.mjs",
+    "test": "node --test tests/*.test.mjs tests/verify-part2.mjs tests/verify-part3.mjs tests/verify-security-part4.mjs tests/verify-editor-part5.mjs tests/verify-media-docs-part6.mjs tests/verify-harvester-part7.mjs tests/verify-vibe-matcher-part8.mjs",
     "check": "node scripts/verify.mjs",
     "sync:ext": "node scripts/sync-extension-core.mjs",
     "icons": "node scripts/generate-brand-icons.mjs"

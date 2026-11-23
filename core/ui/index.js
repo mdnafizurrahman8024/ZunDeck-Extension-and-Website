@@ -32,3 +32,6 @@ export * from './media-manager.js';
 export * from './docs-manager.js';
 export * from './capture-panel.js';
 export * from './capture-staging-review.js';
+export * from './guide-and-prompts.js';
+export * from './matcher-panel.js';
+export * from './vibe-studio-panel.js';

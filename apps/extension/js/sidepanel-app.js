@@ -25,6 +25,8 @@ import { VisualEditorController } from '../core/ui/visual-editor.js';
 import { LivePreviewController } from '../core/ui/live-preview.js';
 import { CapturePanelController } from '../core/ui/capture-panel.js';
 import { StagingReviewController } from '../core/ui/capture-staging-review.js';
+import { VibeStudioController } from '../core/ui/vibe-studio-panel.js';
+import { MatcherPanelController } from '../core/ui/matcher-panel.js';
 
 let activeProfile = getMotherShowcaseFallback();
 let privateVault = null;
@@ -34,6 +36,8 @@ let autoSaveController = null;
 let spVisualEditor = null;
 let spLivePreview = null;
 let spCapturePanel = null;
+let spVibeStudio = null;
+let spMatcherPanel = null;
 
 const dom = {
   tabBtns: document.querySelectorAll('.sp-tab-btn'),
@@ -57,6 +61,8 @@ const dom = {
 
   // Capture (Part 7 Harvester)
   spCapturePanelMount: document.getElementById('sp-capture-panel-mount'),
+  spMatcherPanelMount: document.getElementById('sp-matcher-panel-mount'),
+  spVibePanelMount: document.getElementById('sp-vibe-panel-mount'),
 
   // SOP
   spSopMode: document.getElementById('sp-sop-mode'),
@@ -107,6 +113,53 @@ function switchTab(tabId) {
     initSidepanelVisualEditor();
   } else if (tabId === 'capture') {
     initSidepanelCapture();
+  } else if (tabId === 'sop') {
+    initSidepanelMatcher();
+  } else if (tabId === 'vibe') {
+    initSidepanelVibe();
+  }
+}
+
+function initSidepanelMatcher() {
+  if (!spMatcherPanel && dom.spMatcherPanelMount) {
+    spMatcherPanel = new MatcherPanelController({
+      container: dom.spMatcherPanelMount,
+      profile: activeProfile,
+      isExtension: true,
+      onTailorCv: (tailoredProfile, updatedProfile) => {
+        activeProfile = updatedProfile;
+        if (spVisualEditor) spVisualEditor.setProfile(activeProfile);
+        if (spLivePreview) spLivePreview.setProfile(activeProfile);
+        autoSaveController?.markDirty();
+        switchTab('editor');
+      },
+      onGenerateLetter: (draftScaffold) => {
+        switchTab('editor');
+      }
+    });
+    spMatcherPanel.render();
+  } else if (spMatcherPanel) {
+    spMatcherPanel.setProfile(activeProfile);
+  }
+}
+
+function initSidepanelVibe() {
+  if (!spVibeStudio && dom.spVibePanelMount) {
+    spVibeStudio = new VibeStudioController({
+      container: dom.spVibePanelMount,
+      profile: activeProfile,
+      isExtension: true,
+      onProfileUpdated: (updated) => {
+        activeProfile = updated;
+        if (spVisualEditor) spVisualEditor.setProfile(activeProfile);
+        if (spLivePreview) spLivePreview.setProfile(activeProfile);
+        if (spMatcherPanel) spMatcherPanel.setProfile(activeProfile);
+        autoSaveController?.markDirty();
+      }
+    });
+    spVibeStudio.init();
+  } else if (spVibeStudio) {
+    spVibeStudio.setProfile(activeProfile);
   }
 }
 

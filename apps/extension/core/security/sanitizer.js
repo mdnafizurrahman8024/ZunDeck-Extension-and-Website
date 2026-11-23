@@ -42,6 +42,27 @@ export function stripDangerousMarkup(html = '') {
     .replace(/(href|src|action)\s*=\s*["']?\s*javascript:[^"'>]*/gi, '$1="#"');
 }
 
+export function sanitizeCss(css = '') {
+  if (typeof css !== 'string') return '';
+
+  return css
+    // Strip <script> and HTML tags
+    .replace(/<[^>]*>/g, '')
+    // Strip @import directives
+    .replace(/@import\b[^;]*;/gi, '')
+    .replace(/@import\b[^\n]*/gi, '')
+    // Strip expressions
+    .replace(/expression\s*\([^)]*\)/gi, '')
+    // Strip behavior and -moz-binding
+    .replace(/behavior\s*:[^;]+;?/gi, '')
+    .replace(/-moz-binding\s*:[^;]+;?/gi, '')
+    // Strip javascript: in url() or properties
+    .replace(/url\s*\(\s*['"]?\s*javascript:[^)]*\)/gi, 'none')
+    .replace(/url\s*\(\s*['"]?\s*data:(?!image\/(?:png|jpeg|webp|gif|svg\+xml))[^)]*\)/gi, 'none')
+    .replace(/javascript\s*:/gi, '')
+    .trim();
+}
+
 export function sanitizeValue(value) {
   if (value === null || value === undefined) return value;
   if (typeof value === 'string') {

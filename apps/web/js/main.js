@@ -36,12 +36,18 @@ import { VisualEditorController } from '../../core/ui/visual-editor.js';
 import { LivePreviewController } from '../../core/ui/live-preview.js';
 import { CapturePanelController } from '../../core/ui/capture-panel.js';
 import { StagingReviewController } from '../../core/ui/capture-staging-review.js';
+import { VibeStudioController } from '../../core/ui/vibe-studio-panel.js';
+import { MatcherPanelController } from '../../core/ui/matcher-panel.js';
+import { GuideAndPromptsController } from '../../core/ui/guide-and-prompts.js';
 
 let activeProfile = getMotherShowcaseFallback();
-let studioMode = 'portfolio'; // 'portfolio' | 'cv' | 'letters' | 'notes' | 'editor' | 'capture'
+let studioMode = 'portfolio'; // 'portfolio' | 'cv' | 'letters' | 'notes' | 'editor' | 'capture' | 'vibe' | 'matcher'
 let visualEditor = null;
 let editorLivePreview = null;
 let webCapturePanel = null;
+let webVibeStudio = null;
+let webMatcherPanel = null;
+let webGuidePrompts = null;
 let activePortfolioTemplateId = 'acad-flagship';
 let activeCvTemplateId = 'cv-acad-flagship';
 let activeCvProfileId = 'cv-acad-flagship-profile';
@@ -78,8 +84,18 @@ const dom = {
   tabModeNotes: document.getElementById('tab-mode-notes'),
   tabModeEditor: document.getElementById('tab-mode-editor'),
   tabModeCapture: document.getElementById('tab-mode-capture'),
+  tabModeVibe: document.getElementById('tab-mode-vibe'),
+  tabModeMatcher: document.getElementById('tab-mode-matcher'),
   captureWorkspace: document.getElementById('capture-workspace'),
+  vibeWorkspace: document.getElementById('vibe-workspace'),
+  matcherWorkspace: document.getElementById('matcher-workspace'),
   webCapturePanelMount: document.getElementById('web-capture-panel-mount'),
+  webVibePanelMount: document.getElementById('web-vibe-panel-mount'),
+  webMatcherPanelMount: document.getElementById('web-matcher-panel-mount'),
+  btnOpenGuideModal: document.getElementById('btn-open-guide-modal'),
+  btnCloseGuideModal: document.getElementById('btn-close-guide-modal'),
+  guidePromptsModal: document.getElementById('guide-prompts-modal'),
+  webGuidePanelMount: document.getElementById('web-guide-panel-mount'),
   editorWorkspace: document.getElementById('editor-workspace'),
   visualEditorContainer: document.getElementById('visual-editor-container'),
   editorPreviewIframe: document.getElementById('editor-preview-iframe'),
@@ -319,6 +335,8 @@ function switchStudioMode(mode) {
   dom.tabModeNotes.classList.toggle('active', mode === 'notes');
   if (dom.tabModeEditor) dom.tabModeEditor.classList.toggle('active', mode === 'editor');
   if (dom.tabModeCapture) dom.tabModeCapture.classList.toggle('active', mode === 'capture');
+  if (dom.tabModeVibe) dom.tabModeVibe.classList.toggle('active', mode === 'vibe');
+  if (dom.tabModeMatcher) dom.tabModeMatcher.classList.toggle('active', mode === 'matcher');
 
   if (mode === 'portfolio') {
     dom.catalogSidebar.style.display = 'flex';
@@ -327,6 +345,8 @@ function switchStudioMode(mode) {
     dom.notesWorkspace.style.display = 'none';
     if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
+    if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
+    if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -346,6 +366,8 @@ function switchStudioMode(mode) {
     dom.notesWorkspace.style.display = 'none';
     if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
+    if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
+    if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'flex';
     dom.letterHeaderTools.style.display = 'none';
@@ -366,6 +388,8 @@ function switchStudioMode(mode) {
     dom.notesWorkspace.style.display = 'none';
     if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
+    if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
+    if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'flex';
@@ -386,6 +410,8 @@ function switchStudioMode(mode) {
     dom.notesWorkspace.style.display = 'flex';
     if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
+    if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
+    if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -402,6 +428,8 @@ function switchStudioMode(mode) {
     dom.notesWorkspace.style.display = 'none';
     if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'flex';
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
+    if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
+    if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -418,6 +446,8 @@ function switchStudioMode(mode) {
     dom.notesWorkspace.style.display = 'none';
     if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
     if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'flex';
+    if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
+    if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
 
     dom.cvHeaderTools.style.display = 'none';
     dom.letterHeaderTools.style.display = 'none';
@@ -427,6 +457,42 @@ function switchStudioMode(mode) {
 
     dom.labelActiveTemplate.textContent = 'Smart CV Importer & Web Harvester';
     initCaptureWorkspace();
+  } else if (mode === 'vibe') {
+    dom.catalogSidebar.style.display = 'none';
+    dom.workbenchCanvas.style.display = 'none';
+    dom.lettersWorkspace.style.display = 'none';
+    dom.notesWorkspace.style.display = 'none';
+    if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
+    if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
+    if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'flex';
+    if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'none';
+
+    dom.cvHeaderTools.style.display = 'none';
+    dom.letterHeaderTools.style.display = 'none';
+    dom.btnExportHtml.style.display = 'none';
+    dom.btnSyncToMaster.style.display = 'none';
+    dom.btnPullFromMaster.style.display = 'none';
+
+    dom.labelActiveTemplate.textContent = 'Safe Vibe Coding AI Agent';
+    initVibeWorkspace();
+  } else if (mode === 'matcher') {
+    dom.catalogSidebar.style.display = 'none';
+    dom.workbenchCanvas.style.display = 'none';
+    dom.lettersWorkspace.style.display = 'none';
+    dom.notesWorkspace.style.display = 'none';
+    if (dom.editorWorkspace) dom.editorWorkspace.style.display = 'none';
+    if (dom.captureWorkspace) dom.captureWorkspace.style.display = 'none';
+    if (dom.vibeWorkspace) dom.vibeWorkspace.style.display = 'none';
+    if (dom.matcherWorkspace) dom.matcherWorkspace.style.display = 'flex';
+
+    dom.cvHeaderTools.style.display = 'none';
+    dom.letterHeaderTools.style.display = 'none';
+    dom.btnExportHtml.style.display = 'none';
+    dom.btnSyncToMaster.style.display = 'none';
+    dom.btnPullFromMaster.style.display = 'none';
+
+    dom.labelActiveTemplate.textContent = 'Universal Multimodal Job & PhD Matcher';
+    initMatcherWorkspace();
   }
 }
 
@@ -498,6 +564,8 @@ function initCaptureWorkspace() {
             activeProfile = merged;
             if (visualEditor) visualEditor.setProfile(activeProfile);
             if (editorLivePreview) editorLivePreview.setProfile(activeProfile);
+            if (webVibeStudio) webVibeStudio.setProfile(activeProfile);
+            if (webMatcherPanel) webMatcherPanel.setProfile(activeProfile);
             updatePreview();
             savePrivateVault({ profile: activeProfile }).catch(() => {});
           }
@@ -506,6 +574,75 @@ function initCaptureWorkspace() {
       }
     });
     webCapturePanel.render();
+  }
+}
+
+function initVibeWorkspace() {
+  if (!webVibeStudio && dom.webVibePanelMount) {
+    webVibeStudio = new VibeStudioController({
+      container: dom.webVibePanelMount,
+      profile: activeProfile,
+      isExtension: false,
+      onProfileUpdated: (updated) => {
+        activeProfile = updated;
+        if (visualEditor) visualEditor.setProfile(activeProfile);
+        if (editorLivePreview) editorLivePreview.setProfile(activeProfile);
+        if (webMatcherPanel) webMatcherPanel.setProfile(activeProfile);
+        updatePreview();
+        savePrivateVault({ profile: activeProfile }).catch(() => {});
+      }
+    });
+    webVibeStudio.init();
+  } else if (webVibeStudio) {
+    webVibeStudio.setProfile(activeProfile);
+  }
+}
+
+function initMatcherWorkspace() {
+  if (!webMatcherPanel && dom.webMatcherPanelMount) {
+    webMatcherPanel = new MatcherPanelController({
+      container: dom.webMatcherPanelMount,
+      profile: activeProfile,
+      isExtension: false,
+      onTailorCv: (tailoredProfile, updatedProfile) => {
+        activeProfile = updatedProfile;
+        activeCvProfileId = tailoredProfile.id;
+        switchStudioMode('cv');
+      },
+      onGenerateLetter: (draftScaffold) => {
+        if (dom.targetInst) dom.targetInst.value = draftScaffold.targetInstitution;
+        if (dom.targetProgram) dom.targetProgram.value = draftScaffold.targetProgram;
+        if (dom.targetProfessor) dom.targetProfessor.value = draftScaffold.targetProfessor;
+        if (dom.targetFocus) dom.targetFocus.value = draftScaffold.targetFocus;
+        if (dom.targetNotes) dom.targetNotes.value = draftScaffold.targetNotes;
+        switchStudioMode('letters');
+      }
+    });
+    webMatcherPanel.render();
+  } else if (webMatcherPanel) {
+    webMatcherPanel.setProfile(activeProfile);
+  }
+}
+
+function initGuideModal() {
+  if (!webGuidePrompts && dom.webGuidePanelMount) {
+    webGuidePrompts = new GuideAndPromptsController({
+      container: dom.webGuidePanelMount,
+      onSelectPrompt: (promptText) => {
+        if (dom.guidePromptsModal) dom.guidePromptsModal.style.display = 'none';
+        switchStudioMode('vibe');
+        const input = document.getElementById('input-vibe-prompt');
+        if (input) {
+          input.value = promptText;
+          input.focus();
+        }
+      }
+    });
+    webGuidePrompts.render();
+  }
+  if (dom.guidePromptsModal) {
+    dom.guidePromptsModal.style.display = 'flex';
+    dom.guidePromptsModal.setAttribute('aria-hidden', 'false');
   }
 }
 
@@ -968,6 +1105,22 @@ function initEventListeners() {
   dom.tabModeNotes.addEventListener('click', () => switchStudioMode('notes'));
   dom.tabModeEditor?.addEventListener('click', () => switchStudioMode('editor'));
   dom.tabModeCapture?.addEventListener('click', () => switchStudioMode('capture'));
+  dom.tabModeVibe?.addEventListener('click', () => switchStudioMode('vibe'));
+  dom.tabModeMatcher?.addEventListener('click', () => switchStudioMode('matcher'));
+
+  dom.btnOpenGuideModal?.addEventListener('click', initGuideModal);
+  dom.btnCloseGuideModal?.addEventListener('click', () => {
+    if (dom.guidePromptsModal) {
+      dom.guidePromptsModal.style.display = 'none';
+      dom.guidePromptsModal.setAttribute('aria-hidden', 'true');
+    }
+  });
+  dom.guidePromptsModal?.addEventListener('click', (e) => {
+    if (e.target === dom.guidePromptsModal) {
+      dom.guidePromptsModal.style.display = 'none';
+      dom.guidePromptsModal.setAttribute('aria-hidden', 'true');
+    }
+  });
 
   dom.btnEditorPopout?.addEventListener('click', () => {
     if (editorLivePreview) editorLivePreview.openPopoutWindow();

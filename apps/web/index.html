@@ -55,6 +55,14 @@
           <i class="fa-solid fa-cloud-arrow-down"></i>
           <span>CV Import &amp; Harvester</span>
         </button>
+        <button type="button" class="mode-tab" data-mode="vibe" id="tab-mode-vibe">
+          <i class="fa-solid fa-terminal"></i>
+          <span>Vibe Agent</span>
+        </button>
+        <button type="button" class="mode-tab" data-mode="matcher" id="tab-mode-matcher">
+          <i class="fa-solid fa-crosshairs"></i>
+          <span>Job &amp; PhD Matcher</span>
+        </button>
       </div>
 
       <div class="sync-pill" id="sync-status-indicator" title="Connected to Mother Showcase">
@@ -132,6 +140,10 @@
         <span>Export HTML</span>
       </button>
 
+      <button type="button" class="btn-tool" id="btn-open-guide-modal" title="User Manual &amp; 25+ Prompt Library">
+        <i class="fa-solid fa-book-open"></i>
+        <span>Guide &amp; Prompts</span>
+      </button>
       <button type="button" class="btn-tool" id="btn-theme-toggle" title="Toggle Dark/Light Mode">
         <i class="fa-solid fa-circle-half-stroke"></i>
       </button>
@@ -455,6 +467,16 @@
       <div class="capture-workspace-inner" id="web-capture-panel-mount"></div>
     </div>
 
+    <!-- Vibe Coding Studio Workspace (Part 8) -->
+    <div class="vibe-workspace" id="vibe-workspace" style="display: none;">
+      <div class="vibe-workspace-inner" id="web-vibe-panel-mount"></div>
+    </div>
+
+    <!-- Job & PhD Matcher Workspace (Part 8) -->
+    <div class="matcher-workspace" id="matcher-workspace" style="display: none;">
+      <div class="matcher-workspace-inner" id="web-matcher-panel-mount"></div>
+    </div>
+
   </div>
 
   <!-- ATS Robot X-Ray Modal Drawer -->
@@ -526,6 +548,23 @@
           <div id="verify-placeholders-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- User Manual & Prompt Library Modal (Part 8) -->
+  <div class="xray-modal-overlay" id="guide-prompts-modal" aria-hidden="true" style="display: none;">
+    <div class="gp-modal-window">
+      <div class="gp-modal-header">
+        <div class="xray-title-group">
+          <i class="fa-solid fa-book-open xray-icon" style="color: #0d9488;"></i>
+          <div>
+            <h3 class="xray-title">ZunDeck Interactive Manual &amp; Prompt Library</h3>
+            <p class="xray-subtitle">Step-by-step visual guides and 25+ curated 1-click Vibe Coding prompts</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" id="btn-close-guide-modal">&times;</button>
+      </div>
+      <div class="gp-modal-body" id="web-guide-panel-mount"></div>
     </div>
   </div>
 

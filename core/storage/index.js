@@ -21,3 +21,5 @@ export {
   getBlob,
   deleteBlob
 } from './indexeddb-store.js';
+
+export * from './checkpoint-timeline.js';

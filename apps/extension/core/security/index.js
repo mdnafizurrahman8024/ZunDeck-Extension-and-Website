@@ -2,6 +2,7 @@ export {
   escapeHtml,
   sanitizeUrl,
   stripDangerousMarkup,
+  sanitizeCss,
   sanitizeValue
 } from './sanitizer.js';
 

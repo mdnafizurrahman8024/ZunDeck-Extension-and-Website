@@ -200,4 +200,31 @@ if (CAPTURE_BUCKETS.length < 8) {
 }
 console.log('✓ Smart Harvester, Noise Filter, CV Parser & Staging Review: PASS');
 
+// 13. Check Part 8 Vibe Coding AI Agent, Matcher & Checkpoint Timeline
+const { sanitizeCss } = await import('../core/security/sanitizer.js');
+const { VIBE_TOOLS } = await import('../core/ai/vibe-agent.js');
+const { computeOfflineMatch, CIRCULAR_INPUT_MODES } = await import('../core/ai/opportunity-matcher.js');
+const { PROMPT_LIBRARY, USER_GUIDES } = await import('../core/ui/guide-and-prompts.js');
+const { MAX_CHECKPOINTS } = await import('../core/storage/checkpoint-timeline.js');
+const fallbackProfile = (await import('../core/data/mother-fallback.json', { with: { type: 'json' } })).default;
+
+if (sanitizeCss('@import url("evil.css"); color: red;').includes('@import')) {
+  console.error('✕ CSS sanitizer failed to strip @import directive!');
+  process.exit(1);
+}
+if (VIBE_TOOLS.length !== 4 || MAX_CHECKPOINTS !== 30) {
+  console.error('✕ Vibe agent tools or checkpoint limits misconfigured!');
+  process.exit(1);
+}
+if (CIRCULAR_INPUT_MODES.length !== 5 || PROMPT_LIBRARY.length < 25 || USER_GUIDES.length !== 7) {
+  console.error('✕ Opportunity Matcher modes, prompt library, or user guides incomplete!');
+  process.exit(1);
+}
+const sampleMatch = computeOfflineMatch(fallbackProfile, 'PhD candidate in Bioinformatics and Virology with Python');
+if (sampleMatch.matchScore < 40 || !sampleMatch.matchedStrengths.length) {
+  console.error('✕ Opportunity Matcher failed heuristic analysis!');
+  process.exit(1);
+}
+console.log('✓ Vibe Coding Agent, Universal Matcher, Timeline & 25+ Prompt Library: PASS');
+
 console.log('--- Verification Complete: ALL CHECKS PASSED ---');
